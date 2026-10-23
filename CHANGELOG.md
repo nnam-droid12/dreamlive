@@ -2,6 +2,15 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-23 — Phase 2: Dream engine and gaze
+
+- **Chapters as data** (`src/dreams/`): linear beats and choice beats with 2–3 seeds, each leading to a branch. Chapter 1's branching structure (lighthouse or fish, storm, star or door, island) is in place with placeholder scenes.
+- **AttentionSystem**: one gaze ray per frame. It uses true eye gaze when the runtime exposes a `gaze` input source (Meta VR Glasses), otherwise head gaze from the center of view (Quest 3/3S). It picks the single seed closest in angle (7° cone plus the seed's size). In head-gaze mode a subtle reticle appears only near seeds.
+- **DreamSeedSystem**: looking at a seed makes it react instantly (brighter, larger, halo up), and a dwell ring sweeps closed over 1.5 s; looking away drains it slowly. A pinch while pointing, or gaze plus pinch on Glasses, blooms it at once (accessibility). Idle seeds show a faint ring so they read as "look here", distinct from the ambient stars.
+- **DreamDirectorSystem**: the lean-back default picks the most-looked-at seed (else the default) after 8 s of looking at nothing, with a 25 s cap per choice. Dream time freezes while the headset is off.
+- Optional `gazeTracking` feature enabled; IWSDK gaze diagnostics logging turned off.
+- Emulator results: zero input ran the whole chapter to completion (46 s of placeholder dream time). Head gaze (Quest 3 profile) chose the non-default door. Eye gaze (Glasses profile, head pointed elsewhere) chose the non-default fish. Gaze plus pinch chose the lighthouse before the dwell could finish.
+
 ## 2026-10-23 — Phase 1: The tuck-in ritual
 
 - Removed the scaffold starter content (robot, plant, banner, CDN-hosted models); no runtime network calls remain.

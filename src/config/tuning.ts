@@ -109,6 +109,18 @@ export const Tuning = {
     targetDreamLengthSec: 345,
   },
 
+  dream: {
+    /** "Falling asleep" lasts this long before the dream begins. */
+    startDelaySec: 10,
+    /** A choice never waits longer than this, even if the user keeps glancing. */
+    choiceMaxSec: 25,
+    /** Dwell drains this many times slower than it fills when you look away. */
+    dwellDecayRatio: 0.5,
+    seedAppearSec: 0.8,
+    seedBloomSec: 0.9,
+    seedFadeSec: 0.7,
+  },
+
   performance: {
     targetFps: 72,
     degradeBelowFps: 66,

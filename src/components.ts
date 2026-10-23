@@ -1,4 +1,5 @@
 import { defineComponents } from '@iwsdk/core';
+import { DreamDirector, DreamSeed, GazeRay, GazeTarget } from './components/dream.js';
 import { Dreamer } from './components/dreamer.js';
 import { HandGestureState } from './components/hands.js';
 import { Caption, Ritual } from './components/ritual.js';
@@ -12,4 +13,8 @@ export default defineComponents([
   Caption,
   HandGestureState,
   Dreamer,
+  DreamDirector,
+  GazeRay,
+  GazeTarget,
+  DreamSeed,
 ]);

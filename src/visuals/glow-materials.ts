@@ -177,3 +177,32 @@ export function makeVignetteMaterial(color: number): ShaderMaterial {
     depthTest: true,
   });
 }
+
+/** Gaze dwell indicator: a thin arc that sweeps clockwise from 12 o'clock to `progress`. */
+export function makeDwellRingMaterial(color: number): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      color: { value: new Color(color) },
+      opacity: { value: 0 },
+      progress: { value: 0 },
+    },
+    vertexShader: PLANE_VERT,
+    fragmentShader: /* glsl */ `
+      uniform vec3 color;
+      uniform float opacity, progress;
+      varying vec2 vUv;
+      void main() {
+        vec2 p = vUv * 2.0 - 1.0;
+        float d = length(p);
+        float band = smoothstep(0.08, 0.0, abs(d - 0.85));
+        float a = fract(atan(p.x, p.y) / 6.2831853 + 1.0);
+        float filled = step(a, progress);
+        float track = 0.35;
+        float alpha = opacity * band * mix(track, 1.0, filled);
+        gl_FragColor = vec4(color * alpha, alpha);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    ...ADDITIVE_LIGHT,
+  });
+}
