@@ -84,8 +84,71 @@ export class DreamerSystem extends createSystem({
           d.setValue(Ritual, 'phaseTime', 0);
         }
         break;
-      default:
+      case DreamerState.Sleeping:
         this.sleep(t, delta);
+        if (
+          d.getValue(Ritual, 'phase') === RitualPhase.Waking &&
+          (d.getValue(Ritual, 'phaseTime') ?? 0) >= Tuning.waking.foldSec * 0.75
+        ) {
+          this.next(e, DreamerState.Stirring);
+        }
+        break;
+      case DreamerState.Stirring:
+        this.stir(clamp01(t / Tuning.waking.stirSec), delta);
+        if (t >= Tuning.waking.stirSec) this.next(e, DreamerState.Stretching);
+        break;
+      case DreamerState.Stretching:
+        this.stretch(clamp01(t / Tuning.waking.stretchSec));
+        if (t >= Tuning.waking.stretchSec) this.next(e, DreamerState.Awake);
+        break;
+      default:
+        this.awake(t);
+    }
+  }
+
+  /** Uncurl from the sleeping pose: eyes open to sleepy, wings unwrap. */
+  private stir(k: number, delta: number): void {
+    const g = this.rig!;
+    const e = ease(k);
+    this.fadeZzz(delta);
+    g.body.scale.set(1.07 - 0.07 * e, 0.82 + 0.18 * e, 1.07 - 0.07 * e);
+    g.body.position.y = g.bodyY - 0.007 * (1 - e);
+    g.body.rotation.z = Math.sin(k * 18) * 0.05 * (1 - k);
+    for (const lid of g.lids) lid.rotation.x = LID_CLOSED + (LID_SLEEPY - LID_CLOSED) * e;
+    g.wings.forEach((w, i) => (w.rotation.y = g.wingYaw[i] - (i ? 1 : -1) * 1.3 * (1 - e)));
+    for (const a of g.antennae) a.rotation.x = 0.45 * (1 - e);
+    g.root.rotation.y = 0.35 * (1 - e);
+  }
+
+  /** A big stretch and a small yawn, facing the user again. */
+  private stretch(k: number): void {
+    const g = this.rig!;
+    const s = Math.sin(Math.PI * k);
+    g.body.scale.set(1 - 0.03 * s, 1 + 0.12 * s, 1 - 0.03 * s);
+    g.mouth.scale.set(g.mouthX * (1 + 0.3 * s), g.mouthY * (1 + 2 * s), g.mouth.scale.z);
+    g.wings.forEach((w, i) => (w.rotation.y = g.wingYaw[i] - (i ? 1 : -1) * 0.5 * s));
+    for (const a of g.antennae) a.rotation.x = -0.3 * s;
+    for (const lid of g.lids) lid.rotation.x = LID_SLEEPY + 0.6 * s;
+  }
+
+  /** Awake: gentle breathing, eyes half open, a slow wing flutter. */
+  private awake(t: number): void {
+    const g = this.rig!;
+    const breath = Math.sin(t * 2);
+    g.body.scale.set(1, 1 + 0.015 * breath, 1);
+    for (const lid of g.lids) lid.rotation.x = -0.45;
+    g.wings.forEach((w, i) => (w.rotation.y = g.wingYaw[i] + (i ? 1 : -1) * Math.sin(t * 3) * 0.08));
+    g.glow.uniforms.opacity.value = 0.35;
+  }
+
+  private fadeZzz(delta: number): void {
+    for (const z of this.rig!.zzz) {
+      if (z.age < 0) continue;
+      z.sprite.material.opacity = Math.max(0, z.sprite.material.opacity - delta * 2);
+      if (z.sprite.material.opacity <= 0) {
+        z.age = -1;
+        z.sprite.visible = false;
+      }
     }
   }
 

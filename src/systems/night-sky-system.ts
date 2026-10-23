@@ -77,6 +77,7 @@ export class NightSkySystem extends createSystem({
     geo.setAttribute('position', new BufferAttribute(pos, 3));
     geo.setAttribute('seed', new BufferAttribute(seed, 1));
     const mat = makeStarMaterial(Palette.starWhite);
+    mat.uniforms.size.value = 8;
     const points = new Points(geo, mat);
     points.name = 'DriftingStars';
     points.frustumCulled = false;

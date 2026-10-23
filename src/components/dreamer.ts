@@ -5,6 +5,9 @@ export const DreamerState = {
   Yawning: 'yawning',
   Curling: 'curling',
   Sleeping: 'sleeping',
+  Stirring: 'stirring',
+  Stretching: 'stretching',
+  Awake: 'awake',
 } as const;
 
 export const Dreamer = createComponent('Dreamer', {

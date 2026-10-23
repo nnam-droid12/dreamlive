@@ -7,6 +7,7 @@ import {
   BackSide,
   Color,
   CustomBlending,
+  DoubleSide,
   NormalBlending,
   OneFactor,
   ShaderMaterial,
@@ -200,6 +201,105 @@ export function makeDwellRingMaterial(color: number): ShaderMaterial {
         float track = 0.35;
         float alpha = opacity * band * mix(track, 1.0, filled);
         gl_FragColor = vec4(color * alpha, alpha);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    ...ADDITIVE_LIGHT,
+  });
+}
+
+/** Upward rain: each point loops from the table edge up `height` m (GPU-animated). */
+export function makeRainMaterial(color: number, height: number): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      color: { value: new Color(color) },
+      opacity: { value: 0 },
+      time: { value: 0 },
+      height: { value: height },
+    },
+    vertexShader: /* glsl */ `
+      attribute float seed;
+      uniform float time, height;
+      varying float vFade;
+      void main() {
+        float k = fract(seed * 13.7 + time * (0.35 + seed * 0.3));
+        vec3 p = position + vec3(0.0, k * height, 0.0);
+        vFade = (1.0 - k) * smoothstep(0.0, 0.08, k);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = 5.0 / max(0.05, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 color;
+      uniform float opacity;
+      varying float vFade;
+      void main() {
+        vec2 c = gl_PointCoord * 2.0 - 1.0;
+        float a = opacity * vFade * exp(-(c.x * c.x * 6.0 + c.y * c.y * 1.2));
+        gl_FragColor = vec4(color * a, a);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    ...ADDITIVE_LIGHT,
+  });
+}
+
+/** Light cone along local +Z (apex at origin); fades with distance and toward the edge. */
+export function makeBeamMaterial(color: number): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: { color: { value: new Color(color) }, opacity: { value: 0 } },
+    vertexShader: /* glsl */ `
+      varying float vAlong;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        vAlong = uv.y;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vView = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 color;
+      uniform float opacity;
+      varying float vAlong;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        float soft = pow(abs(dot(vNormal, vView)), 1.5);
+        float a = opacity * soft * pow(vAlong, 0.8) * 0.55;
+        gl_FragColor = vec4(color * a, a);
+      }`,
+    side: DoubleSide,
+    transparent: true,
+    depthWrite: false,
+    ...ADDITIVE_LIGHT,
+  });
+}
+
+/** Fading trail points: attribute `birth` (seconds); older points fade out. */
+export function makeTrailMaterial(color: number, life: number): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: { color: { value: new Color(color) }, time: { value: 0 }, life: { value: life }, opacity: { value: 1 } },
+    vertexShader: /* glsl */ `
+      attribute float birth;
+      uniform float time, life;
+      varying float vFade;
+      void main() {
+        float age = time - birth;
+        vFade = clamp(1.0 - age / life, 0.0, 1.0) * step(0.0, age);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = (4.0 + 6.0 * vFade) / max(0.05, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 color;
+      uniform float opacity;
+      varying float vFade;
+      void main() {
+        float d = length(gl_PointCoord * 2.0 - 1.0);
+        float a = opacity * vFade * exp(-d * d * 3.0);
+        gl_FragColor = vec4(color * a, a);
       }`,
     transparent: true,
     depthWrite: false,

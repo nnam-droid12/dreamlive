@@ -1,5 +1,6 @@
-import { createSystem, Matrix4, Vector3 } from '@iwsdk/core';
-import { HandGestureState, Handedness } from '../components/hands.js';
+import { createSystem, Entity, Matrix4, Vector3 } from '@iwsdk/core';
+import { Gestures, HandGestureState, Handedness } from '../components/hands.js';
+import { StageSurface } from '../components/stage.js';
 import { Tuning } from '../config/tuning.js';
 
 /** Joints read per hand: palm center = mid(metacarpal, knuckle); normal from metacarpal. */
@@ -15,6 +16,8 @@ type FillPosesFrame = XRFrame & {
   fillPoses?: (spaces: XRSpace[], base: XRSpace, out: Float32Array) => boolean;
 };
 const cfg = Tuning.palmCalibration;
+const gest = Tuning.gestures;
+const HUSH_MAX_SPEED = 0.15;
 
 /**
  * Reads hand joints straight from WebXR and classifies each hand's palm pose
@@ -23,6 +26,7 @@ const cfg = Tuning.palmCalibration;
  */
 export class GestureSystem extends createSystem({
   hands: { required: [HandGestureState] },
+  director: { required: [Gestures, StageSurface] },
 }) {
   private poses = new Float32Array(16 * JOINT_NAMES.length);
   private jointSpaces = new WeakMap<XRHand, XRJointSpace[]>();
@@ -31,6 +35,11 @@ export class GestureSystem extends createSystem({
   private knuckle = new Vector3();
   private normal = new Vector3();
   private cosMaxTilt = Math.cos((cfg.maxPalmTiltDeg * Math.PI) / 180);
+  private cosMaxCup = Math.cos((gest.cupMaxTiltDeg * Math.PI) / 180);
+  private a = new Vector3();
+  private b = new Vector3();
+  private left?: Entity;
+  private right?: Entity;
 
   init(): void {
     for (const hand of [Handedness.Left, Handedness.Right]) {
@@ -54,6 +63,7 @@ export class GestureSystem extends createSystem({
       if (!frame || !refSpace || !hand || !this.readPalm(frame, refSpace, hand)) {
         entity.setValue(HandGestureState, 'tracked', false);
         entity.setValue(HandGestureState, 'palmDown', false);
+        entity.setValue(HandGestureState, 'palmUp', false);
         entity.setValue(HandGestureState, 'still', false);
         continue;
       }
@@ -79,7 +89,58 @@ export class GestureSystem extends createSystem({
       entity.setValue(HandGestureState, 'speed', speed);
       entity.setValue(HandGestureState, 'still', !!wasTracked && speed < cfg.maxSpeed);
       entity.setValue(HandGestureState, 'palmDown', -this.normal.y >= this.cosMaxTilt);
+      entity.setValue(HandGestureState, 'palmUp', this.normal.y >= this.cosMaxCup);
     }
+    this.summarize(delta);
+  }
+
+  /** Two-hand and stage-relative gestures: cupped hands and the hush palm. */
+  private summarize(delta: number): void {
+    const d = this.queries.director.entities.values().next().value;
+    if (!d) return;
+    this.left = this.right = undefined;
+    for (const e of this.queries.hands.entities) {
+      if (e.getValue(HandGestureState, 'hand') === Handedness.Left) this.left = e;
+      else this.right = e;
+    }
+    const l = this.left;
+    const r = this.right;
+    let cupped = false;
+    if (l && r && l.getValue(HandGestureState, 'palmUp') && r.getValue(HandGestureState, 'palmUp')) {
+      this.a.fromArray(l.getVectorView(HandGestureState, 'palmCenter'));
+      this.b.fromArray(r.getVectorView(HandGestureState, 'palmCenter'));
+      if (this.a.distanceTo(this.b) <= gest.cupMaxSpacing) {
+        cupped = true;
+        this.a.add(this.b).multiplyScalar(0.5).toArray(d.getVectorView(Gestures, 'cupCenter'));
+      }
+    }
+    d.setValue(Gestures, 'cupped', cupped);
+
+    const c = d.getVectorView(StageSurface, 'center');
+    const yaw = d.getValue(StageSurface, 'yaw') ?? 0;
+    const halfW = (d.getValue(StageSurface, 'width') ?? 0.6) / 2 + 0.1;
+    const halfD = (d.getValue(StageSurface, 'depth') ?? 0.4) / 2 + 0.1;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    let hushing = false;
+    for (const h of [l, r]) {
+      if (!h || !h.getValue(HandGestureState, 'palmDown')) continue;
+      if ((h.getValue(HandGestureState, 'speed') ?? 1) > HUSH_MAX_SPEED) continue;
+      const p = h.getVectorView(HandGestureState, 'palmCenter');
+      const dx = p[0] - c[0];
+      const dz = p[2] - c[2];
+      const lx = dx * cos - dz * sin;
+      const lz = dx * sin + dz * cos;
+      const height = p[1] - c[1];
+      if (Math.abs(lx) < halfW && Math.abs(lz) < halfD && height >= gest.hushMinHeight && height <= gest.hushMaxHeight) {
+        hushing = true;
+      }
+    }
+    let hold = d.getValue(Gestures, 'hushHold') ?? 0;
+    hold = hushing ? hold + delta : Math.max(0, hold - delta);
+    const hush = hold >= gest.hushHoldSec;
+    d.setValue(Gestures, 'hush', hush);
+    d.setValue(Gestures, 'hushHold', hush ? 0 : hold);
   }
 
   /** Fills this.center / this.normal in world space. Returns false if untracked. */

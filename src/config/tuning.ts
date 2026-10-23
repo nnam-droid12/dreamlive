@@ -97,6 +97,15 @@ export const Tuning = {
 
   gestures: {
     hushHoldSec: 1,
+    /** A palm hovering this high above the stage counts as hushing. */
+    hushMinHeight: 0.04,
+    hushMaxHeight: 0.4,
+    /** Palm-up tilt allowance for cupping. */
+    cupMaxTiltDeg: 50,
+    /** Two cupped palms must be closer than this. */
+    cupMaxSpacing: 0.22,
+    /** A cup this close (horizontally) to a falling star catches it. */
+    catchRadius: 0.25,
     palmOutHoldSec: 1,
     pinchStartDistance: 0.02,
     pinchEndDistance: 0.035,
@@ -107,6 +116,16 @@ export const Tuning = {
   chapter: {
     stormAutoPassSec: 20,
     targetDreamLengthSec: 345,
+  },
+
+  waking: {
+    /** Set pieces fold flat into the table like a closing pop-up book. */
+    foldSec: 4,
+    stirSec: 2.5,
+    stretchSec: 2,
+    orbRiseSec: 3,
+    /** Seconds after the orb arrives before the session counts as awake. */
+    settleSec: 2,
   },
 
   dream: {

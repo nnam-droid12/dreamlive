@@ -148,7 +148,7 @@ export class PalmGuideSystem extends createSystem({
 }
 
 /** White glowing outline of a right hand, fingers toward +V (texture up). */
-function drawPalmOutline(): HTMLCanvasElement {
+export function drawPalmOutline(): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d');

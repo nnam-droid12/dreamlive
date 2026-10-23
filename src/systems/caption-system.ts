@@ -63,6 +63,12 @@ export class CaptionSystem extends createSystem({
 
   update(delta: number): void {
     const c = this.queries.captions.entities.values().next().value;
+    const ttl = c?.getValue(Caption, 'ttl') ?? 0;
+    if (c && ttl > 0) {
+      const left = ttl - delta;
+      c.setValue(Caption, 'ttl', Math.max(0, left));
+      if (left <= 0) c.setValue(Caption, 'text', '');
+    }
     const wanted = c ? (c.getValue(Caption, 'text') ?? '') : '';
     const inXR = this.visibilityState.peek() !== VisibilityState.NonImmersive;
     if (wanted && wanted !== this.shownText && this.opacity <= 0.01) this.draw(wanted);

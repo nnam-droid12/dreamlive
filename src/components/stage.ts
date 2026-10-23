@@ -37,6 +37,12 @@ export const RoomSlots = createComponent('RoomSlots', {
   ceilingFound: { type: Types.Boolean, default: false },
   ceilingHeight: { type: Types.Float32, default: 0 },
   planeCount: { type: Types.Int16, default: 0 },
+  /** Where wall moments happen: on the real wall ahead, or a paper backdrop. */
+  anchorReady: { type: Types.Boolean, default: false },
+  anchorIsBackdrop: { type: Types.Boolean, default: false },
+  anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },
+  /** Unit normal of the anchor surface, pointing toward the user. */
+  anchorNormal: { type: Types.Vec3, default: [0, 0, 1] },
 });
 
 /** Tags the entity whose object3D is the stage root (origin = stage center, +Z toward user). */

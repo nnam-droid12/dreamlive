@@ -19,6 +19,8 @@ export const Palette = {
   dreamerPupil: 0x1b1840,
   /** Multiplied over passthrough during the dream to dim the room. */
   nightTint: 0x0d0b26,
+  seaDeep: 0x26307a,
+  seaShallow: 0x5a73d6,
 } as const;
 
 export type PaletteKey = keyof typeof Palette;

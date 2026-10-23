@@ -10,8 +10,12 @@ export const RitualPhase = {
   Rings: 'rings',
   /** The Dreamer walks out, yawns and curls up. */
   DreamerEnter: 'dreamerEnter',
-  /** Dreamer asleep; the room dims and stars drift (falling asleep). */
+  /** Dreamer asleep; the room dims and stars drift, then the dream plays. */
   Asleep: 'asleep',
+  /** The dream folds away; the Dreamer stirs and hands over a memory orb. */
+  Waking: 'waking',
+  /** Session's dream is over; the orb is kept. */
+  Awake: 'awake',
 } as const;
 
 export const Ritual = createComponent('Ritual', {
@@ -30,4 +34,6 @@ export const Ritual = createComponent('Ritual', {
 /** The single on-screen caption line. Empty text hides it. */
 export const Caption = createComponent('Caption', {
   text: { type: Types.String, default: '' },
+  /** Seconds left before the text clears itself; 0 = stays until replaced. */
+  ttl: { type: Types.Float32, default: 0 },
 });

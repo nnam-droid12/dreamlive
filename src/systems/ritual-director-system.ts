@@ -1,4 +1,5 @@
 import { createSystem, VisibilityState } from '@iwsdk/core';
+import { DevControls } from '../components/dream.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
 
@@ -12,13 +13,16 @@ export const ARRIVAL_CAPTION = 'Place both hands flat on a table near you.';
  * the XR session is visible, so taking the headset off freezes the ritual.
  */
 export class RitualDirectorSystem extends createSystem({
-  director: { required: [Ritual, Caption] },
+  director: { required: [Ritual, Caption, DevControls] },
 }) {
-  update(delta: number): void {
+  private wasArriving = false;
+
+  update(realDelta: number): void {
     const d = this.queries.director.entities.values().next().value;
     if (!d) return;
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
 
+    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
     let phase = d.getValue(Ritual, 'phase');
     if (phase === RitualPhase.Idle) {
       phase = RitualPhase.Arrival;
@@ -38,7 +42,12 @@ export class RitualDirectorSystem extends createSystem({
       d.setValue(Ritual, 'asleepAt', elapsed);
     }
 
-    const caption = phase === RitualPhase.Arrival ? ARRIVAL_CAPTION : '';
-    if (d.getValue(Caption, 'text') !== caption) d.setValue(Caption, 'text', caption);
+    // Own the caption only around Arrival so sound captions can use it later.
+    const arriving = phase === RitualPhase.Arrival;
+    if (arriving !== this.wasArriving) {
+      this.wasArriving = arriving;
+      d.setValue(Caption, 'text', arriving ? ARRIVAL_CAPTION : '');
+      d.setValue(Caption, 'ttl', 0);
+    }
   }
 }

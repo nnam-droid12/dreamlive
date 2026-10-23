@@ -12,8 +12,18 @@ export const DreamDirector = createComponent('DreamDirector', {
   /** Seed that decided the last choice and how ('gaze' | 'pinch' | 'leanBack'). */
   lastChoice: { type: Types.String, default: '' },
   lastChoiceBy: { type: Types.String, default: '' },
+  /** Every choice this dream, "seed:how" comma-separated, in order. */
+  choices: { type: Types.String, default: '' },
   started: { type: Types.Boolean, default: false },
   completed: { type: Types.Boolean, default: false },
+  /** One-shot event from a set piece (e.g. 'hush'); ends a beat whose endOn matches. */
+  signal: { type: Types.String, default: '' },
+});
+
+/** Developer controls (testing and the Director-mode recording flag). */
+export const DevControls = createComponent('DevControls', {
+  /** Multiplies ritual and dream time. 1 in normal play. */
+  timeScale: { type: Types.Float32, default: 1 },
 });
 
 export const GazeMode = { None: 'none', Eye: 'eye', Head: 'head' } as const;
