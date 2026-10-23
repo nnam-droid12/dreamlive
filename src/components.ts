@@ -1,11 +1,15 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 import { defineComponents } from '@iwsdk/core';
-import { Robot } from './robot-component.js';
+import { Dreamer } from './components/dreamer.js';
+import { HandGestureState } from './components/hands.js';
+import { Caption, Ritual } from './components/ritual.js';
+import { RoomSlots, StageAnchor, StageSurface } from './components/stage.js';
 
-export default defineComponents([Robot]);
+export default defineComponents([
+  StageSurface,
+  StageAnchor,
+  RoomSlots,
+  Ritual,
+  Caption,
+  HandGestureState,
+  Dreamer,
+]);

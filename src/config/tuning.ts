@@ -30,16 +30,59 @@ export const Tuning = {
     minDepth: 0.3,
     /** Floating paper backdrop distance when no wall is detected. */
     backdropDistance: 1.2,
+    defaultWidth: 0.6,
+    defaultDepth: 0.4,
+    maxWidth: 0.9,
+    maxDepth: 0.6,
+    /** Where the auto/air stage sits relative to the head. */
+    airForward: 0.45,
+    airDrop: 0.45,
+    /** Re-scan detected planes this often. */
+    roomScanIntervalSec: 0.5,
+    maxWallDistance: 4,
   },
 
   palmCalibration: {
     holdSec: 2,
+    /** Hold progress drains this many times slower than it fills (forgiving). */
+    decayRatio: 0.5,
     /** Palm normal must be within this angle of straight down. */
     maxPalmTiltDeg: 35,
     /** Both palms must be within this vertical distance of each other. */
     maxHeightDelta: 0.06,
     /** Palm speed below this counts as "still". */
     maxSpeed: 0.08,
+    minPalmSpacing: 0.08,
+    /** Palms must be at least this far below the eyes (hands raised to the face never tuck in). */
+    minDropBelowHead: 0.2,
+    maxPalmSpacing: 0.8,
+    /** Palm center sits this far above the surface it rests on. */
+    palmSurfaceOffset: 0.02,
+    /** A detected table within this height of the palms is snapped to. */
+    tableSnapTolerance: 0.08,
+    /** With no tuck-in by then, the stage is placed automatically. */
+    autoTuckInSec: 25,
+  },
+
+  ritual: {
+    ringGrowSec: 0.9,
+    ringMergeSec: 1.0,
+    ringFadeSec: 0.8,
+    tintFadeSec: 2,
+    tintOpacity: 0.42,
+    dreamerScale: 1.5,
+    dreamerWalkSec: 2.6,
+    dreamerWalkDistance: 0.12,
+    dreamerYawnSec: 1.8,
+    dreamerCurlSec: 1.6,
+    zzzIntervalSec: 1.4,
+    vignetteFadeSec: 3,
+    vignetteOpacity: 0.45,
+    starCount: 90,
+    /** Where the palm guide floats when no table is detected. */
+    guideForward: 0.45,
+    guideDrop: 0.4,
+    shadowOpacity: 0.35,
   },
 
   gaze: {

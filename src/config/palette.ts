@@ -14,6 +14,9 @@ export const Palette = {
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,
   starWhite: 0xfff8e8,
+  dreamerFur: 0xece8ff,
+  dreamerEye: 0xfdfcff,
+  dreamerPupil: 0x1b1840,
   /** Multiplied over passthrough during the dream to dim the room. */
   nightTint: 0x0d0b26,
 } as const;

@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
+# Manual-only while the repo is private (free-plan Pages cannot serve private
+# repos). Restore `push: branches: [main]` when the repo goes public.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

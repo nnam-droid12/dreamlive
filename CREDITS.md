@@ -14,7 +14,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 
 | Asset | Source | License |
 |---|---|---|
-| *(none yet; Dreamlive art is built from code primitives)* | | |
+| The Dreamer, rings, stars, night tint, cloud platform | Original, built in code (`src/scene-assets`, `src/visuals`) | Project-owned |
 
 ## Audio
 
@@ -22,6 +22,6 @@ Every third-party asset, sound and library used in the shipped build is listed h
 |---|---|---|
 | *(none yet; placeholder audio is generated procedurally with Web Audio)* | | |
 
-## Temporary scaffold content (removed in Phase 1)
+## Scaffold content
 
-The IWSDK starter scene (robot, plant, desk, welcome panel, `chime.mp3`, WebXR banner) ships with the scaffold under the MIT license and is only used for the Phase 0 deploy test.
+The 2D landing panel (`public/ui/welcome.uikitml`) is adapted from the IWSDK starter (MIT). All other starter content was removed in Phase 1.
