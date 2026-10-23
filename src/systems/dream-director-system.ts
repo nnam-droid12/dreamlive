@@ -1,6 +1,6 @@
 import { createSystem, Entity, VisibilityState } from '@iwsdk/core';
 import { DevControls, DreamDirector, DreamSeed, GazeTarget, SeedState } from '../components/dream.js';
-import { Ritual, RitualPhase } from '../components/ritual.js';
+import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
 import { Chapters, findChapter } from '../dreams/registry.js';
 import type { BeatDef } from '../dreams/types.js';
@@ -15,9 +15,13 @@ const dream = Tuning.dream;
  * The dream never stalls. Dream time freezes while the headset is off.
  */
 export class DreamDirectorSystem extends createSystem({
-  director: { required: [DreamDirector, Ritual, DevControls] },
+  director: { required: [DreamDirector, Ritual, DevControls, Caption] },
   seeds: { required: [DreamSeed, GazeTarget] },
 }) {
+  /** One-time teaching captions, so the core mechanic is obvious in the first minute. */
+  private taughtChoice = false;
+  private taughtFollow = false;
+
   update(realDelta: number): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
     const d = this.queries.director.entities.values().next().value;
@@ -71,6 +75,7 @@ export class DreamDirectorSystem extends createSystem({
           const prior = d.getValue(DreamDirector, 'choices') ?? '';
           const entry = `${s.getValue(DreamSeed, 'seedId')}:${s.getValue(DreamSeed, 'bloomedBy')}`;
           d.setValue(DreamDirector, 'choices', prior ? `${prior},${entry}` : entry);
+          this.confirmChoice(d, s.getValue(DreamSeed, 'bloomedBy') ?? '');
           this.goTo(d, s.getValue(DreamSeed, 'branch') ?? '');
           return;
         }
@@ -103,9 +108,27 @@ export class DreamDirectorSystem extends createSystem({
     d.setValue(Ritual, 'phaseTime', 0);
   }
 
+  private caption(d: Entity, text: string, seconds: number): void {
+    d.setValue(Caption, 'text', text);
+    d.setValue(Caption, 'ttl', seconds);
+  }
+
+  private confirmChoice(d: Entity, how: string): void {
+    if (how === 'catch') this.caption(d, 'You caught a falling star.', 4);
+    else if (how !== 'leanBack' && !this.taughtFollow) {
+      this.taughtFollow = true;
+      this.caption(d, how === 'pinch' ? 'The dream follows your choice.' : 'The dream follows your gaze.', 4);
+    }
+  }
+
   private goTo(d: Entity, beatId: string): void {
     d.setValue(DreamDirector, 'signal', '');
     d.setValue(DreamDirector, 'beatId', beatId);
+    const beat = findChapter(d.getValue(DreamDirector, 'chapterId') ?? '')?.beats[beatId];
+    if (beat?.seeds && !this.taughtChoice) {
+      this.taughtChoice = true;
+      this.caption(d, 'Look at a glowing light to choose the dream.', 7);
+    }
     d.setValue(DreamDirector, 'beatTime', 0);
     d.setValue(DreamDirector, 'idleGaze', 0);
   }

@@ -18,7 +18,8 @@ import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
 import { Dreamer, DreamerState } from '../components/dreamer.js';
 import { MemoryOrb } from '../components/memory.js';
-import { Ritual, RitualPhase } from '../components/ritual.js';
+import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
+import { RoomSlots } from '../components/stage.js';
 import { Palette, type PaletteKey } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { createDreamFish } from '../scene-assets/dream-fish.scene-asset.js';
@@ -49,7 +50,7 @@ export function keptMoment(choices: string): string {
  * awake (the Memory Shelf takes over in Phase 4).
  */
 export class WakingSystem extends createSystem({
-  director: { required: [Ritual, DreamDirector, DevControls] },
+  director: { required: [Ritual, DreamDirector, DevControls, RoomSlots, Caption] },
   dreamers: { required: [Dreamer] },
 }) {
   private orb?: Object3D;
@@ -60,6 +61,10 @@ export class WakingSystem extends createSystem({
   private head = new Vector3();
   private quat = new Quaternion();
   private fwd = new Vector3();
+  private shelf = new Vector3();
+  private fromHover = new Vector3();
+  private shelfAge = -1;
+  private landed = false;
 
   update(realDelta: number): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
@@ -75,6 +80,10 @@ export class WakingSystem extends createSystem({
       return;
     }
     this.orbAge += delta;
+    if (phase === RitualPhase.Awake) {
+      this.settleOnWall(d, delta);
+      return;
+    }
     this.player.head.getWorldPosition(this.head);
     this.player.head.getWorldQuaternion(this.quat);
     this.fwd.set(0, 0, -1).applyQuaternion(this.quat).setY(0).normalize();
@@ -93,6 +102,33 @@ export class WakingSystem extends createSystem({
     if (this.arrived && phase === RitualPhase.Waking && this.orbAge >= Tuning.waking.orbRiseSec + Tuning.waking.settleSec) {
       d.setValue(Ritual, 'phase', RitualPhase.Awake);
       d.setValue(Ritual, 'phaseTime', 0);
+    }
+  }
+
+  /** After waking, the orb drifts to the wall and stays there: the session's closing image. */
+  private settleOnWall(d: Entity, delta: number): void {
+    const orb = this.orb!;
+    if (this.shelfAge < 0) {
+      this.shelfAge = 0;
+      this.fromHover.copy(orb.position);
+      this.shelf.copy(orb.position);
+      if (d.getValue(RoomSlots, 'anchorReady')) {
+        const a = d.getVectorView(RoomSlots, 'anchorPoint');
+        const n = d.getVectorView(RoomSlots, 'anchorNormal');
+        this.shelf.set(a[0] + n[0] * 0.06, a[1] - 0.22, a[2] + n[2] * 0.06);
+      }
+    }
+    this.shelfAge += delta;
+    const k = Math.min(1, this.shelfAge / 3);
+    orb.position.lerpVectors(this.fromHover, this.shelf, ease(k));
+    orb.position.y += Math.sin(this.orbAge * 1.6) * 0.004 + Math.sin(Math.PI * k) * 0.05;
+    const inner = orb.getObjectByName('Moment');
+    if (inner) inner.rotation.y += delta * 0.6;
+    if (k >= 1 && !this.landed) {
+      this.landed = true;
+      Sound.play('chime', this.shelf, 0.7);
+      d.setValue(Caption, 'text', 'Tomorrow night, a new dream.');
+      d.setValue(Caption, 'ttl', 8);
     }
   }
 

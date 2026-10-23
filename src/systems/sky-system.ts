@@ -16,17 +16,20 @@ import {
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
-import { Ritual } from '../components/ritual.js';
+import { Caption, Ritual } from '../components/ritual.js';
 import { RoomSlots, StageAnchor, StageSurface } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { foldAmount, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { createStorybookDoor } from '../scene-assets/storybook-door.scene-asset.js';
-import { makeSoftRectMaterial, makeStarMaterial } from '../visuals/glow-materials.js';
+import { PaperSeaLayout } from '../dreams/chapter1_paperSea.js';
+import { makeRisingStarMaterial, makeSoftRectMaterial } from '../visuals/glow-materials.js';
 
 const DOOR_DROP = 0.32;
 const LANTERNS = 6;
 const SKY_STARS = 240;
+const WALL_STARS = 70;
+const SKY_RISE_SEC = 7;
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 
@@ -36,7 +39,7 @@ const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
  * and the closing sky of stars on the real ceiling (or a dome over the table).
  */
 export class SkySystem extends createSystem({
-  director: { required: [DreamDirector, Ritual, DevControls, StageSurface, RoomSlots] },
+  director: { required: [DreamDirector, Ritual, DevControls, StageSurface, RoomSlots, Caption] },
   stage: { required: [StageAnchor] },
 }) {
   private door?: Object3D;
@@ -50,6 +53,7 @@ export class SkySystem extends createSystem({
   private doorLevel = 0;
   private open = 0;
   private skyLevel = 0;
+  private skyAge = 0;
   private time = 0;
   private lastScene = '';
   private doorBase = new Vector3();
@@ -79,6 +83,8 @@ export class SkySystem extends createSystem({
       this.skyLevel += (target - this.skyLevel) * Math.min(1, delta * (target ? 0.5 : 1.2));
       this.sky.mat.uniforms.opacity.value = this.skyLevel;
       this.sky.mat.uniforms.time.value = this.time;
+      this.skyAge += delta;
+      this.sky.mat.uniforms.rise.value = Math.min(1, this.skyAge / SKY_RISE_SEC);
       this.sky.points.visible = this.skyLevel > 0.005;
     }
   }
@@ -155,33 +161,59 @@ export class SkySystem extends createSystem({
   }
 
   private buildSky(d: Entity): void {
+    const stage = this.queries.stage.entities.values().next().value?.object3D;
+    if (!stage) return;
     const c = d.getVectorView(StageSurface, 'center');
     const ceiling = d.getValue(RoomSlots, 'ceilingHeight') ?? 0;
     const lift = ceiling - c[1];
     const useCeiling = !!d.getValue(RoomSlots, 'ceilingFound') && lift > 1.2 && lift < 2.8;
+    const onWall = !!d.getValue(RoomSlots, 'anchorReady');
+    const anchor = d.getVectorView(RoomSlots, 'anchorPoint');
+    const normal = new Vector3().fromArray(d.getVectorView(RoomSlots, 'anchorNormal'));
+    const right = new Vector3().crossVectors(new Vector3(0, 1, 0), normal).normalize();
+    const [iu, iv] = PaperSeaLayout.island;
+    const island = stage.localToWorld(
+      new Vector3((iu * (d.getValue(StageSurface, 'width') ?? 0.6)) / 2, 0.05, (iv * (d.getValue(StageSurface, 'depth') ?? 0.4)) / 2),
+    );
+
     const pos = new Float32Array(SKY_STARS * 3);
+    const start = new Float32Array(SKY_STARS * 3);
     const seed = new Float32Array(SKY_STARS);
     for (let i = 0; i < SKY_STARS; i++) {
       const a = i * 2.39996;
       const r = Math.sqrt((i + 0.5) / SKY_STARS);
-      if (useCeiling) {
+      const s = (i * 0.618034) % 1;
+      if (onWall && i < WALL_STARS) {
+        // A band on the wall ahead: inside the view cone, so the climax is always seen.
+        const u = ((i * 0.754877) % 1) * 2 - 1;
+        const v = s * 0.6 - 0.35;
+        pos.set([
+          anchor[0] + right.x * u * 0.9 + normal.x * 0.02,
+          anchor[1] + v,
+          anchor[2] + right.z * u * 0.9 + normal.z * 0.02,
+        ], i * 3);
+      } else if (useCeiling) {
         pos.set([c[0] + Math.cos(a) * r * 1.6, ceiling - 0.03, c[2] + Math.sin(a) * r * 1.6], i * 3);
       } else {
         // No usable ceiling: a compact cap of stars high over the table, never near the face.
-        const height = 0.55 + 0.35 * ((i * 0.618034) % 1);
-        pos.set([c[0] + Math.cos(a) * r * 0.5, c[1] + height, c[2] + Math.sin(a) * r * 0.5], i * 3);
+        pos.set([c[0] + Math.cos(a) * r * 0.5, c[1] + 0.55 + 0.35 * s, c[2] + Math.sin(a) * r * 0.5], i * 3);
       }
+      start.set([island.x, island.y, island.z], i * 3);
       seed[i] = (i * 0.381966) % 1;
     }
     const geo = new BufferGeometry();
     geo.setAttribute('position', new BufferAttribute(pos, 3));
+    geo.setAttribute('start', new BufferAttribute(start, 3));
     geo.setAttribute('seed', new BufferAttribute(seed, 1));
-    const mat = makeStarMaterial(Palette.starWhite);
-    mat.uniforms.size.value = useCeiling ? 40 : 9;
+    const mat = makeRisingStarMaterial(Palette.starWhite);
+    mat.uniforms.size.value = useCeiling ? 40 : 12;
     const points = new Points(geo, mat);
-    points.name = useCeiling ? 'CeilingStarSky' : 'StarDome';
+    points.name = 'StarSky';
     points.frustumCulled = false;
     this.world.createTransformEntity(points);
     this.sky = { points, mat };
+    this.skyAge = 0;
+    d.setValue(Caption, 'text', 'Look up: the dream is filling your sky.');
+    d.setValue(Caption, 'ttl', 5);
   }
 }

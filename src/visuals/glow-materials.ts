@@ -306,3 +306,42 @@ export function makeTrailMaterial(color: number, life: number): ShaderMaterial {
     ...ADDITIVE_LIGHT,
   });
 }
+
+/** Stars that stream from attribute `start` to their place as `rise` goes 0 → 1. */
+export function makeRisingStarMaterial(color: number): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: {
+      color: { value: new Color(color) },
+      opacity: { value: 0 },
+      time: { value: 0 },
+      size: { value: 14 },
+      rise: { value: 0 },
+    },
+    vertexShader: /* glsl */ `
+      attribute float seed;
+      attribute vec3 start;
+      uniform float time, size, rise;
+      varying float vTwinkle;
+      void main() {
+        float k = clamp(rise * 1.6 - seed * 0.6, 0.0, 1.0);
+        k = k * k * (3.0 - 2.0 * k);
+        vec3 p = mix(start, position, k);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vTwinkle = (0.55 + 0.45 * sin(time * (1.2 + seed * 2.0) + seed * 60.0)) * step(0.001, k);
+        gl_PointSize = size * (0.4 + seed * 0.8) / max(0.05, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 color;
+      uniform float opacity;
+      varying float vTwinkle;
+      void main() {
+        float d = length(gl_PointCoord * 2.0 - 1.0);
+        float alpha = opacity * vTwinkle * exp(-d * d * 3.5) * step(d, 1.0);
+        gl_FragColor = vec4(color * alpha, alpha);
+      }`,
+    transparent: true,
+    depthWrite: false,
+    ...ADDITIVE_LIGHT,
+  });
+}

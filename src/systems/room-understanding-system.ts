@@ -87,8 +87,10 @@ export class RoomUnderstandingSystem extends createSystem({
         this.toPlane.subVectors(this.center, this.head).setY(0);
         const ahead = this.toPlane.dot(this.forward);
         const reach = Math.max(0, this.toPlane.length() - 0.5 * Math.min(width, depth));
-        if (ahead < -0.05 || reach > stage.maxReach || reach >= tableScore) continue;
-        tableScore = reach;
+        // Quest labels real tables; prefer them over chairs or couch seats at similar height.
+        const score = reach - (label === 'table' ? 0.3 : 0);
+        if (ahead < -0.05 || reach > stage.maxReach || score >= tableScore) continue;
+        tableScore = score;
         this.bestTable.copy(this.center);
         this.axisX.set(1, 0, 0).applyQuaternion(this.quat);
         tableYaw = Math.atan2(-this.axisX.z, this.axisX.x);

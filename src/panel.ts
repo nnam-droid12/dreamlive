@@ -6,6 +6,7 @@
  */
 
 import { createSystem, UIKitMLAsset, VisibilityState } from '@iwsdk/core';
+import { Sound } from './audio/engine.js';
 
 export class PanelSystem extends createSystem({}) {
   init(): void {
@@ -21,7 +22,11 @@ export class PanelSystem extends createSystem({}) {
       return;
     }
 
-    const launchXR = () => this.world.launchXR();
+    const launchXR = () => {
+      // Start audio inside the click: browsers only allow it during a user gesture.
+      Sound.ensure();
+      this.world.launchXR();
+    };
     const exitXR = () => this.world.exitXR();
     xrButton.addEventListener('click', launchXR);
     exitButton.addEventListener('click', exitXR);

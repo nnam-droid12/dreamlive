@@ -77,12 +77,15 @@ export class AttentionSystem extends createSystem({
     }
     best?.setValue(GazeTarget, 'focused', true);
 
-    const showReticle = mode === GazeMode.Head && nearest < g.reticleShowAngleDeg;
+    // Head-gaze reticle: shown whenever a choice is waiting (dim when far from a seed),
+    // so Quest 3/3S users see what "looking" is doing.
+    const showReticle = mode === GazeMode.Head && nearest < Infinity;
     this.reticle.visible = showReticle;
     if (showReticle) {
-      this.reticle.position.copy(this.origin).addScaledVector(this.dir, nearestDist * 0.97);
+      const near = nearest < g.reticleShowAngleDeg;
+      this.reticle.position.copy(this.origin).addScaledVector(this.dir, near ? nearestDist * 0.97 : 0.7);
       this.reticle.quaternion.copy(this.quat);
-      this.reticleMat.uniforms.opacity.value = best ? 1 : 1 - nearest / g.reticleShowAngleDeg;
+      this.reticleMat.uniforms.opacity.value = best ? 1 : near ? 0.35 + 0.65 * (1 - nearest / g.reticleShowAngleDeg) : 0.3;
     }
   }
 

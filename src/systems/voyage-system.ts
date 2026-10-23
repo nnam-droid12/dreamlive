@@ -18,7 +18,7 @@ import {
   VisibilityState,
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
-import { DevControls, DreamDirector } from '../components/dream.js';
+import { DevControls, DreamDirector, GazeTarget } from '../components/dream.js';
 import { Ritual } from '../components/ritual.js';
 import { StageAnchor, StageSurface } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
@@ -56,7 +56,10 @@ const SPOT = {
 export class VoyageSystem extends createSystem({
   director: { required: [DreamDirector, Ritual, DevControls, StageSurface] },
   stage: { required: [StageAnchor] },
+  targets: { required: [GazeTarget] },
 }) {
+  private lookYaw = 0;
+  private look = new Vector3();
   private boat?: Object3D;
   private tiny?: Object3D;
   private tinyBody?: Object3D;
@@ -125,6 +128,16 @@ export class VoyageSystem extends createSystem({
     if (this.tinyBody) {
       const lookUp = scene === 'island' ? ease(clamp01(p * 2)) : 0;
       this.tinyBody.rotation.x = -0.4 * lookUp;
+      // The tiny Dreamer turns toward whatever the user is looking at.
+      let wanted = 0;
+      for (const t of this.queries.targets.entities) {
+        if (!t.getValue(GazeTarget, 'focused')) continue;
+        this.look.fromArray(t.getVectorView(GazeTarget, 'worldPos'));
+        this.tiny!.worldToLocal(this.look);
+        wanted = Math.max(-1.1, Math.min(1.1, Math.atan2(this.look.x, this.look.z)));
+      }
+      this.lookYaw += (wanted - this.lookYaw) * Math.min(1, delta * 4);
+      this.tinyBody.rotation.y = this.lookYaw;
     }
 
     this.updateFish(scene, delta, fold);

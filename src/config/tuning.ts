@@ -130,7 +130,7 @@ export const Tuning = {
 
   dream: {
     /** "Falling asleep" lasts this long before the dream begins. */
-    startDelaySec: 10,
+    startDelaySec: 4,
     /** A choice never waits longer than this, even if the user keeps glancing. */
     choiceMaxSec: 25,
     /** Dwell drains this many times slower than it fills when you look away. */

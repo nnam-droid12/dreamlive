@@ -1,8 +1,9 @@
 import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core';
-import { Sound } from '../audio/engine.js';
+import { Sound, SOUND_CAPTIONS } from '../audio/engine.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 
 const SOUND_CAPTION_SEC = 3.5;
+const SOUND_TEXTS = new Set<string>(Object.values(SOUND_CAPTIONS));
 
 /**
  * Bridges the procedural audio engine to the session: starts sound when XR is
@@ -18,11 +19,19 @@ export class AudioSystem extends createSystem({
   private fwd = new Vector3();
   private up = new Vector3();
   private lastPhase = '';
+  private gestureHooked = false;
 
   update(): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) {
       Sound.suspend();
       return;
+    }
+    // XR selects (pinches) are user gestures: use the first one to unlock audio if needed.
+    const session = this.xrManager.getSession();
+    if (session && !this.gestureHooked) {
+      this.gestureHooked = true;
+      session.addEventListener('selectstart', () => Sound.ensure());
+      session.addEventListener('end', () => (this.gestureHooked = false), { once: true });
     }
     if (!Sound.ensure()) return;
     this.player.head.getWorldPosition(this.pos);
@@ -46,7 +55,13 @@ export class AudioSystem extends createSystem({
     }
     Sound.tick();
 
-    if (Sound.pendingCaption && phase !== RitualPhase.Arrival) {
+    // Story captions (teaching, closing) outrank sound captions: never interrupt them.
+    const current = d.getValue(Caption, 'text') ?? '';
+    const storyCaption = current !== '' && !SOUND_TEXTS.has(current);
+    if (Sound.pendingCaption && (phase === RitualPhase.Arrival || storyCaption)) {
+      Sound.pendingCaption = '';
+    }
+    if (Sound.pendingCaption) {
       d.setValue(Caption, 'text', Sound.pendingCaption);
       d.setValue(Caption, 'ttl', SOUND_CAPTION_SEC);
       Sound.pendingCaption = '';

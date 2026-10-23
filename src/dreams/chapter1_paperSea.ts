@@ -21,8 +21,8 @@ export const chapter1PaperSea: ChapterDef = {
   title: 'The Paper Sea',
   start: 'sea-rises',
   beats: {
-    'sea-rises': { id: 'sea-rises', duration: 16, scene: 'sea-rise', tint: 'moonBlue', next: 'drift' },
-    drift: { id: 'drift', duration: 12, scene: 'drift', tint: 'moonBlue', next: 'choice-1' },
+    'sea-rises': { id: 'sea-rises', duration: 10, scene: 'sea-rise', tint: 'moonBlue', next: 'drift' },
+    drift: { id: 'drift', duration: 6, scene: 'drift', tint: 'moonBlue', next: 'choice-1' },
     'choice-1': {
       id: 'choice-1',
       duration: 0,
@@ -46,8 +46,8 @@ export const chapter1PaperSea: ChapterDef = {
         },
       ],
     },
-    lighthouse: { id: 'lighthouse', duration: 42, scene: 'lighthouse', tint: 'lanternAmber', next: 'storm' },
-    fish: { id: 'fish', duration: 42, scene: 'fish', tint: 'moonBlueSoft', next: 'storm' },
+    lighthouse: { id: 'lighthouse', duration: 30, scene: 'lighthouse', tint: 'lanternAmber', next: 'storm' },
+    fish: { id: 'fish', duration: 30, scene: 'fish', tint: 'moonBlueSoft', next: 'storm' },
     storm: { id: 'storm', duration: 20, scene: 'storm', tint: 'indigo', next: 'calm', endOn: 'hush' },
     calm: { id: 'calm', duration: 5, scene: 'calm', tint: 'moonBlue', next: 'choice-2' },
     'choice-2': {

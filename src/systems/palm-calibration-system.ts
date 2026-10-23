@@ -1,4 +1,4 @@
-import { createSystem, Entity, Quaternion, Vector3 } from '@iwsdk/core';
+import { createSystem, Entity, Matrix4, Quaternion, Vector3, XRPlane } from '@iwsdk/core';
 import { HandGestureState, Handedness } from '../components/hands.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots, StageSource, StageSurface } from '../components/stage.js';
@@ -6,17 +6,36 @@ import { Tuning } from '../config/tuning.js';
 
 const cfg = Tuning.palmCalibration;
 const stage = Tuning.stage;
+/** A detected surface counts as "under the palms" within this height. */
+const SURFACE_MATCH_HEIGHT = 0.12;
+const Y_AXIS = new Vector3(0, 1, 0);
+const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
+
+interface PlaneShape {
+  polygon: ReadonlyArray<DOMPointReadOnly>;
+  semanticLabel?: string;
+}
+
+/** A real surface the stage can sit on (world space). */
+interface Surface {
+  center: Vector3;
+  yaw: number;
+  width: number;
+  depth: number;
+}
 
 /**
- * The tuck-in: both palms flat, still and level for ~2 s defines the dream
+ * The tuck-in: both palms flat, still and level for ~2 s define the dream
  * stage (always available, even when a table was auto-detected — it is also
- * the ritual). Snaps to a detected table at palm height; otherwise trusts the
- * palms, or floats a cloud platform when the room was scanned and nothing is
- * under them. With no attempt for autoTuckInSec, places the stage itself.
+ * the ritual). The stage fits whichever detected surface is under the palms;
+ * if none was reported, it trusts the palms (an invisible surface at palm
+ * height). With no attempt for autoTuckInSec, it places the stage itself — on
+ * the detected table, or on a cloud floating in front when there is none.
  */
 export class PalmCalibrationSystem extends createSystem({
   hands: { required: [HandGestureState] },
   director: { required: [Ritual, StageSurface, RoomSlots] },
+  planes: { required: [XRPlane] },
 }) {
   private left = new Vector3();
   private right = new Vector3();
@@ -24,7 +43,10 @@ export class PalmCalibrationSystem extends createSystem({
   private head = new Vector3();
   private headQuat = new Quaternion();
   private local = new Vector3();
-  private tableCenter = new Vector3();
+  private inverse = new Matrix4();
+  private planeQuat = new Quaternion();
+  private axis = new Vector3();
+  private found: Surface = { center: new Vector3(), yaw: 0, width: 0, depth: 0 };
 
   update(delta: number): void {
     const d = this.queries.director.entities.values().next().value;
@@ -36,14 +58,8 @@ export class PalmCalibrationSystem extends createSystem({
       if (e.getValue(HandGestureState, 'hand') === Handedness.Left) leftHand = e;
       else rightHand = e;
     }
-    const ready = (e?: Entity) =>
-      !!e &&
-      e.getValue(HandGestureState, 'tracked') &&
-      e.getValue(HandGestureState, 'palmDown') &&
-      e.getValue(HandGestureState, 'still');
-
     let ok = false;
-    if (ready(leftHand) && ready(rightHand)) {
+    if (this.ready(leftHand) && this.ready(rightHand)) {
       this.left.fromArray(leftHand!.getVectorView(HandGestureState, 'palmCenter'));
       this.right.fromArray(rightHand!.getVectorView(HandGestureState, 'palmCenter'));
       const spacing = this.left.distanceTo(this.right);
@@ -58,9 +74,7 @@ export class PalmCalibrationSystem extends createSystem({
     }
 
     let hold = d.getValue(Ritual, 'holdProgress') ?? 0;
-    hold = ok
-      ? hold + delta / cfg.holdSec
-      : Math.max(0, hold - (delta * cfg.decayRatio) / cfg.holdSec);
+    hold = ok ? hold + delta / cfg.holdSec : Math.max(0, hold - (delta * cfg.decayRatio) / cfg.holdSec);
     d.setValue(Ritual, 'holdProgress', Math.min(1, hold));
 
     if (hold >= 1) {
@@ -73,54 +87,91 @@ export class PalmCalibrationSystem extends createSystem({
     }
   }
 
+  private ready(e?: Entity): boolean {
+    return (
+      !!e &&
+      !!e.getValue(HandGestureState, 'tracked') &&
+      !!e.getValue(HandGestureState, 'palmDown') &&
+      !!e.getValue(HandGestureState, 'still')
+    );
+  }
+
+  /** The detected horizontal surface under `point` (closest in height), if any. */
+  private surfaceUnder(point: Vector3): Surface | undefined {
+    let best = SURFACE_MATCH_HEIGHT;
+    let hit = false;
+    for (const e of this.queries.planes.entities) {
+      const plane = e.getValue(XRPlane, '_plane') as PlaneShape | undefined;
+      const obj = e.object3D;
+      if (!plane || !obj) continue;
+      if (plane.semanticLabel === 'floor' || plane.semanticLabel === 'ceiling') continue;
+      obj.updateWorldMatrix(true, false);
+      obj.getWorldQuaternion(this.planeQuat);
+      if (Math.abs(this.axis.set(0, 1, 0).applyQuaternion(this.planeQuat).y) < 0.85) continue;
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const p of plane.polygon) {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minZ = Math.min(minZ, p.z);
+        maxZ = Math.max(maxZ, p.z);
+      }
+      this.local.copy(point).applyMatrix4(this.inverse.copy(obj.matrixWorld).invert());
+      const dy = Math.abs(this.local.y);
+      if (dy >= best || this.local.x < minX - 0.05 || this.local.x > maxX + 0.05) continue;
+      if (this.local.z < minZ - 0.05 || this.local.z > maxZ + 0.05) continue;
+      best = dy;
+      hit = true;
+      this.found.center.set((minX + maxX) / 2, 0, (minZ + maxZ) / 2).applyMatrix4(obj.matrixWorld);
+      this.axis.set(1, 0, 0).applyQuaternion(this.planeQuat);
+      this.found.yaw = Math.atan2(-this.axis.z, this.axis.x);
+      this.found.width = maxX - minX;
+      this.found.depth = maxZ - minZ;
+    }
+    return hit ? this.found : undefined;
+  }
+
   private placeStage(d: Entity, byPalms: boolean): void {
     this.player.head.getWorldPosition(this.head);
-    const tableFound = !!d.getValue(RoomSlots, 'tableFound');
-    this.tableCenter.fromArray(d.getVectorView(RoomSlots, 'tableCenter'));
-    const tableYaw = d.getValue(RoomSlots, 'tableYaw') ?? 0;
-    const tableW = d.getValue(RoomSlots, 'tableWidth') ?? 0;
-    const tableD = d.getValue(RoomSlots, 'tableDepth') ?? 0;
+    let surface: Surface | undefined;
     let source: (typeof StageSource)[keyof typeof StageSource];
-
-    if (!byPalms) {
-      if (tableFound) {
-        // Pull the table center toward the user so the stage sits within reach.
-        this.mid.copy(this.tableCenter);
-        this.local.subVectors(this.head, this.mid).setY(0);
-        const pull = Math.max(0, Math.min(this.local.length() - stage.maxReach * 0.6, 0.3));
-        this.mid.addScaledVector(this.local.normalize(), pull);
-        source = StageSource.Auto;
-      } else {
-        this.player.head.getWorldQuaternion(this.headQuat);
-        this.local.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
-        this.mid.copy(this.head).addScaledVector(this.local, stage.airForward);
-        this.mid.y = this.head.y - stage.airDrop;
-        source = StageSource.Air;
-      }
-    } else if (tableFound && Math.abs(this.tableCenter.y - this.mid.y) <= cfg.tableSnapTolerance) {
-      this.mid.y = this.tableCenter.y;
-      source = StageSource.Table;
+    if (byPalms) {
+      surface = this.surfaceUnder(this.mid);
+      source = surface ? StageSource.Table : StageSource.Palm;
+    } else if (d.getValue(RoomSlots, 'tableFound')) {
+      this.found.center.fromArray(d.getVectorView(RoomSlots, 'tableCenter'));
+      this.found.yaw = d.getValue(RoomSlots, 'tableYaw') ?? 0;
+      this.found.width = d.getValue(RoomSlots, 'tableWidth') ?? 0;
+      this.found.depth = d.getValue(RoomSlots, 'tableDepth') ?? 0;
+      surface = this.found;
+      source = StageSource.Auto;
+      // Pull the table center toward the user so the stage sits within reach.
+      this.mid.copy(surface.center);
+      this.local.subVectors(this.head, this.mid).setY(0);
+      const pull = Math.max(0, Math.min(this.local.length() - stage.maxReach * 0.6, 0.3));
+      this.mid.addScaledVector(this.local.normalize(), pull);
     } else {
-      source = (d.getValue(RoomSlots, 'planeCount') ?? 0) > 0 ? StageSource.Air : StageSource.Palm;
+      this.player.head.getWorldQuaternion(this.headQuat);
+      this.local.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
+      this.mid.copy(this.head).addScaledVector(this.local, stage.airForward);
+      this.mid.y = this.head.y - stage.airDrop;
+      source = StageSource.Air;
     }
 
     const yaw = Math.atan2(this.head.x - this.mid.x, this.head.z - this.mid.z);
     let width: number = stage.defaultWidth;
     let depth: number = stage.defaultDepth;
-    if (source === StageSource.Table || source === StageSource.Auto) {
-      // Fit the stage inside the table: work in the table's frame.
-      const turned = Math.abs(Math.cos(yaw - tableYaw)) < Math.SQRT1_2;
-      const extX = Math.min(turned ? tableD : tableW, stage.maxWidth);
-      const extZ = Math.min(turned ? tableW : tableD, stage.maxDepth);
-      width = Math.max(extX, stage.minWidth);
-      depth = Math.max(extZ, stage.minDepth);
+    if (surface) {
+      // Fit the stage inside the surface: work in the surface's own frame.
+      const turned = Math.abs(Math.cos(yaw - surface.yaw)) < Math.SQRT1_2;
+      width = Math.max(Math.min(turned ? surface.depth : surface.width, stage.maxWidth), stage.minWidth);
+      depth = Math.max(Math.min(turned ? surface.width : surface.depth, stage.maxDepth), stage.minDepth);
       const ax = turned ? depth : width;
       const az = turned ? width : depth;
-      this.local.subVectors(this.mid, this.tableCenter).applyAxisAngle(Y_AXIS, -tableYaw);
-      this.local.x = clamp(this.local.x, Math.max(0, tableW - ax) / 2);
-      this.local.z = clamp(this.local.z, Math.max(0, tableD - az) / 2);
-      this.mid.copy(this.local).applyAxisAngle(Y_AXIS, tableYaw).add(this.tableCenter);
-      this.mid.y = this.tableCenter.y;
+      this.local.subVectors(this.mid, surface.center).applyAxisAngle(Y_AXIS, -surface.yaw);
+      this.local.x = clamp(this.local.x, Math.max(0, surface.width - ax) / 2);
+      this.local.z = clamp(this.local.z, Math.max(0, surface.depth - az) / 2);
+      this.mid.copy(this.local).applyAxisAngle(Y_AXIS, surface.yaw).add(surface.center);
+      this.mid.y = surface.center.y;
     }
     if (!byPalms) {
       this.local.set(0.14, 0, 0).applyAxisAngle(Y_AXIS, yaw);
@@ -140,6 +191,3 @@ export class PalmCalibrationSystem extends createSystem({
     d.setValue(Ritual, 'phaseTime', 0);
   }
 }
-
-const Y_AXIS = new Vector3(0, 1, 0);
-const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
