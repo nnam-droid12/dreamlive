@@ -19,6 +19,7 @@ import { PalmGuideSystem } from './systems/palm-guide-system.js';
 import { RitualDirectorSystem } from './systems/ritual-director-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { SeaSystem } from './systems/sea-system.js';
+import { ShowcaseSystem } from './systems/showcase-system.js';
 import { SkySystem } from './systems/sky-system.js';
 import { StageEffectsSystem } from './systems/stage-effects-system.js';
 import { VoyageSystem } from './systems/voyage-system.js';
@@ -60,6 +61,7 @@ World.create(
     .registerSystem(SkySystem)
     .registerSystem(DreamSeedSystem)
     .registerSystem(WakingSystem)
+    .registerSystem(ShowcaseSystem)
     .registerSystem(AudioSystem)
     .registerSystem(CaptionSystem)
     .registerSystem(PanelSystem);
