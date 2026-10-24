@@ -11,6 +11,16 @@ import { Sound } from './audio/engine.js';
 export class PanelSystem extends createSystem({}) {
   init(): void {
     const panel = this.world.getSceneObject<UIKitMLAsset>('welcome-panel');
+    // The 2D landing panel belongs to the browser page only, never inside XR.
+    const panelEntity = this.world.getSceneEntity?.('welcome-panel');
+    if (panelEntity?.object3D) {
+      const obj = panelEntity.object3D;
+      this.cleanupFuncs.push(
+        this.world.visibilityState.subscribe((v) => {
+          obj.visible = v === VisibilityState.NonImmersive;
+        }),
+      );
+    }
     const xrButton = panel?.getElementById('xr-button');
     const exitButton = panel?.getElementById('exit-button');
     if (xrButton == null || exitButton == null) {

@@ -15,8 +15,11 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Asset | Source | License |
 |---|---|---|
 | The Dreamer, rings, stars, night tint, cloud platform, paper boat, lighthouse, fish, door | Original, built in code (`src/scene-assets`, `src/visuals`) | Project-owned |
-| Wooden Lounge HDRI (`public/env/wooden_lounge_*`) — lighting, and the showcase-mode room | [Poly Haven](https://polyhaven.com/a/wooden_lounge) | CC0 |
-| Wooden Table 01 (`public/models/wooden-table.glb`) — showcase-mode table | [Poly Haven](https://polyhaven.com/a/WoodenTable_01) | CC0 |
+| Wooden Lounge HDRI (`public/env/wooden_lounge_1k.hdr`) — image-based lighting | [Poly Haven](https://polyhaven.com/a/wooden_lounge) | CC0 |
+| Manhattan skyline at night (`public/env/nyc-skyline.webp`) — showcase bedroom view | Photo by [Jorge Garcia](https://unsplash.com/@jorgenchu) on [Unsplash](https://unsplash.com/photos/TlswXan_O_8) | Unsplash License |
+| Textures: herringbone_parquet, painted_plaster_wall, rough_linen, cotton_jersey, velour_velvet, poly_wool_herringbone (`public/textures/`) | [Poly Haven](https://polyhaven.com/textures) | CC0 |
+| Potted Plant 02, Throw Pillows 01 (`public/models/`) | [Poly Haven](https://polyhaven.com/models) | CC0 |
+| Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio
 

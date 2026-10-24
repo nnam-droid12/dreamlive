@@ -37,6 +37,8 @@ export const RoomSlots = createComponent('RoomSlots', {
   ceilingFound: { type: Types.Boolean, default: false },
   ceilingHeight: { type: Types.Float32, default: 0 },
   planeCount: { type: Types.Int16, default: 0 },
+  /** Set by showcase mode: the layout is authored, so detection must not overwrite it. */
+  locked: { type: Types.Boolean, default: false },
   /** Where wall moments happen: on the real wall ahead, or a paper backdrop. */
   anchorReady: { type: Types.Boolean, default: false },
   anchorIsBackdrop: { type: Types.Boolean, default: false },

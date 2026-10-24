@@ -14,19 +14,6 @@ export default defineAssets({
   lighthouse,
   'dream-fish': dreamFish,
   'storybook-door': storybookDoor,
-  // Showcase mode only (desktop / video): Poly Haven CC0, lazy-loaded.
-  'showcase-backdrop': {
-    url: publicAssetUrl('env/wooden_lounge_4k.jpg'),
-    type: AssetType.Texture,
-    name: 'Wooden Lounge backdrop (showcase)',
-    priority: 'lazy',
-  },
-  'showcase-table': {
-    url: publicAssetUrl('models/wooden-table.glb'),
-    type: AssetType.GLTF,
-    name: 'Wooden Table (showcase)',
-    priority: 'lazy',
-  },
   'welcome-panel': {
     url: publicAssetUrl('ui/welcome.uikitml'),
     type: AssetType.UIKitML,

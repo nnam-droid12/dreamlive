@@ -39,7 +39,7 @@ export class RoomUnderstandingSystem extends createSystem({
     if (this.timer > 0) return;
     this.timer = stage.roomScanIntervalSec;
     const room = this.queries.room.entities.values().next().value;
-    if (!room) return;
+    if (!room || room.getValue(RoomSlots, 'locked')) return;
 
     this.player.head.getWorldPosition(this.head);
     this.player.head.getWorldQuaternion(this.headQuat);
