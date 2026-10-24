@@ -16,15 +16,12 @@ import {
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
-import { Dreamer, DreamerState } from '../components/dreamer.js';
+import { Bigfoot, BigfootState } from '../components/bigfoot.js';
 import { MemoryOrb } from '../components/memory.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Palette, type PaletteKey } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
-import { createDreamFish } from '../scene-assets/dream-fish.scene-asset.js';
-import { createLighthouse } from '../scene-assets/lighthouse.scene-asset.js';
-import { createStorybookDoor } from '../scene-assets/storybook-door.scene-asset.js';
 import { makeDiscMaterial } from '../visuals/glow-materials.js';
 
 const ORB_RADIUS = 0.04;
@@ -32,16 +29,15 @@ const HOVER_FORWARD = 0.42;
 const HOVER_DROP = 0.1;
 const ease = (t: number) => t * t * (3 - 2 * t);
 const MOMENT_COLOR: Record<string, PaletteKey> = {
-  lighthouse: 'lanternAmber',
-  fish: 'moonBlueSoft',
-  star: 'starWhite',
-  door: 'pinkSoft',
+  surf: 'moonBlue',
+  dj: 'pinkSoft',
+  ski: 'starWhite',
 };
 
 /** The moment the orb keeps: the first choice the user made, else the last. */
 export function keptMoment(choices: string): string {
   const list = choices.split(',').filter(Boolean).map((c) => c.split(':'));
-  return (list.find(([, how]) => how !== 'leanBack') ?? list[list.length - 1] ?? ['star'])[0];
+  return (list.find(([, how]) => how !== 'leanBack') ?? list[list.length - 1] ?? ['dj'])[0].replace(/-2$/, '');
 }
 
 /**
@@ -51,7 +47,7 @@ export function keptMoment(choices: string): string {
  */
 export class WakingSystem extends createSystem({
   director: { required: [Ritual, DreamDirector, DevControls, RoomSlots, Caption] },
-  dreamers: { required: [Dreamer] },
+  dreamers: { required: [Bigfoot] },
 }) {
   private orb?: Object3D;
   private orbAge = 0;
@@ -75,7 +71,7 @@ export class WakingSystem extends createSystem({
     const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
     const dreamer = this.queries.dreamers.entities.values().next().value;
     if (!this.orb) {
-      if (!dreamer || dreamer.getValue(Dreamer, 'state') !== DreamerState.Awake) return;
+      if (!dreamer || dreamer.getValue(Bigfoot, 'state') !== BigfootState.Awake) return;
       this.spawn(d, dreamer);
       return;
     }
@@ -136,7 +132,7 @@ export class WakingSystem extends createSystem({
     const moment = keptMoment(d.getValue(DreamDirector, 'choices') ?? '');
     const color = Palette[MOMENT_COLOR[moment] ?? 'starWhite'];
     dreamer.object3D?.getWorldPosition(this.start);
-    this.start.y += 0.09;
+    this.start.y += 1.25;
     const orb = new Group();
     orb.name = 'MemoryOrb';
     const shell = new Mesh(
@@ -167,23 +163,10 @@ export class WakingSystem extends createSystem({
   }
 }
 
-/** A tiny model of the kept moment, centered inside the orb. */
+/** A tiny glowing keepsake of the act inside the orb (wave, disco ball, snowflake). */
 function momentMiniature(moment: string): Object3D {
-  let m: Object3D;
-  if (moment === 'lighthouse') {
-    m = createLighthouse();
-    m.scale.setScalar(0.24);
-    m.position.y = -0.026;
-  } else if (moment === 'fish') {
-    m = createDreamFish();
-    m.scale.setScalar(0.32);
-  } else if (moment === 'door') {
-    m = createStorybookDoor();
-    m.scale.setScalar(0.13);
-    m.position.y = -0.028;
-  } else {
-    m = new Mesh(new SphereGeometry(0.01, 12, 8), new MeshBasicMaterial({ color: Palette.starWhite }));
-  }
+  const color = Palette[MOMENT_COLOR[moment] ?? 'starWhite'];
+  const m = new Mesh(new SphereGeometry(0.012, 16, 12), new MeshBasicMaterial({ color }));
   const wrap = new Group();
   wrap.name = 'Moment';
   wrap.add(m);

@@ -1,6 +1,6 @@
 import { defineComponents } from '@iwsdk/core';
+import { Bigfoot } from './components/bigfoot.js';
 import { DevControls, DreamDirector, DreamSeed, GazeRay, GazeTarget } from './components/dream.js';
-import { Dreamer } from './components/dreamer.js';
 import { Gestures, HandGestureState } from './components/hands.js';
 import { MemoryOrb } from './components/memory.js';
 import { Caption, Ritual } from './components/ritual.js';
@@ -14,7 +14,7 @@ export default defineComponents([
   Caption,
   HandGestureState,
   Gestures,
-  Dreamer,
+  Bigfoot,
   DreamDirector,
   DevControls,
   GazeRay,

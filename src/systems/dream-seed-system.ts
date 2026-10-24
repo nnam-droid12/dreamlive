@@ -223,9 +223,9 @@ export class DreamSeedSystem extends createSystem({
 
   private spawn(d: Entity, seed: SeedDef, beatId: string): void {
     const stage = this.queries.stage.entities.values().next().value;
-    if (!stage) return;
-    const pos = new Vector3();
     const onWall = seed.anchor === 'wall';
+    if (!stage && !onWall) return;
+    const pos = new Vector3();
     if (onWall) {
       if (!d.getValue(RoomSlots, 'anchorReady')) return;
       wallWorld(seed, d.getVectorView(RoomSlots, 'anchorPoint'), d.getVectorView(RoomSlots, 'anchorNormal'), pos);
@@ -246,7 +246,7 @@ export class DreamSeedSystem extends createSystem({
     const ring = new Mesh(new PlaneGeometry(seed.radius * 3.4, seed.radius * 3.4), ringMat);
     ring.renderOrder = 3;
     root.add(core, halo, ring);
-    const entity = onWall
+    const entity = onWall || !stage
       ? this.world.createTransformEntity(root)
       : this.world.createTransformEntity(root, { parent: stage });
     entity.addComponent(DreamSeed, { seedId: seed.id, branch: seed.branch, beatId, state: SeedState.Appearing });

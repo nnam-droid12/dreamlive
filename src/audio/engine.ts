@@ -15,7 +15,7 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 
 export type SoundName =
   | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush';
-export type LoopName = 'waves' | 'rain';
+export type LoopName = 'waves' | 'rain' | 'snore';
 
 export interface LoopHandle {
   setPosition(p: Vec): void;
@@ -152,7 +152,18 @@ class AudioEngine {
     src.loop = true;
     const filter = c.createBiquadFilter();
     const shape = c.createGain();
-    if (name === 'waves') {
+    if (name === 'snore') {
+      // Slow in-out breathing: low rumble swelling on each breath.
+      filter.type = 'lowpass';
+      filter.frequency.value = 260;
+      const lfo = c.createOscillator();
+      lfo.frequency.value = 0.22;
+      const depth = c.createGain();
+      depth.gain.value = 0.9;
+      shape.gain.value = 0.2;
+      lfo.connect(depth).connect(shape.gain);
+      lfo.start();
+    } else if (name === 'waves') {
       filter.type = 'lowpass';
       filter.frequency.value = 520;
       const lfo = c.createOscillator();

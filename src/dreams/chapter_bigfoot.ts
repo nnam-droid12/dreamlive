@@ -1,0 +1,38 @@
+import type { ChapterDef, SeedDef } from './types.js';
+
+/**
+ * "Bigfoot's Big Dream". Bigfoot sleep-walks off the bed and dives into the TV;
+ * his dream plays inside it. Twice, the user's gaze picks the act (surf a wave
+ * through New York, DJ a rooftop party, ski down a skyscraper); during each act
+ * things fly out of the screen to be caught. Then he climbs back out to bed.
+ *
+ * Seeds hang 1.2 m in front of the TV (wall anchor), spread wide enough to stay
+ * distinct from a seated viewer ~4 m away, and well inside the central FoV cone.
+ */
+const actSeeds = (suffix: string): SeedDef[] => [
+  { id: `surf${suffix}`, branch: `surf${suffix}`, anchor: 'wall', position: [-0.62, -0.15, 1.2], color: 'moonBlue', radius: 0.07 },
+  { id: `dj${suffix}`, branch: `dj${suffix}`, anchor: 'wall', position: [0, 0.32, 1.2], color: 'pinkSoft', radius: 0.07 },
+  { id: `ski${suffix}`, branch: `ski${suffix}`, anchor: 'wall', position: [0.62, -0.15, 1.2], color: 'starWhite', radius: 0.07 },
+];
+
+export const chapterBigfoot: ChapterDef = {
+  id: 'bigfoot-dream',
+  title: "Bigfoot's Big Dream",
+  start: 'sleepwalk',
+  beats: {
+    sleepwalk: { id: 'sleepwalk', duration: 13, scene: 'sleepwalk', tint: 'moonBlue', next: 'tv-intro' },
+    'tv-intro': { id: 'tv-intro', duration: 5, scene: 'intro', tint: 'moonBlue', next: 'choice-1' },
+    'choice-1': { id: 'choice-1', duration: 0, scene: 'intro', tint: 'moonBlue', defaultSeed: 'dj', seeds: actSeeds('') },
+    surf: { id: 'surf', duration: 30, scene: 'surf', tint: 'moonBlue', next: 'choice-2' },
+    dj: { id: 'dj', duration: 30, scene: 'dj', tint: 'pinkSoft', next: 'choice-2' },
+    ski: { id: 'ski', duration: 30, scene: 'ski', tint: 'starWhite', next: 'choice-2' },
+    'choice-2': { id: 'choice-2', duration: 0, scene: 'intro', tint: 'moonBlue', defaultSeed: 'surf-2', seeds: actSeeds('-2') },
+    'surf-2': { id: 'surf-2', duration: 30, scene: 'surf', tint: 'moonBlue', next: 'finale' },
+    'dj-2': { id: 'dj-2', duration: 30, scene: 'dj', tint: 'pinkSoft', next: 'finale' },
+    'ski-2': { id: 'ski-2', duration: 30, scene: 'ski', tint: 'starWhite', next: 'finale' },
+    finale: { id: 'finale', duration: 14, scene: 'finale', tint: 'lanternGlow' },
+  },
+};
+
+/** The act a scene/seed id belongs to ('surf' | 'dj' | 'ski'), or ''. */
+export const actOf = (id: string): string => id.replace(/-2$/, '');

@@ -1,4 +1,4 @@
-import { createSystem, Mesh, PlaneGeometry, Vector3 } from '@iwsdk/core';
+import { createSystem, Mesh, PlaneGeometry, Quaternion, Vector3 } from '@iwsdk/core';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots, StageSurface } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
@@ -11,9 +11,9 @@ const BACKDROP_H = 0.85;
 
 /**
  * Chooses where wall moments happen (lighthouse beam, door, memory shelf): the
- * point on the real wall straight ahead of the user through the stage, at eye
- * level. With no usable wall, a soft floating paper backdrop stands in 1.2 m
- * ahead. Computed once, when the Dreamer falls asleep.
+ * point on the real wall straight ahead of the seated user, at eye level. With
+ * no usable wall, a soft floating paper backdrop stands in 1.2 m ahead.
+ * Computed once, at arrival.
  */
 export class WallAnchorSystem extends createSystem({
   director: { required: [Ritual, RoomSlots, StageSurface] },
@@ -24,15 +24,18 @@ export class WallAnchorSystem extends createSystem({
   private wall = new Vector3();
   private normal = new Vector3();
   private point = new Vector3();
+  private headQuat = new Quaternion();
 
   update(): void {
     const d = this.queries.director.entities.values().next().value;
     if (!d || d.getValue(RoomSlots, 'anchorReady')) return;
-    if (d.getValue(Ritual, 'phase') !== RitualPhase.Asleep) return;
+    if (d.getValue(Ritual, 'phase') === RitualPhase.Idle) return;
 
+    // Straight ahead of the seated viewer, at arrival (the TV portal goes there).
     this.player.head.getWorldPosition(this.head);
-    this.center.fromArray(d.getVectorView(StageSurface, 'center'));
-    this.dir.subVectors(this.center, this.head).setY(0).normalize();
+    this.player.head.getWorldQuaternion(this.headQuat);
+    this.dir.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
+    this.center.copy(this.head);
     let backdrop = true;
     if (d.getValue(RoomSlots, 'wallFound')) {
       this.wall.fromArray(d.getVectorView(RoomSlots, 'wallCenter'));

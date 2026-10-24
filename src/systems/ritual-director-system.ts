@@ -5,7 +5,7 @@ import { Tuning } from '../config/tuning.js';
 
 const r = Tuning.ritual;
 const RINGS_TOTAL_SEC = r.ringGrowSec + r.ringMergeSec + r.ringFadeSec;
-export const ARRIVAL_CAPTION = 'Place both hands flat on a table near you.';
+export const ARRIVAL_CAPTION = 'Shh... Bigfoot is asleep. Look at him to peek into his dream.';
 
 /**
  * Runs the opening timeline: Idle → Arrival (on entering XR) → Rings →

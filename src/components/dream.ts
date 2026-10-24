@@ -14,6 +14,8 @@ export const DreamDirector = createComponent('DreamDirector', {
   lastChoiceBy: { type: Types.String, default: '' },
   /** Every choice this dream, "seed:how" comma-separated, in order. */
   choices: { type: Types.String, default: '' },
+  /** Things caught from the TV this dream. */
+  catches: { type: Types.Int16, default: 0 },
   started: { type: Types.Boolean, default: false },
   completed: { type: Types.Boolean, default: false },
   /** One-shot event from a set piece (e.g. 'hush'); ends a beat whose endOn matches. */

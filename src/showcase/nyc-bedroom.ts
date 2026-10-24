@@ -32,11 +32,11 @@ import {
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 
 export const NycLayout = {
-  room: { minX: -2.5, maxX: 2.7, minZ: -3.0, maxZ: 1.6, height: 2.9 },
-  tv: { center: new Vector3(0.1, 1.3, -2.965), width: 1.45, height: 0.83 },
-  /** Top of the mattress where Bigfoot sleeps (center), and the bed's long axis (+X). */
-  bed: { top: new Vector3(-1.45, 0.62, -1.6), length: 2.1, width: 1.75 },
-  sideTable: { center: new Vector3(0.48, 0.6, -0.55), radius: 0.28 },
+  room: { minX: -3.4, maxX: 3.6, minZ: -4.2, maxZ: 2.2, height: 3.0 },
+  tv: { center: new Vector3(0.2, 1.45, -4.165), width: 2.2, height: 1.24 },
+  /** Top of the king mattress where Bigfoot sleeps (center), and the bed's long axis (+X). */
+  bed: { top: new Vector3(-2.25, 0.62, -1.9), length: 2.3, width: 2.0 },
+  sideTable: { center: new Vector3(0.6, 0.6, -0.4), radius: 0.28 },
 } as const;
 
 type MapSet = { diff?: Texture; nor?: Texture; arm?: Texture };
@@ -148,12 +148,12 @@ export async function buildNycBedroom(): Promise<Group> {
   ceiling.position.set(cx, R.height, cz);
   add(ceiling, false);
   // Recessed downlights (warm, no shadows) plus a soft fill, so walls read as warm plaster.
-  for (const z of [-2.2, -0.8, 0.6]) {
+  for (const z of [-3.0, -1.2, 0.6]) {
     const light = new Mesh(new CircleGeometry(0.06, 24), new MeshBasicMaterial({ color: 0xfff1d6 }));
     light.rotation.x = Math.PI / 2;
-    light.position.set(-0.4, R.height - 0.002, z);
+    light.position.set(0, R.height - 0.002, z);
     const down = new PointLight(0xffe2c0, 1.1, 4.5, 1.6);
-    down.position.set(-0.4, R.height - 0.15, z);
+    down.position.set(0, R.height - 0.15, z);
     room.add(light, down);
   }
   room.add(new HemisphereLight(0xfff1e2, 0x3b2f26, 0.75));
@@ -188,9 +188,9 @@ export async function buildNycBedroom(): Promise<Group> {
   );
   screen.name = 'TvScreen';
   room.add(place(screen, tv.center.x, tv.center.y, tv.center.z));
-  add(place(new Mesh(bevelBox(2.2, 0.42, 0.42, 0.012), walnut), tv.center.x, 0.27, R.minZ + 0.23));
+  add(place(new Mesh(bevelBox(2.9, 0.42, 0.42, 0.012), walnut), tv.center.x, 0.27, R.minZ + 0.23));
   for (const dx of [-1, 1]) {
-    add(place(new Mesh(new CylinderGeometry(0.012, 0.012, 0.06, 8), brushedMetal), tv.center.x + dx * 1.0, 0.03, R.minZ + 0.23));
+    add(place(new Mesh(new CylinderGeometry(0.012, 0.012, 0.06, 8), brushedMetal), tv.center.x + dx * 1.35, 0.03, R.minZ + 0.23));
   }
 
   buildBed(room, add, { linen, cotton, velvet, wool });
@@ -225,15 +225,16 @@ function buildBed(
   add(place(new Mesh(bevelBox(1.45, 0.08, bed.width + 0.12, 0.035, 0.05), linenMat), x0 + bed.length - 0.72, 0.6, z));
   add(place(new Mesh(bevelBox(0.42, 0.035, bed.width + 0.16, 0.014, 0.02), woolMat), x0 + bed.length - 0.3, 0.65, z));
   for (const side of [-1, 1]) {
-    const pillow = new Mesh(bevelBox(0.42, 0.15, 0.68, 0.06, 0.07), cottonMat);
+    const pillow = new Mesh(bevelBox(0.46, 0.16, 0.78, 0.06, 0.08), cottonMat);
     pillow.rotation.z = -0.12;
-    add(place(pillow, x0 + 0.3, 0.64, z + side * 0.43));
+    add(place(pillow, x0 + 0.32, 0.64, z + side * 0.48));
   }
   // Rug under the foot of the bed.
-  add(place(new Mesh(bevelBox(2.4, 0.012, 1.9, 0.004, 0.02), woolMat), x0 + 1.55, 0.006, z), false);
+  add(place(new Mesh(bevelBox(2.9, 0.012, 2.5, 0.004, 0.02), woolMat), x0 + 1.7, 0.006, z), false);
 
   // Walnut nightstands; the far one carries a warm lamp (the room's main light).
-  for (const dz of [-1.15, 1.15]) {
+  const side = bed.width / 2 + 0.32;
+  for (const dz of [-side, side]) {
     add(place(new Mesh(bevelBox(0.45, 0.5, 0.42, 0.012), walnut), x0 + 0.26, 0.25, z + dz));
   }
   const lamp = new Group();
@@ -253,7 +254,7 @@ function buildBed(
   glow.shadow.mapSize.set(512, 512);
   glow.shadow.bias = -0.002;
   lamp.add(base, shade, bulb, glow);
-  add(place(lamp, x0 + 0.26, 0.5, z - 1.15));
+  add(place(lamp, x0 + 0.26, 0.5, z - side));
   void room;
 }
 

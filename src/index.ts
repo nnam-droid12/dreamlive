@@ -7,22 +7,17 @@ import { RoomSlots, StageSurface } from './components/stage.js';
 import { PanelSystem } from './panel.js';
 import { AttentionSystem } from './systems/attention-system.js';
 import { AudioSystem } from './systems/audio-system.js';
+import { BigfootSystem } from './systems/bigfoot-system.js';
+import { CatchSystem } from './systems/catch-system.js';
+import { DreamTvSystem } from './systems/dream-tv-system.js';
 import { CaptionSystem } from './systems/caption-system.js';
 import { DreamDirectorSystem } from './systems/dream-director-system.js';
 import { DreamSeedSystem } from './systems/dream-seed-system.js';
-import { DreamerSystem } from './systems/dreamer-system.js';
 import { GestureSystem } from './systems/gesture-system.js';
-import { LighthouseSystem } from './systems/lighthouse-system.js';
 import { NightSkySystem } from './systems/night-sky-system.js';
-import { PalmCalibrationSystem } from './systems/palm-calibration-system.js';
-import { PalmGuideSystem } from './systems/palm-guide-system.js';
 import { RitualDirectorSystem } from './systems/ritual-director-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
-import { SeaSystem } from './systems/sea-system.js';
 import { ShowcaseSystem } from './systems/showcase-system.js';
-import { SkySystem } from './systems/sky-system.js';
-import { StageEffectsSystem } from './systems/stage-effects-system.js';
-import { VoyageSystem } from './systems/voyage-system.js';
 import { WakingSystem } from './systems/waking-system.js';
 import { WallAnchorSystem } from './systems/wall-anchor-system.js';
 
@@ -47,18 +42,13 @@ World.create(
     .registerSystem(GestureSystem)
     .registerSystem(AttentionSystem)
     .registerSystem(RoomUnderstandingSystem)
-    .registerSystem(PalmCalibrationSystem)
     .registerSystem(RitualDirectorSystem)
     .registerSystem(DreamDirectorSystem)
     .registerSystem(WallAnchorSystem)
-    .registerSystem(PalmGuideSystem)
-    .registerSystem(StageEffectsSystem)
-    .registerSystem(DreamerSystem)
+    .registerSystem(BigfootSystem)
     .registerSystem(NightSkySystem)
-    .registerSystem(SeaSystem)
-    .registerSystem(LighthouseSystem)
-    .registerSystem(VoyageSystem)
-    .registerSystem(SkySystem)
+    .registerSystem(DreamTvSystem)
+    .registerSystem(CatchSystem)
     .registerSystem(DreamSeedSystem)
     .registerSystem(WakingSystem)
     .registerSystem(ShowcaseSystem)
