@@ -110,7 +110,7 @@ export class CatchSystem extends createSystem({
       o.scale.setScalar(0.4 + 0.6 * Math.min(1, k * 2));
       o.rotation.x += f.spin.x * delta;
       o.rotation.y += f.spin.y * delta;
-      if (this.touched(o.position, cupped)) {
+      if (this.touched(o.position, cupped) || (k >= 1 && f.age > FLIGHT_SEC * this.slow + 0.35 && !!d.getValue(DevControls, 'autoCatch'))) {
         f.state = 'caught';
         f.age = 0;
         const caught = (d.getValue(DreamDirector, 'catches') ?? 0) + 1;

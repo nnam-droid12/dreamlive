@@ -33,6 +33,8 @@ const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 class AudioEngine {
   ctx?: AudioContext;
   private master!: GainNode;
+  /** Final mix (after the compressor), for recording. */
+  private out?: AudioNode;
   private sfx!: GainNode;
   private music!: GainNode;
   private musicLevel = 0;
@@ -69,6 +71,7 @@ class AudioEngine {
       this.master = c.createGain();
       this.master.gain.value = 0.8;
       this.master.connect(comp).connect(c.destination);
+      this.out = comp;
       this.sfx = c.createGain();
       this.sfx.connect(this.master);
       this.music = c.createGain();
@@ -83,6 +86,14 @@ class AudioEngine {
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => undefined);
     return true;
+  }
+
+  /** The final mix as a MediaStream (Director-mode recording). */
+  recordStream(): MediaStream | undefined {
+    if (!this.ctx || !this.out) return undefined;
+    const dest = this.ctx.createMediaStreamDestination();
+    this.out.connect(dest);
+    return dest.stream;
   }
 
   suspend(): void {

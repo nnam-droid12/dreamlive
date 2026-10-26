@@ -26,6 +26,8 @@ export const DreamDirector = createComponent('DreamDirector', {
 export const DevControls = createComponent('DevControls', {
   /** Multiplies ritual and dream time. 1 in normal play. */
   timeScale: { type: Types.Float32, default: 1 },
+  /** Director mode: things that fly out of the TV count as caught when they arrive. */
+  autoCatch: { type: Types.Boolean, default: false },
 });
 
 export const GazeMode = { None: 'none', Eye: 'eye', Head: 'head' } as const;

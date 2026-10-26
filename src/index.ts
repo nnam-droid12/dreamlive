@@ -5,11 +5,13 @@ import { Gestures } from './components/hands.js';
 import { Caption, Ritual } from './components/ritual.js';
 import { Session } from './components/session.js';
 import { RoomSlots, StageSurface } from './components/stage.js';
+import { Director } from './config/director.js';
 import { PanelSystem } from './panel.js';
 import { AttentionSystem } from './systems/attention-system.js';
 import { AudioSystem } from './systems/audio-system.js';
 import { BigfootSystem } from './systems/bigfoot-system.js';
 import { CatchSystem } from './systems/catch-system.js';
+import { DirectorSystem } from './systems/director-system.js';
 import { DreamTvSystem } from './systems/dream-tv-system.js';
 import { CaptionSystem } from './systems/caption-system.js';
 import { DreamDirectorSystem } from './systems/dream-director-system.js';
@@ -65,4 +67,6 @@ World.create(
     .registerSystem(AudioSystem)
     .registerSystem(CaptionSystem)
     .registerSystem(PanelSystem);
+  // Dev-only demo recording (`?director`): scripted camera, cards, WebM capture.
+  if (Director.enabled) world.registerSystem(DirectorSystem);
 });
