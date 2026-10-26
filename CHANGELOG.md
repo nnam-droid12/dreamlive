@@ -16,9 +16,8 @@ All notable changes to Dreamlive, newest first.
   - A full dream shelved its orb in slot 0, and the orb was still there after a reload.
   - Pinching it set the replay and the TV played the surf act.
   - Production build passes.
-- Not yet proven in the emulator:
-  - The locked-seed visual: the emulator crashed while frame-stepping to the choice.
-  - The headset-off fade-in: the emulator tooling can't change visibility.
+  - Later run: at the first choice on night 1, the ski seed spawned locked while surf and DJ were open (`docs/screens/judge/04-choice-locked.png`).
+- Not yet proven in the emulator: the headset-off fade-in, because the emulator tooling can't change visibility.
 
 ## 2026-10-26 — Bigfoot slimmed for Quest
 
