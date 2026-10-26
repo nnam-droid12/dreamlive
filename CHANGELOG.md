@@ -11,6 +11,7 @@ All notable changes to Dreamlive, newest first.
   - Bigfoot lies face up on the king bed.
   - He sleep-walks to the TV with his feet on the floor.
   - The DJ act plays inside the TV.
+  - Full zero-input run at 4x speed: lean-back picked DJ, then surf. A hand in reach caught 2 flying items. Bigfoot climbed back to bed and woke up standing by it, and the memory orb settled on the TV wall.
 
 ## 2026-10-24 — Direction change: Bigfoot and the dream TV
 
