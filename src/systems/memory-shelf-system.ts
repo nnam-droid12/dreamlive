@@ -17,6 +17,7 @@ import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
+import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 import { ACT_TITLE } from '../dreams/chapter_bigfoot.js';
@@ -30,6 +31,7 @@ const cfg = Tuning.memoryShelf;
 const LEDGE_DEPTH = 0.13;
 const LEDGE_THICK = 0.03;
 const SLIDE_RATE = 3;
+const bySlot = (a: Entity, b: Entity) => (a.getValue(MemoryOrb, 'slot') ?? 0) - (b.getValue(MemoryOrb, 'slot') ?? 0);
 
 /**
  * The Memory Shelf: a walnut ledge on the wall beside the TV holding one orb per
@@ -81,7 +83,7 @@ export class MemoryShelfSystem extends createSystem({
     for (const e of this.queries.orbs.entities) {
       if ((e.getValue(MemoryOrb, 'slot') ?? -1) >= 0) this.shelved.push(e);
     }
-    this.shelved.sort((a, b) => (a.getValue(MemoryOrb, 'slot') ?? 0) - (b.getValue(MemoryOrb, 'slot') ?? 0));
+    this.shelved.sort(bySlot);
     while (this.shelved.length > cfg.capacity) this.shelved.shift()!.dispose();
     const k = Math.min(1, SLIDE_RATE * delta);
     for (let i = 0; i < this.shelved.length; i++) {
@@ -111,7 +113,7 @@ export class MemoryShelfSystem extends createSystem({
     this.along.crossVectors(this.up, this.normal).normalize();
     this.origin
       .copy(anchor)
-      .addScaledVector(this.along, cfg.offsetRight)
+      .addScaledVector(this.along, Showcase.enabled ? cfg.offsetRight : -((d.getValue(RoomSlots, 'anchorWidth') ?? 2.18) / 2 + cfg.edgeGap + (cfg.capacity * cfg.spacing) / 2))
       .addScaledVector(this.up, -cfg.drop)
       .addScaledVector(this.normal, LEDGE_DEPTH / 2 + 0.01);
 
@@ -142,8 +144,8 @@ export class MemoryShelfSystem extends createSystem({
     );
     teaser.name = 'TomorrowOrb';
     teaser.position.copy(this.slot(cfg.capacity, this.slotPos));
-    const tag = labelSprite(`Tomorrow: ${dreamNight((d.getValue(Session, 'night') ?? 1) + 1).title}`, 0.8);
-    tag.position.y = ORB_RADIUS + 0.1;
+    const tag = labelSprite(`Tomorrow: ${dreamNight((d.getValue(Session, 'night') ?? 1) + 1).title}`, 0.6);
+    tag.position.y = ORB_RADIUS + 0.17;
     teaser.add(tag);
     this.world.createTransformEntity(teaser);
     d.setValue(Session, 'shelfReady', true);

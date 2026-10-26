@@ -26,7 +26,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 
 | Sound | Source | License |
 |---|---|---|
-| *(none yet; placeholder audio is generated procedurally with Web Audio)* | | |
+| All music and sound effects: synthesized live in the browser with the Web Audio API (`src/audio/engine.ts`), no audio files | Original | Project-owned |
 
 ## Scaffold content
 

@@ -40,6 +40,7 @@ export class GestureSystem extends createSystem({
   private head = new Vector3();
   private viewFwd = new Vector3();
   private headQuat = new Quaternion();
+  private outCooldown = 0;
   private a = new Vector3();
   private b = new Vector3();
   private left?: Entity;
@@ -159,11 +160,13 @@ export class GestureSystem extends createSystem({
       this.b.fromArray(h.getVectorView(HandGestureState, 'palmCenter')).sub(this.head);
       if (this.b.dot(this.viewFwd) >= gest.palmOutMinReach && this.b.y >= gest.palmOutMinHeight) out = true;
     }
+    this.outCooldown = Math.max(0, this.outCooldown - delta);
     let outHold = d.getValue(Gestures, 'palmOutHold') ?? 0;
-    outHold = out ? outHold + delta : 0;
+    outHold = out && this.outCooldown <= 0 ? Math.max(0, outHold) + delta : 0;
     const palmOut = outHold >= gest.palmOutHoldSec;
+    if (palmOut) this.outCooldown = gest.cooldownSec * 2;
     d.setValue(Gestures, 'palmOut', palmOut);
-    d.setValue(Gestures, 'palmOutHold', palmOut ? -gest.cooldownSec : outHold);
+    d.setValue(Gestures, 'palmOutHold', palmOut ? 0 : outHold);
   }
 
   /** Fills this.center / this.normal in world space. Returns false if untracked. */

@@ -146,6 +146,9 @@ export class CatchSystem extends createSystem({
       this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
       if (this.hand.distanceTo(p) < TOUCH_RADIUS) return true;
     }
+    const pads = this.input.xr.gamepads;
+    if (pads.left && this.player.gripSpaces.left.getWorldPosition(this.hand).distanceTo(p) < TOUCH_RADIUS) return true;
+    if (pads.right && this.player.gripSpaces.right.getWorldPosition(this.hand).distanceTo(p) < TOUCH_RADIUS) return true;
     return false;
   }
 

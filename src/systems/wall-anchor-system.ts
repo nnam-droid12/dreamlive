@@ -29,6 +29,8 @@ export class WallAnchorSystem extends createSystem({
     const d = this.queries.director.entities.values().next().value;
     if (!d || d.getValue(RoomSlots, 'anchorReady')) return;
     if (d.getValue(Ritual, 'phase') === RitualPhase.Idle) return;
+    // Give plane detection a moment: decide on the real room, not an empty first scan.
+    if ((d.getValue(RoomSlots, 'planeCount') ?? 0) === 0 && (d.getValue(Ritual, 'phaseTime') ?? 0) < Tuning.stage.anchorWaitSec) return;
 
     // Straight ahead of the seated viewer, at arrival (the TV portal goes there).
     this.player.head.getWorldPosition(this.head);
@@ -59,6 +61,7 @@ export class WallAnchorSystem extends createSystem({
     if (backdrop) {
       this.point.copy(this.head).addScaledVector(this.dir, Tuning.stage.backdropDistance);
       this.normal.copy(this.dir).negate();
+      d.setValue(RoomSlots, 'anchorWidth', Tuning.stage.backdropTvWidth);
       this.buildBackdrop();
     }
     if (!screen) this.point.y = this.head.y + 0.05;

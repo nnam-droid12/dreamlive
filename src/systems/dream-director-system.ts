@@ -2,6 +2,7 @@ import { createSystem, Entity, VisibilityState } from '@iwsdk/core';
 import { DevControls, DreamDirector, DreamSeed, GazeTarget, SeedState } from '../components/dream.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
+import { actOf } from '../dreams/chapter_bigfoot.js';
 import { Chapters, findChapter } from '../dreams/registry.js';
 import type { BeatDef } from '../dreams/types.js';
 import { dreamDelta } from '../dreams/beat-context.js';
@@ -95,7 +96,17 @@ export class DreamDirectorSystem extends createSystem({
     const idle = anyFocused ? 0 : (d.getValue(DreamDirector, 'idleGaze') ?? 0) + delta;
     d.setValue(DreamDirector, 'idleGaze', idle);
     if (idle < Tuning.gaze.leanBackTimeoutSec && beatTime < dream.choiceMaxSec) return;
-    const pick = mostLooked ?? fallback ?? first;
+    let pick = mostLooked ?? fallback ?? first;
+    const lastAct = actOf(d.getValue(DreamDirector, 'lastChoice') ?? '');
+    if (!mostLooked && pick && lastAct && actOf(pick.getValue(DreamSeed, 'seedId') ?? '') === lastAct) {
+      for (const s of this.queries.seeds.entities) {
+        if (s.getValue(DreamSeed, 'beatId') !== beat.id || s.getValue(DreamSeed, 'locked')) continue;
+        if (actOf(s.getValue(DreamSeed, 'seedId') ?? '') !== lastAct) {
+          pick = s;
+          break;
+        }
+      }
+    }
     if (!pick || pick.getValue(DreamSeed, 'state') === SeedState.Appearing) return;
     pick.setValue(DreamSeed, 'state', SeedState.Blooming);
     pick.setValue(DreamSeed, 'stateTime', 0);

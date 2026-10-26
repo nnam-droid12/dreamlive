@@ -172,8 +172,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       // the parent's frame, so it works lying down or upright, in the room or the TV.
       const parent = root.parent;
       if (!parent) return;
-      parent.updateMatrixWorld(true);
-      root.updateMatrixWorld(true);
+      root.updateWorldMatrix(true, true);
       inv.copy(parent.matrixWorld).invert();
       let minY = Infinity;
       for (const b of bones) {

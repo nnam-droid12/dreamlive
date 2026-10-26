@@ -2,6 +2,21 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — Judge loop #3 and safe fixes
+
+The second independent judge pass scored the build **6.0 / 10** (Innovation 7, Experience 6, Technical 5, Polish 6; it was 5.25). Safe fixes applied:
+
+- **Room planes first.** The TV, shelf and Bigfoot's bed wait up to 2.5 s for detected planes, so a real Quest no longer locks in the fallback layout from an empty first scan.
+- **Shelf beside the TV's real edge** in mixed reality. In the showcase it stays authored. A TV on the floating backdrop is 1.4 m wide so it fits the 60° cone.
+- **Controllers can catch** (grip position), so the golden goal no longer needs hands.
+- Near clip plane 0.001 → 0.02 for depth precision. Bigfoot's grounding updates only its own transform chain, not the whole scene graph, each frame.
+- The lean-back default never repeats the act that just played.
+- The palm-out cooldown survives dropping the hand.
+- The "Tomorrow" tag no longer overlaps the orbs, and the shelf sort no longer allocates every frame.
+- CREDITS: the audio line now says it is synthesized live in the browser.
+- Emulator smoke test (living room, mixed reality): 17 planes detected before placement, TV on the real wall, shelf just left of it, console clean.
+- Known, not changed in the freeze: never run on a real Quest (fps, hand tracking and plane timing are unverified), no persistence with WebXR anchors, and the dream nights are mostly visual variety.
+
 ## 2026-10-27 — Phase 7: hardening (robustness matrix)
 
 The matrix from BUILD_PLAN.md §8 was adapted to the Bigfoot design: the table and surface items became room-detection checks. All runs were in the IWER emulator.

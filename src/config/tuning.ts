@@ -42,6 +42,10 @@ export const Tuning = {
     /** Re-scan detected planes this often. */
     roomScanIntervalSec: 0.5,
     maxWallDistance: 5,
+    /** Seconds into arrival to wait for detected planes before falling back. */
+    anchorWaitSec: 2.5,
+    /** Picture width when the TV hangs on the floating backdrop (fits the 60° cone). */
+    backdropTvWidth: 1.4,
     /** A labeled bed/couch this far away (horizontal) or less can be Bigfoot's bed. */
     maxRestDistance: 4.5,
     /** Seat/top heights that count as a bed or couch surface. */
@@ -180,6 +184,8 @@ export const Tuning = {
     spacing: 0.125,
     /** Ledge center: this far along the wall from the TV center (negative = left), and this far down. */
     offsetRight: -1.95,
+    /** Outside the showcase: the ledge starts this far beyond the TV's left edge. */
+    edgeGap: 0.6,
     drop: 0.12,
     /** A pinched orb replays its act on the TV for this long. */
     replaySec: 12,
