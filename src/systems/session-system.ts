@@ -57,6 +57,8 @@ export class SessionSystem extends createSystem({
       this.queries.director.subscribe('qualify', (d) => {
         d.setValue(Session, 'night', MemoryStore.night());
         d.setValue(Session, 'unlockAll', MemoryStore.unlockAll());
+        d.setValue(Session, 'highContrast', MemoryStore.settings().highContrast);
+        d.setValue(Session, 'reducedMotion', MemoryStore.settings().reducedMotion);
         this.refreshLabels(d);
       }),
     );
@@ -75,6 +77,8 @@ export class SessionSystem extends createSystem({
         this.on(this.ui, 'btn-resume', () => this.resume()) &&
         this.on(this.ui, 'btn-restart', () => this.restart()) &&
         this.on(this.ui, 'btn-unlock', () => this.toggleUnlock()) &&
+        this.on(this.ui, 'btn-contrast', () => this.toggleSetting('highContrast')) &&
+        this.on(this.ui, 'btn-motion', () => this.toggleSetting('reducedMotion')) &&
         this.on(this.ui, 'btn-exit', () => {
           this.resume();
           this.world.exitXR();
@@ -166,13 +170,27 @@ export class SessionSystem extends createSystem({
     }
   }
 
+  private toggleSetting(key: 'highContrast' | 'reducedMotion'): void {
+    const d = this.queries.director.entities.values().next().value;
+    if (!d) return;
+    const on = !d.getValue(Session, key);
+    d.setValue(Session, key, on);
+    MemoryStore.setSetting(key, on);
+    this.refreshLabels(d);
+  }
+
   private refreshLabels(d: Entity): void {
+    const contrast = `Big captions: ${d.getValue(Session, 'highContrast') ? 'on' : 'off'}`;
+    const motion = `Calm motion: ${d.getValue(Session, 'reducedMotion') ? 'on' : 'off'}`;
+    this.ui?.getElementById<UIKit.Text>('contrast-label')?.setProperties({ text: contrast });
+    this.ui?.getElementById<UIKit.Text>('motion-label')?.setProperties({ text: motion });
     const text = d.getValue(Session, 'unlockAll') ? UNLOCK_ON : UNLOCK_OFF;
     this.ui?.getElementById<UIKit.Text>('unlock-label')?.setProperties({ text });
     this.world.getSceneObject<UIKitMLAsset>('welcome-panel')?.getElementById<UIKit.Text>('unlock-button-label')?.setProperties({ text });
     const n = MemoryStore.orbs().length;
     const night = d.getValue(Session, 'night') ?? 1;
-    const status = `Night ${night}: ${dreamNight(night).title} - ${n} ${n === 1 ? 'memory' : 'memories'}`;
+    const fps = Math.round(d.getValue(Session, 'fps') ?? 0);
+    const status = `Night ${night}: ${dreamNight(night).title} - ${n} ${n === 1 ? 'memory' : 'memories'} - ${fps} fps`;
     this.ui?.getElementById<UIKit.Text>('pause-status')?.setProperties({ text: status });
   }
 

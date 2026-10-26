@@ -70,6 +70,8 @@ export class CatchSystem extends createSystem({
   private hand = new Vector3();
   private cup = new Vector3();
   private taughtGoal = false;
+  /** Flight-time multiplier (reduced motion slows catchables). */
+  private slow = 1;
 
   init(): void {
     this.models.set('surf', starfish());
@@ -102,7 +104,7 @@ export class CatchSystem extends createSystem({
     f.age += delta;
     const o = f.obj;
     if (f.state === 'flying') {
-      const k = Math.min(1, f.age / FLIGHT_SEC);
+      const k = Math.min(1, f.age / (FLIGHT_SEC * this.slow));
       o.position.lerpVectors(f.from, f.to, ease(k)).addScaledVector(this.up, Math.sin(Math.PI * k) * 0.35);
       if (k >= 1) o.position.y += Math.sin(f.age * 3) * 0.01;
       o.scale.setScalar(0.4 + 0.6 * Math.min(1, k * 2));
@@ -119,7 +121,7 @@ export class CatchSystem extends createSystem({
           d.setValue(Caption, 'ttl', 3);
         }
         Sound.play('catch', o.position, 0.6);
-      } else if (f.age > FLIGHT_SEC + HOVER_SEC) {
+      } else if (f.age > FLIGHT_SEC * this.slow + HOVER_SEC) {
         f.state = 'missed';
         f.age = 0;
       }
@@ -180,7 +182,9 @@ export class CatchSystem extends createSystem({
     f.from.copy(this.anchor).addScaledVector(this.normal, 0.08).addScaledVector(this.right, (Math.random() - 0.5) * 1.0);
     f.from.y += (Math.random() - 0.5) * 0.5;
     // Ends floating within easy reach: ahead of the chest, a little below the eyes.
-    f.to.copy(this.head).addScaledVector(this.fwd, 0.42).addScaledVector(this.side, (Math.random() - 0.5) * 0.5);
+    const calm = !!d.getValue(Session, 'reducedMotion');
+    this.slow = calm ? 1.6 : 1;
+    f.to.copy(this.head).addScaledVector(this.fwd, calm ? 0.6 : 0.42).addScaledVector(this.side, (Math.random() - 0.5) * 0.5);
     f.to.y -= 0.28;
     f.spin.set(Math.random() * 2 - 1, Math.random() * 3 - 1.5, 0);
     f.state = 'flying';

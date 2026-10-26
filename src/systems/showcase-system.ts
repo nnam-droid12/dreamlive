@@ -84,6 +84,9 @@ export class ShowcaseSystem extends createSystem({
   /** The authored room replaces detection: side table = tuck-in surface, TV = wall anchor. */
   private applyLayout(d: Entity): void {
     this.laidOut = true;
+    // Seat the viewer where the bed and the TV share one comfortable view.
+    this.player.position.copy(NycLayout.seat.position);
+    this.player.rotation.y = NycLayout.seat.yaw;
     const t = NycLayout.sideTable;
     const tv = NycLayout.tv;
     d.setValue(RoomSlots, 'locked', true);

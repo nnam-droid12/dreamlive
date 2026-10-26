@@ -22,6 +22,12 @@ interface SaveData {
   firstNight: string;
   unlockAll: boolean;
   orbs: SavedOrb[];
+  settings: Settings;
+}
+
+export interface Settings {
+  highContrast: boolean;
+  reducedMotion: boolean;
 }
 
 const localDate = (d: Date): string =>
@@ -42,6 +48,10 @@ function read(): SaveData {
     firstNight: typeof data?.firstNight === 'string' ? data.firstNight : localDate(new Date()),
     unlockAll: data?.unlockAll === true,
     orbs: Array.isArray(data?.orbs) ? data.orbs.filter((o) => typeof o?.momentId === 'string') : [],
+    settings: {
+      highContrast: data?.settings?.highContrast === true,
+      reducedMotion: data?.settings?.reducedMotion === true,
+    },
   };
   if (!data) write();
   return cache;
@@ -77,6 +87,13 @@ export const MemoryStore = {
   },
   setUnlockAll(on: boolean): void {
     read().unlockAll = on;
+    write();
+  },
+  settings(): Readonly<Settings> {
+    return read().settings;
+  },
+  setSetting(key: keyof Settings, on: boolean): void {
+    read().settings[key] = on;
     write();
   },
 };

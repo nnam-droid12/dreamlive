@@ -8,6 +8,7 @@ import {
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
+import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
@@ -49,6 +50,7 @@ export class DreamSpillSystem extends createSystem({
   private dir = new Vector3();
   private beamTopY = 0;
   private beamHalfW = 0;
+  private halfParticles = false;
 
   update(realDelta: number): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
@@ -76,9 +78,17 @@ export class DreamSpillSystem extends createSystem({
       }
     }
 
+    const calm = !!d.getValue(Session, 'reducedMotion');
+    if (calm) target *= cfg.calmLevel;
+    // Adaptive quality level 2+: half the particles.
+    const half = (d.getValue(Session, 'quality') ?? 0) >= 2;
+    if (half !== this.halfParticles) {
+      this.halfParticles = half;
+      for (const p of this.fields.values()) p.geometry.setDrawRange(0, half ? p.geometry.getAttribute('seed').count / 2 : Infinity);
+    }
     let lightLevel = 0;
     for (const a of ['surf', 'dj', 'ski'] as const) {
-      const goal = a === act ? target : 0;
+      const goal = a === act && !(calm && a === 'surf') ? target : 0;
       this.level[a] += (goal - this.level[a]) * Math.min(1, cfg.fadeRate * realDelta);
       const field = this.fields.get(a)!;
       const mat = field.material as ShaderMaterial;
@@ -91,10 +101,10 @@ export class DreamSpillSystem extends createSystem({
 
     // DJ: beams sweep from the TV's top corners; the light pulses on the beat.
     const dj = this.level.dj;
-    const beat = Math.pow(1 - ((this.time * cfg.bpm) / 60) % 1, 3);
+    const beat = Math.pow(1 - Sound.beatPhase(this.time, cfg.bpm), 3);
     for (let i = 0; i < this.beams.length; i++) {
       const beam = this.beams[i];
-      beam.visible = dj > 0.01;
+      beam.visible = dj > 0.01 && !calm;
       if (!beam.visible) continue;
       const side = i % 2 ? 1 : -1;
       const yaw = Math.sin(this.time * 0.8 + i * 1.7) * 0.7 + side * 0.25;

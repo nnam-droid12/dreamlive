@@ -6,6 +6,10 @@ export const Session = createComponent('Session', {
   paused: { type: Types.Boolean, default: false },
   /** "Judges & demo: unlock all dreams". */
   unlockAll: { type: Types.Boolean, default: false },
+  /** Accessibility: opaque, larger, high-contrast captions. */
+  highContrast: { type: Types.Boolean, default: false },
+  /** Accessibility: no parallax or flashes, calmer room effects, slower catchables. */
+  reducedMotion: { type: Types.Boolean, default: false },
   /** Real nights since the first visit, 1-based (local calendar dates). */
   night: { type: Types.Int16, default: 1 },
   /** Bumped by "Restart dream"; systems with private dream state reset on change. */
@@ -18,6 +22,10 @@ export const Session = createComponent('Session', {
   shelfNext: { type: Types.Vec3, default: [0, 0, 0] },
   /** Slot number the next orb to land takes (one past the newest on the shelf). */
   shelfNextSlot: { type: Types.Int16, default: 0 },
+  /** Adaptive quality level, 0 = full (QualitySystem). */
+  quality: { type: Types.Int8, default: 0 },
+  /** Smoothed measured frame rate. */
+  fps: { type: Types.Float32, default: 0 },
   /** Seconds left of the fade-in after the headset comes back or the pause ends. */
   fadeIn: { type: Types.Float32, default: 0 },
 });

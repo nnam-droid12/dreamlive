@@ -20,6 +20,7 @@ import { MemoryShelfSystem } from './systems/memory-shelf-system.js';
 import { NightSkySystem } from './systems/night-sky-system.js';
 import { RitualDirectorSystem } from './systems/ritual-director-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
+import { QualitySystem } from './systems/quality-system.js';
 import { SessionSystem } from './systems/session-system.js';
 import { ShowcaseSystem } from './systems/showcase-system.js';
 import { WakingSystem } from './systems/waking-system.js';
@@ -46,6 +47,7 @@ World.create(
   world
     .registerSystem(GestureSystem)
     .registerSystem(SessionSystem)
+    .registerSystem(QualitySystem)
     .registerSystem(AttentionSystem)
     .registerSystem(RoomUnderstandingSystem)
     .registerSystem(RitualDirectorSystem)

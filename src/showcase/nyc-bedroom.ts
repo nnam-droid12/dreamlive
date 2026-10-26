@@ -4,8 +4,9 @@
  * from photo-scanned CC0 materials (Poly Haven), image-based lighting and a real
  * skyline photo (Unsplash) outside floor-to-ceiling glass.
  *
- * World layout (meters): the seated viewer's chair is at the origin facing -Z.
- * The TV wall is ahead, the window wall to the right, the bed to the front-left.
+ * World layout (meters): the TV wall is at -Z, the window wall at +X, the bed
+ * to the left. The seated viewer (`seat`) is turned so the bed and the TV both
+ * fit inside the 60° comfortable field of view.
  */
 import {
   AssetManager,
@@ -36,7 +37,9 @@ export const NycLayout = {
   tv: { center: new Vector3(0.2, 1.45, -4.165), width: 2.2, height: 1.24 },
   /** Top of the king mattress where Bigfoot sleeps (center), and the bed's long axis (+X). */
   bed: { top: new Vector3(-2.25, 0.62, -1.9), length: 2.3, width: 2.0 },
-  sideTable: { center: new Vector3(0.6, 0.6, -0.4), radius: 0.28 },
+  sideTable: { center: new Vector3(1.06, 0.6, -0.5), radius: 0.28 },
+  /** The viewer's chair (floor point) and facing (yaw, radians; 0 = -Z): between the bed and the TV. */
+  seat: { position: new Vector3(0.6, 0, -0.2), yaw: 0.567 },
 } as const;
 
 type MapSet = { diff?: Texture; nor?: Texture; arm?: Texture };

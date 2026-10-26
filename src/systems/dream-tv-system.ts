@@ -18,6 +18,7 @@ import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
+import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import type { DreamTvScene } from '../dream-tv/common.js';
 import { gradientTexture, loadSkyline } from '../dream-tv/common.js';
@@ -62,6 +63,9 @@ export class DreamTvSystem extends createSystem({
   private up = new Vector3(0, 1, 0);
   private head = new Vector3();
   private rel = new Vector3();
+  /** Reduced motion: no parallax, no flash. */
+  private calm = false;
+  private reducedRes = false;
   private fwd = new Vector3();
   private headQuat = new Quaternion();
 
@@ -101,7 +105,14 @@ export class DreamTvSystem extends createSystem({
     this.active.update(this.time, delta);
 
     // Turning on: a soft flash of light that settles into the picture.
-    const flash = Math.max(0, 1 - this.power) * 2;
+    this.calm = !!d.getValue(Session, 'reducedMotion');
+    const reduced = (d.getValue(Session, 'quality') ?? 0) >= 1;
+    if (reduced !== this.reducedRes) {
+      this.reducedRes = reduced;
+      const [w, h] = reduced ? Tuning.performance.tvReduced : Tuning.performance.tvFull;
+      this.rt.setSize(w, h);
+    }
+    const flash = this.calm ? 0 : Math.max(0, 1 - this.power) * 2;
     this.screenMat.color.setScalar(this.power + flash * this.power);
     this.parallax();
     // Looking away: keep the last picture instead of paying for a second scene render.
@@ -123,7 +134,8 @@ export class DreamTvSystem extends createSystem({
     this.rel.subVectors(this.head, this.anchor);
     const dx = this.rel.dot(this.right);
     const dy = this.rel.dot(this.up);
-    this.cam.position.set(s.eye[0] - dx * PARALLAX, s.eye[1] - dy * PARALLAX, s.eye[2]);
+    const k = this.calm ? 0 : PARALLAX;
+    this.cam.position.set(s.eye[0] - dx * k, s.eye[1] - dy * k, s.eye[2]);
     this.cam.lookAt(s.target[0], s.target[1], s.target[2]);
   }
 

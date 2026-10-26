@@ -302,7 +302,7 @@ export class BigfootSystem extends createSystem({
       const toTv = fwd.length();
       fwd.normalize();
       const left = new Vector3().crossVectors(UP, fwd);
-      this.restPos.copy(this.head).setY(0.02).addScaledVector(fwd, Math.min(1.5, toTv * 0.5)).addScaledVector(left, 0.9);
+      this.restPos.copy(this.head).setY(0.02).addScaledVector(fwd, Math.min(1.5, toTv * 0.5)).addScaledVector(left, 0.6);
       this.restAxis.copy(left);
       this.exitTop.copy(this.restPos).addScaledVector(fwd, 0.5);
       this.exit.copy(this.exitTop);

@@ -10,6 +10,7 @@ import {
   VisibilityState,
 } from '@iwsdk/core';
 import { Caption } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
 
 const CANVAS_W = 1024;
@@ -32,6 +33,7 @@ export class CaptionSystem extends createSystem({
   private material!: MeshBasicMaterial;
   private mesh!: Mesh;
   private shownText = '';
+  private shownContrast = false;
   private opacity = 0;
   private placed = false;
   private head = new Vector3();
@@ -72,6 +74,12 @@ export class CaptionSystem extends createSystem({
       if (left <= 0) c.setValue(Caption, 'text', '');
     }
     const wanted = c ? (c.getValue(Caption, 'text') ?? '') : '';
+    const contrast = !!c?.hasComponent(Session) && !!c.getValue(Session, 'highContrast');
+    if (contrast !== this.shownContrast) {
+      this.shownContrast = contrast;
+      this.mesh.scale.setScalar(contrast ? 1.3 : 1);
+      if (this.shownText) this.draw(this.shownText);
+    }
     const inXR = this.visibilityState.peek() !== VisibilityState.NonImmersive;
     if (wanted && wanted !== this.shownText && this.opacity <= 0.01) this.draw(wanted);
     const show = inXR && wanted !== '' && wanted === this.shownText;
@@ -98,7 +106,7 @@ export class CaptionSystem extends createSystem({
     const g = this.canvas.getContext('2d');
     if (!g) return;
     g.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    let size = 54;
+    let size = this.shownContrast ? 60 : 54;
     let lines = [text];
     const font = (px: number) => `500 ${px}px system-ui, "Segoe UI", Roboto, sans-serif`;
     g.font = font(size);
@@ -112,11 +120,11 @@ export class CaptionSystem extends createSystem({
     const lineH = size * 1.25;
     const textW = Math.min(CANVAS_W - 8, Math.max(...lines.map((l) => g.measureText(l).width)) + 2 * PAD_X);
     const boxH = lines.length * lineH + 30;
-    g.fillStyle = 'rgba(14, 12, 40, 0.78)';
+    g.fillStyle = this.shownContrast ? '#000000' : 'rgba(14, 12, 40, 0.78)';
     g.beginPath();
     g.roundRect((CANVAS_W - textW) / 2, (CANVAS_H - boxH) / 2, textW, boxH, Math.min(48, boxH / 2));
     g.fill();
-    g.fillStyle = '#fdfcff';
+    g.fillStyle = this.shownContrast ? '#ffe14d' : '#fdfcff';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     lines.forEach((l, i) => g.fillText(l, CANVAS_W / 2, CANVAS_H / 2 + (i - (lines.length - 1) / 2) * lineH + 2));

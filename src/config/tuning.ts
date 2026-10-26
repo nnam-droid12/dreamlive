@@ -159,6 +159,8 @@ export const Tuning = {
     rampOut: [0.86, 0.97] as const,
     /** Effects reach this strength during a memory replay. */
     replayLevel: 0.6,
+    /** Strength under reduced motion. */
+    calmLevel: 0.35,
     fadeRate: 2,
     sprayCount: 700,
     confettiCount: 500,
@@ -174,8 +176,8 @@ export const Tuning = {
     /** Orbs shown on the ledge (newest kept; storage keeps more). */
     capacity: 7,
     spacing: 0.125,
-    /** Ledge center: this far right of the TV center along the wall, and this far down. */
-    offsetRight: 1.75,
+    /** Ledge center: this far along the wall from the TV center (negative = left), and this far down. */
+    offsetRight: -1.95,
     drop: 0.12,
     /** A pinched orb replays its act on the TV for this long. */
     replaySec: 12,
@@ -184,5 +186,11 @@ export const Tuning = {
   performance: {
     targetFps: 72,
     degradeBelowFps: 66,
+    /** Seconds below the floor before stepping quality down; seconds of headroom before stepping up. */
+    degradeAfterSec: 3,
+    upgradeAfterSec: 20,
+    /** TV picture resolution at full and reduced quality. */
+    tvFull: [1024, 576] as const,
+    tvReduced: [512, 288] as const,
   },
 } as const;

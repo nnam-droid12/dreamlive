@@ -2,6 +2,8 @@ import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core'
 import { Sound, SOUND_CAPTIONS } from '../audio/engine.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
+import { RoomSlots } from '../components/stage.js';
+import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 
 const SOUND_CAPTION_SEC = 3.5;
 const SOUND_TEXTS = new Set<string>(Object.values(SOUND_CAPTIONS));
@@ -21,6 +23,9 @@ export class AudioSystem extends createSystem({
   private up = new Vector3();
   private lastPhase = '';
   private gestureHooked = false;
+  private beat = newBeatContext();
+  private tv = new Vector3();
+  private lastAct = '';
 
   update(): void {
     const d0 = this.queries.director.entities.values().next().value;
@@ -55,6 +60,21 @@ export class AudioSystem extends createSystem({
         Sound.play('wake');
       }
       if (phase === RitualPhase.Awake) Sound.setMusic(0.45);
+    }
+    // The act on the TV plays its own music from the TV; the music box steps back.
+    let act: '' | 'surf' | 'dj' | 'ski' = '';
+    if (phase === RitualPhase.Asleep && readBeat(d, this.beat)) {
+      const s = this.beat.scene;
+      if (s === 'surf' || s === 'dj' || s === 'ski') act = s;
+    } else if (d.hasComponent(Session)) {
+      const r = d.getValue(Session, 'replay') ?? '';
+      if (r === 'surf' || r === 'dj' || r === 'ski') act = r;
+    }
+    if (act !== this.lastAct && d.hasComponent(RoomSlots) && d.getValue(RoomSlots, 'anchorReady')) {
+      this.lastAct = act;
+      this.tv.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
+      Sound.setAct(act, this.tv);
+      if (phase === RitualPhase.Asleep) Sound.setMusic(act ? 0.2 : 0.6);
     }
     Sound.tick();
 

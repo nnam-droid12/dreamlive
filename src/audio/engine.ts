@@ -12,7 +12,8 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 
 export type SoundName =
   | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush';
-export type LoopName = 'waves' | 'rain' | 'snore';
+export type LoopName = 'waves' | 'wind' | 'snore';
+export type ActName = '' | 'surf' | 'dj' | 'ski';
 
 export interface LoopHandle {
   setPosition(p: Vec): void;
@@ -21,6 +22,12 @@ export interface LoopHandle {
 }
 
 const MELODY = [72, 76, 79, 84, 83, 79, 76, 74, 72, 74, 76, 79, 77, 74, 71, 67];
+/** Act tempos (BPM) and patterns, one entry per 16th step. */
+const ACT_BPM: Record<Exclude<ActName, ''>, number> = { surf: 100, dj: 120, ski: 140 };
+const DJ_BASS = [36, 0, 36, 48, 0, 36, 0, 46, 34, 0, 34, 46, 0, 34, 41, 43];
+const DJ_CHORDS = [[60, 64, 67], [58, 62, 65], [57, 60, 64], [55, 59, 62]];
+const SURF_PLUCKS = [72, 0, 76, 0, 79, 0, 76, 81, 79, 0, 76, 0, 74, 0, 72, 0];
+const SKI_BELLS = [96, 0, 0, 0, 91, 0, 0, 0, 93, 0, 0, 0, 88, 0, 91, 0];
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
 class AudioEngine {
@@ -35,6 +42,14 @@ class AudioEngine {
   private noteIndex = 0;
   private musicOn = false;
   private pad?: { stop(): void; gain: GainNode };
+  /** The act playing on the TV: its own bus, placed at the TV. */
+  private act: ActName = '';
+  private actBus?: GainNode;
+  private actPanner?: PannerNode;
+  private actLoop?: LoopHandle;
+  private actStart = 0;
+  private nextStep = 0;
+  private step = 0;
   private hum?: { stop(): void; gain: GainNode };
   /** Last caption-worthy sound, consumed by AudioSystem. */
   pendingCaption = '';
@@ -171,10 +186,17 @@ class AudioEngine {
       lfo.connect(depth).connect(shape.gain);
       lfo.start();
     } else {
+      // Wind: airy band-passed noise whose pitch drifts like gusts.
       filter.type = 'bandpass';
-      filter.frequency.value = 3400;
-      filter.Q.value = 0.6;
-      shape.gain.value = 0.35;
+      filter.frequency.value = 900;
+      filter.Q.value = 0.8;
+      const lfo = c.createOscillator();
+      lfo.frequency.value = 0.09;
+      const depth = c.createGain();
+      depth.gain.value = 500;
+      lfo.connect(depth).connect(filter.frequency);
+      lfo.start();
+      shape.gain.value = 0.4;
     }
     src.connect(filter).connect(shape).connect(level).connect(panner).connect(this.sfx);
     src.start();
@@ -212,6 +234,40 @@ class AudioEngine {
     }
   }
 
+  /**
+   * The act playing on the TV ('' = none): a DJ groove, surf swells and plucks,
+   * or ski wind and bells, all from the TV's position. The music box steps back.
+   */
+  setAct(act: ActName, at: Vec): void {
+    const c = this.ctx;
+    if (!c || act === this.act) return;
+    this.act = act;
+    this.actLoop?.stop();
+    this.actLoop = undefined;
+    if (!this.actBus) {
+      this.actBus = c.createGain();
+      this.actBus.gain.value = 0;
+      this.actPanner = this.panner(at);
+      this.actBus.connect(this.actPanner).connect(this.sfx);
+    }
+    this.place(this.actPanner!, at);
+    this.actBus.gain.setTargetAtTime(act ? 0.9 : 0, c.currentTime, act ? 0.6 : 0.8);
+    if (act === 'surf') this.actLoop = this.loop('waves', at, 0.7);
+    if (act === 'ski') this.actLoop = this.loop('wind', at, 0.45);
+    if (act) {
+      this.actStart = this.nextStep = c.currentTime + 0.1;
+      this.step = 0;
+    }
+  }
+
+  /** 0..1 position within the current act beat (1 = on the beat). For visuals that pulse in time. */
+  beatPhase(fallbackTime: number, bpm: number): number {
+    const c = this.ctx;
+    if (!c || !this.act || c.state !== 'running') return ((fallbackTime * bpm) / 60) % 1;
+    const beats = ((c.currentTime - this.actStart) * ACT_BPM[this.act]) / 60;
+    return ((beats % 1) + 1) % 1;
+  }
+
   /** Lower the music briefly so a key sound reads clearly. */
   duck(amount: number, seconds: number): void {
     const c = this.ctx;
@@ -223,10 +279,12 @@ class AudioEngine {
     g.setTargetAtTime(this.musicLevel * 0.9, t + seconds, 0.8);
   }
 
-  /** Called every frame: schedules music-box notes slightly ahead. */
+  /** Called every frame: schedules music-box notes and act steps slightly ahead. */
   tick(): void {
     const c = this.ctx;
-    if (!c || !this.musicOn || c.state !== 'running') return;
+    if (!c || c.state !== 'running') return;
+    this.tickAct(c);
+    if (!this.musicOn) return;
     const beat = 60 / 76;
     while (this.nextNote < c.currentTime + 0.3) {
       const n = MELODY[this.noteIndex % MELODY.length];
@@ -236,6 +294,71 @@ class AudioEngine {
       this.noteIndex++;
       this.nextNote += this.noteIndex % 8 === 0 ? beat * 2 : beat;
     }
+  }
+
+  private tickAct(c: AudioContext): void {
+    if (!this.act || !this.actBus) return;
+    const sixteenth = 60 / ACT_BPM[this.act] / 4;
+    const out = this.actBus;
+    while (this.nextStep < c.currentTime + 0.25) {
+      const t = this.nextStep;
+      const s = this.step % 16;
+      const bar = Math.floor(this.step / 16);
+      if (this.act === 'dj') {
+        if (s % 4 === 0) this.kick(t, out);
+        if (s % 4 === 2) this.noiseBurst(t, 0.06, 9000, 0.05, out);
+        if (s === 4 || s === 12) this.noiseBurst(t, 0.18, 2200, 0.09, out);
+        const b = DJ_BASS[s];
+        if (b) this.synth(midi(b), t, sixteenth * 1.6, 0.16, 'sawtooth', 700, out);
+        if (s === 0 || s === 10) {
+          for (const n of DJ_CHORDS[bar % 4]) this.synth(midi(n), t, sixteenth * 2.5, 0.05, 'square', 1800, out);
+        }
+      } else if (this.act === 'surf') {
+        const n = SURF_PLUCKS[s];
+        if (n) this.tone(midi(n), t, 0.9, 0.07, out);
+        if (s === 0 && bar % 2 === 0) this.noiseBurst(t, 2.4, 600, 0.14, out);
+      } else {
+        if (s % 2 === 0) this.noiseBurst(t, 0.07, 7000, s % 4 === 0 ? 0.05 : 0.03, out);
+        const n = SKI_BELLS[s];
+        if (n) this.tone(midi(n), t, 0.5, 0.05, out);
+        if (s === 0 && bar % 2 === 1) this.noiseBurst(t, 0.8, 2600, 0.12, out);
+      }
+      this.step++;
+      this.nextStep += sixteenth;
+    }
+  }
+
+  /** Four-on-the-floor kick: a sine dropping in pitch. */
+  private kick(t: number, out: AudioNode): void {
+    const c = this.ctx!;
+    const o = c.createOscillator();
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g).connect(out);
+    o.start(t);
+    o.stop(t + 0.32);
+  }
+
+  /** A short filtered synth note (bass, stabs). */
+  private synth(freq: number, t: number, dur: number, gain: number, type: OscillatorType, cutoff: number, out: AudioNode): void {
+    const c = this.ctx!;
+    const o = c.createOscillator();
+    o.type = type;
+    o.frequency.value = freq;
+    const f = c.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(cutoff, t);
+    f.frequency.exponentialRampToValueAtTime(cutoff * 0.3, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   // ---- building blocks ----------------------------------------------------
