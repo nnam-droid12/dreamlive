@@ -169,7 +169,7 @@ export const Tuning = {
     beamLength: 6,
     beamRadius: 0.7,
     lightIntensity: 2.4,
-    lightDistance: 7,
+    lightDistance: 10,
   },
 
   memoryShelf: {

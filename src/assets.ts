@@ -1,4 +1,7 @@
 import { AssetType, defineAssets } from '@iwsdk/core';
+import djBooth from './scene-assets/dj-booth.scene-asset.js';
+import skis from './scene-assets/skis.scene-asset.js';
+import surfboard from './scene-assets/surfboard.scene-asset.js';
 
 const publicAssetUrl = (filePath: string): string =>
   `${import.meta.env.BASE_URL}${filePath.replace(/^\/+/u, '')}`;
@@ -11,6 +14,10 @@ export default defineAssets({
     name: 'Bigfoot',
     priority: 'lazy',
   },
+  // Dream-act props (procedural; the TV worlds build their own copies).
+  surfboard,
+  skis,
+  'dj-booth': djBooth,
   'pause-panel': {
     url: publicAssetUrl('ui/pause.uikitml'),
     type: AssetType.UIKitML,

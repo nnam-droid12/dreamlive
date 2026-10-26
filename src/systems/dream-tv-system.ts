@@ -23,7 +23,10 @@ import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js'
 import type { DreamTvScene } from '../dream-tv/common.js';
 import { gradientTexture, loadSkyline } from '../dream-tv/common.js';
 import { dreamNight } from '../dreams/nights.js';
-import { djScene, introScene, skiScene, surfScene } from '../dream-tv/scenes.js';
+import { djScene } from '../dream-tv/dj.js';
+import { introScene } from '../dream-tv/scenes.js';
+import { skiScene } from '../dream-tv/ski.js';
+import { surfScene } from '../dream-tv/surf.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 
 const RT_W = 1024;

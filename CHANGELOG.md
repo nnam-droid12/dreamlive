@@ -2,6 +2,23 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — Phase 6: polish (audio, accessibility, quality, framing, act worlds) and Bigfoot grounding
+
+- **Bigfoot floated: root cause fixed.** The self-grounding nudged his model along the room's vertical. While he lay down, that vertical ran sideways through his body, and the nudges piled up there and stayed when he stood up (measured 1.2 m off). The correction is now one height value, rebuilt every frame.
+  - Grounding uses his real skin: about 2,500 skinned vertices are sampled a few times a second to find how far the skin reaches below his bones in the current pose. His back rests on the mattress and his soles on the floor in every pose.
+  - He is smaller (1.6 m, was 1.9 m), as the owner asked.
+- **Act worlds rebuilt** (`src/dream-tv/surf.ts`, `dj.ts`, `ski.ts`), with new procedural props registered as assets and previewed in material and clay: `surfboard`, `skis`, `dj-booth`.
+  - **Surf**: a lofted shortboard (rocker, stringer, fins), sea swells in the vertex shader (no CPU work), a breaking wave with foam, and the skyline above.
+  - **DJ**: a rooftop over the city with a DJ booth (spinning turntables, mixer, speaker stacks with woofers), instanced string lights, lasers on the beat, and an instanced crowd bouncing at 120 BPM, with a clear lane so Bigfoot shows.
+  - **Ski**: Bigfoot carves on real skis down a snowy tower roof. The run scrolls past him: groomed snow, slalom gates, and lit facades dropping away on both sides.
+  - Tighter cameras in all three.
+- **Per-act music** from the TV: a 120 BPM DJ groove (kick, hats, bass, stabs), surf swells and plucks, and ski wind with bells. The music box steps back during acts, and the room's DJ light pulses on the kick.
+- **Accessibility**: pause-panel toggles for high-contrast captions (opaque black, large yellow text) and reduced motion (no TV parallax or flash, calmer room effects, slower catchables). Both are saved.
+- **Adaptive quality** in the headset: below 66 fps for 3 s it steps down (half-resolution TV picture, then half the particles, then frozen shadows), and it steps back up after 20 s of headroom. The pause panel shows the measured fps. The showcase always stays at full quality.
+- **Showcase framing**: the viewer's seat moved and turned so the bed and the TV share the 60° view. The TV is now 4 m away. The memory shelf moved to the left of the TV.
+- The TV's room light moved off the wall so it no longer leaves a hard disc.
+- Production build passes.
+
 ## 2026-10-26 — Judge loop #2 and fixes
 
 An independent judge sub-agent scored the build **5.25 / 10**: Innovation 6, Experience 5, Technical 5, Polish 5. Its top issues and what changed:

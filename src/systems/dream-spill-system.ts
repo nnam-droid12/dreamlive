@@ -156,7 +156,7 @@ export class DreamSpillSystem extends createSystem({
 
     // The TV's glow on the room. Present from the start (intensity 0) so adding it never recompiles shaders.
     this.light = new PointLight(0xffffff, 0, cfg.lightDistance, 1.6);
-    this.light.position.copy(this.anchor).addScaledVector(this.normal, 0.9);
+    this.light.position.copy(this.anchor).addScaledVector(this.normal, 1.8);
     this.world.createTransformEntity(this.light);
   }
 

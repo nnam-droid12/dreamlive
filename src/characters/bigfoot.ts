@@ -22,6 +22,7 @@ import {
   MeshStandardMaterial,
   Object3D,
   Quaternion,
+  SkinnedMesh,
   SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
@@ -46,9 +47,13 @@ const CLIP_HINTS: Record<Exclude<BigfootAnim, 'rest'>, RegExp> = {
   cheer: /happy/i,
   leap: /big/i,
 };
-const HEIGHT = 1.9;
-/** Lowest bone sits this far above the surface (ankle/hip joints are inside the body). */
+const HEIGHT = 1.6;
+/** Starting guess for how far his skin reaches below his lowest bone (meters at scale 1). */
 const GROUND_PAD = 0.07;
+/** The skin is re-measured this often (and on every new animation); bones carry it between. */
+const SKIN_MEASURE_SEC = 0.25;
+/** Every Nth vertex is sampled when measuring the skin. */
+const SKIN_STRIDE = 12;
 
 export interface BigfootRig {
   root: Object3D;
@@ -87,6 +92,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   model.scale.setScalar(HEIGHT / Math.max(size.y, 1e-3));
   const scaled = new Box3().setFromObject(model);
   model.position.y -= scaled.min.y;
+  const modelBase = model.position.clone();
   model.traverse((o) => {
     if ((o as Mesh).isMesh) o.castShadow = o.receiveShadow = true;
   });
@@ -104,6 +110,16 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   const headBone = bones.find((b) => /Head$/.test(b.name));
   const chest = bones.find((b) => /Spine2$/.test(b.name)) ?? bones.find((b) => /Spine1?$/.test(b.name));
   let breath = 0;
+  const skinned: SkinnedMesh[] = [];
+  model.traverse((o) => {
+    if ((o as SkinnedMesh).isSkinnedMesh) skinned.push(o as SkinnedMesh);
+  });
+  // How far the skin reaches below the lowest bone, per unit of root scale (pose-dependent).
+  let skinGap = GROUND_PAD;
+  /** Grounding correction along the parent's vertical (parent units). */
+  let groundLift = 0;
+  let measureIn = 0;
+  const v = new Vector3();
   const inv = new Matrix4();
   const q = new Quaternion();
   const p = new Vector3();
@@ -119,6 +135,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     real: true,
     current: 'idle',
     play(anim, opts = {}) {
+      measureIn = 0;
       if (anim === 'rest') {
         if (rig.current !== 'rest') {
           mixer.stopAllAction();
@@ -148,10 +165,11 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       breath += delta;
       if (chest) chest.scale.setScalar(rig.current === 'rest' ? 1 + Math.sin(breath * 1.4) * 0.025 : 1);
       // Self-grounding: whatever height the caller placed him at is the surface his
-      // lowest bone rests on (feet on the floor standing, back on the mattress lying,
-      // the hop's height mid-jump). Mixamo's root heights don't survive the unit
-      // conversion, so the pose alone can't be trusted. Measured in the parent's
-      // frame, so it works lying down or upright, in the room or inside the TV.
+      // skin rests on (soles on the floor standing, back on the mattress lying, the
+      // hop's height mid-jump). Mixamo's root heights don't survive the unit
+      // conversion, so the pose alone can't be trusted. Bones are cheap to read every
+      // frame; the true skin below them is sampled a few times a second. Measured in
+      // the parent's frame, so it works lying down or upright, in the room or the TV.
       const parent = root.parent;
       if (!parent) return;
       parent.updateMatrixWorld(true);
@@ -163,10 +181,25 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
         if (p.y < minY) minY = p.y;
       }
       if (!Number.isFinite(minY)) return;
+      measureIn -= delta;
+      if (measureIn <= 0 && skinned.length) {
+        measureIn = SKIN_MEASURE_SEC;
+        let minSkin = Infinity;
+        for (const sm of skinned) {
+          const count = sm.geometry.getAttribute('position').count;
+          for (let i = 0; i < count; i += SKIN_STRIDE) {
+            sm.getVertexPosition(i, v).applyMatrix4(sm.matrixWorld).applyMatrix4(inv);
+            if (v.y < minSkin) minSkin = v.y;
+          }
+        }
+        if (Number.isFinite(minSkin)) skinGap = (minY - minSkin) / Math.max(1e-3, root.scale.y);
+      }
       // Move the inner model (not the caller-owned root) along the parent's vertical.
-      const lift = root.position.y + GROUND_PAD * root.scale.y - minY;
-      p.set(0, lift / root.scale.y, 0).applyQuaternion(q.copy(root.quaternion).invert());
-      model.position.add(p);
+      // Rebuilt from one scalar every frame, so it never drifts sideways when he
+      // lies down and stands up again (the parent's vertical turns with him).
+      groundLift += root.position.y - (minY - skinGap * root.scale.y);
+      p.set(0, groundLift / root.scale.y, 0).applyQuaternion(q.copy(root.quaternion).invert());
+      model.position.copy(modelBase).add(p);
     },
     has(anim) {
       return actions.has(anim);
