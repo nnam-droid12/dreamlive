@@ -8,7 +8,7 @@ import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta } from '../dreams/beat-context.js';
-import { isUnlocked } from '../dreams/chapter_bigfoot.js';
+import { dreamNight } from '../dreams/nights.js';
 import { MemoryStore } from '../memory/store.js';
 import { buildMemoryOrb } from '../visuals/memory-orb.js';
 
@@ -121,9 +121,8 @@ export class WakingSystem extends createSystem({
       this.landed = true;
       Sound.play('chime', this.shelf, 0.7);
       this.keep(d);
-      const night = d.getValue(Session, 'night') ?? 1;
-      const allOpen = isUnlocked('ski', night, !!d.getValue(Session, 'unlockAll'));
-      d.setValue(Caption, 'text', allOpen ? 'Kept on your shelf. Pinch it to dream it again.' : 'Kept on your shelf. A new dream opens tomorrow night.');
+      const gold = !!this.orbEntity?.getValue(MemoryOrb, 'gold');
+      d.setValue(Caption, 'text', gold ? 'A golden memory! Kept on your shelf. Tomorrow, a new dream night.' : 'Kept on your shelf. Tomorrow night, a new dream.');
       d.setValue(Caption, 'ttl', 8);
     }
   }
@@ -132,13 +131,15 @@ export class WakingSystem extends createSystem({
     const moment = keptMoment(d.getValue(DreamDirector, 'choices') ?? '');
     dreamer.object3D?.getWorldPosition(this.start);
     this.start.y += 1.25;
-    const orb = buildMemoryOrb(moment);
+    const gold = (d.getValue(DreamDirector, 'catches') ?? 0) >= dreamNight(d.getValue(Session, 'night') ?? 1).goldGoal;
+    const orb = buildMemoryOrb(moment, gold);
     orb.position.copy(this.start);
     this.orbEntity = this.world.createTransformEntity(orb);
     this.orbEntity.addComponent(MemoryOrb, {
       chapterId: d.getValue(DreamDirector, 'chapterId') ?? '',
       momentId: moment,
       createdAt: new Date().toISOString(),
+      gold,
     });
     this.orb = orb;
     this.orbAge = 0;
@@ -157,6 +158,7 @@ export class WakingSystem extends createSystem({
       momentId: e.getValue(MemoryOrb, 'momentId') ?? '',
       createdAt: e.getValue(MemoryOrb, 'createdAt') ?? '',
       night: d.getValue(Session, 'night') ?? 1,
+      gold: !!e.getValue(MemoryOrb, 'gold'),
     });
   }
 }

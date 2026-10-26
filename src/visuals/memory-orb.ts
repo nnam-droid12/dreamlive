@@ -19,9 +19,9 @@ const MOMENT_COLOR: Record<string, PaletteKey> = {
   ski: 'starWhite',
 };
 
-/** The glowing glass keepsake of one dream act (wave blue, party pink, snow white). */
-export function buildMemoryOrb(moment: string): Object3D {
-  const color = Palette[MOMENT_COLOR[moment] ?? 'starWhite'];
+/** The glowing glass keepsake of one dream act (wave blue, party pink, snow white; gold when earned). */
+export function buildMemoryOrb(moment: string, gold = false): Object3D {
+  const color = gold ? Palette.lanternGlow : Palette[MOMENT_COLOR[moment] ?? 'starWhite'];
   const orb = new Group();
   orb.name = 'MemoryOrb';
   const shell = new Mesh(
@@ -29,7 +29,8 @@ export function buildMemoryOrb(moment: string): Object3D {
     new MeshStandardMaterial({
       color,
       emissive: new Color(color),
-      emissiveIntensity: 0.55,
+      emissiveIntensity: gold ? 1.1 : 0.55,
+      metalness: gold ? 0.6 : 0,
       roughness: 0.15,
       transparent: true,
       opacity: 0.4,
@@ -37,7 +38,7 @@ export function buildMemoryOrb(moment: string): Object3D {
     }),
   );
   const halo = new Mesh(new PlaneGeometry(ORB_RADIUS * 5, ORB_RADIUS * 5), makeDiscMaterial(color));
-  (halo.material as ShaderMaterial).uniforms.opacity.value = 0.75;
+  (halo.material as ShaderMaterial).uniforms.opacity.value = gold ? 1 : 0.75;
   halo.onBeforeRender = (_r, _s, camera) => halo.quaternion.copy(camera.quaternion);
   const moment3d = new Group();
   moment3d.name = 'Moment';

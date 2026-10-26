@@ -1,5 +1,4 @@
 import {
-  CanvasTexture,
   Color,
   createSystem,
   Entity,
@@ -12,9 +11,6 @@ import {
   RayInteractable,
   ShaderMaterial,
   SphereGeometry,
-  Sprite,
-  SpriteMaterial,
-  SRGBColorSpace,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -31,6 +27,7 @@ import { findChapter } from '../dreams/registry.js';
 import { stageLocal, wallWorld } from '../dreams/stage-frame.js';
 import type { SeedDef } from '../dreams/types.js';
 import { makeDiscMaterial, makeDwellRingMaterial } from '../visuals/glow-materials.js';
+import { labelSprite } from '../visuals/label-sprite.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 
 const dream = Tuning.dream;
@@ -288,7 +285,11 @@ export class DreamSeedSystem extends createSystem({
     const ring = new Mesh(new PlaneGeometry(seed.radius * 3.4, seed.radius * 3.4), ringMat);
     ring.renderOrder = 3;
     root.add(core, halo, ring);
-    if (seed.label) core.add(seedLabel(locked ? `${seed.label} - tomorrow` : seed.label, seed.radius));
+    if (seed.label) {
+      const tag = labelSprite(locked ? `${seed.label} - tomorrow` : seed.label, seed.radius * 3.6);
+      tag.position.y = -seed.radius * 2.1;
+      core.add(tag);
+    }
     const entity = onWall || !stage
       ? this.world.createTransformEntity(root)
       : this.world.createTransformEntity(root, { parent: stage });
@@ -307,35 +308,4 @@ export class DreamSeedSystem extends createSystem({
       bloomSounded: false,
     });
   }
-}
-
-/** A readable name tag under a seed (camera-facing). Lives in the seed's core, so it grows and fades with it. */
-function seedLabel(text: string, radius: number): Sprite {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 112;
-  const g = canvas.getContext('2d');
-  if (g) {
-    g.font = '600 52px system-ui, "Segoe UI", Roboto, sans-serif';
-    const w = Math.min(500, g.measureText(text).width + 56);
-    g.fillStyle = 'rgba(14, 12, 40, 0.72)';
-    g.beginPath();
-    g.roundRect((512 - w) / 2, 12, w, 88, 44);
-    g.fill();
-    g.fillStyle = '#fdfcff';
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(text, 256, 58);
-  }
-  const map = new CanvasTexture(canvas);
-  map.colorSpace = SRGBColorSpace;
-  const sprite = new Sprite(new SpriteMaterial({ map, transparent: true, depthWrite: false }));
-  sprite.name = 'SeedLabel';
-  // Labels are decoration: pointer rays must pass through (Sprite raycasts need a camera and would throw).
-  sprite.raycast = () => {};
-  const width = radius * 3.6;
-  sprite.scale.set(width, (width * 112) / 512, 1);
-  sprite.position.y = -radius * 2.1;
-  sprite.renderOrder = 4;
-  return sprite;
 }

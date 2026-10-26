@@ -17,6 +17,7 @@ import { Gestures } from '../components/hands.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
+import { dreamNight } from '../dreams/nights.js';
 import { MemoryStore } from '../memory/store.js';
 
 const PANEL_DISTANCE = 0.6;
@@ -170,7 +171,8 @@ export class SessionSystem extends createSystem({
     this.ui?.getElementById<UIKit.Text>('unlock-label')?.setProperties({ text });
     this.world.getSceneObject<UIKitMLAsset>('welcome-panel')?.getElementById<UIKit.Text>('unlock-button-label')?.setProperties({ text });
     const n = MemoryStore.orbs().length;
-    const status = `Night ${d.getValue(Session, 'night') ?? 1} - ${n} ${n === 1 ? 'memory' : 'memories'} on your shelf`;
+    const night = d.getValue(Session, 'night') ?? 1;
+    const status = `Night ${night}: ${dreamNight(night).title} - ${n} ${n === 1 ? 'memory' : 'memories'}`;
     this.ui?.getElementById<UIKit.Text>('pause-status')?.setProperties({ text: status });
   }
 

@@ -1,7 +1,9 @@
 import { createSystem, VisibilityState } from '@iwsdk/core';
 import { DevControls } from '../components/dream.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
+import { dreamNight } from '../dreams/nights.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 
 const r = Tuning.ritual;
@@ -47,7 +49,8 @@ export class RitualDirectorSystem extends createSystem({
     const arriving = phase === RitualPhase.Arrival;
     if (arriving !== this.wasArriving) {
       this.wasArriving = arriving;
-      d.setValue(Caption, 'text', arriving ? ARRIVAL_CAPTION : '');
+      const night = d.hasComponent(Session) ? (d.getValue(Session, 'night') ?? 1) : 1;
+      d.setValue(Caption, 'text', arriving ? `Night ${night}: ${dreamNight(night).title}. ${ARRIVAL_CAPTION}` : '');
       d.setValue(Caption, 'ttl', 0);
     }
   }

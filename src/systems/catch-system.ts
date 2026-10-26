@@ -17,9 +17,11 @@ import {
 import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
 import { Gestures, HandGestureState } from '../components/hands.js';
-import { Ritual, RitualPhase } from '../components/ritual.js';
+import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { dreamNight } from '../dreams/nights.js';
 
 const SPAWN_EVERY = 2.4;
 const FLIGHT_SEC = 2.2;
@@ -67,6 +69,7 @@ export class CatchSystem extends createSystem({
   private side = new Vector3();
   private hand = new Vector3();
   private cup = new Vector3();
+  private taughtGoal = false;
 
   init(): void {
     this.models.set('surf', starfish());
@@ -108,7 +111,13 @@ export class CatchSystem extends createSystem({
       if (this.touched(o.position, cupped)) {
         f.state = 'caught';
         f.age = 0;
-        d.setValue(DreamDirector, 'catches', (d.getValue(DreamDirector, 'catches') ?? 0) + 1);
+        const caught = (d.getValue(DreamDirector, 'catches') ?? 0) + 1;
+        d.setValue(DreamDirector, 'catches', caught);
+        if (caught === dreamNight(d.getValue(Session, 'night') ?? 1).goldGoal) {
+          Sound.play('bloom', o.position, 0.8);
+          d.setValue(Caption, 'text', 'Golden memory earned!');
+          d.setValue(Caption, 'ttl', 3);
+        }
         Sound.play('catch', o.position, 0.6);
       } else if (f.age > FLIGHT_SEC + HOVER_SEC) {
         f.state = 'missed';
@@ -139,6 +148,12 @@ export class CatchSystem extends createSystem({
   }
 
   private launch(d: Entity, kind: Kind): void {
+    if (!this.taughtGoal) {
+      this.taughtGoal = true;
+      const goal = dreamNight(d.getValue(Session, 'night') ?? 1).goldGoal;
+      d.setValue(Caption, 'text', `Catch ${goal} things from the dream for a golden memory.`);
+      d.setValue(Caption, 'ttl', 6);
+    }
     let f = this.flyers.find((x) => x.state === 'idle' && x.kind === kind);
     if (!f) {
       if (this.flyers.filter((x) => x.kind === kind).length >= POOL) return;

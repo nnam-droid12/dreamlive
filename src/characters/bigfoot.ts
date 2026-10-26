@@ -28,7 +28,10 @@ import {
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /** 'rest' = his straight modelling pose (lying face-up asleep), with gentle breathing. */
-export type BigfootAnim = 'idle' | 'walk' | 'jump' | 'sleep' | 'dance' | 'wave' | 'stretch' | 'rest';
+export type BigfootAnim =
+  | 'idle' | 'walk' | 'jump' | 'sleep' | 'dance' | 'wave' | 'stretch' | 'rest'
+  /** Night variants: house dance, happy bounce, big leap. */
+  | 'dance2' | 'cheer' | 'leap';
 
 /** Name fragments that identify each clip in a Meshy export. */
 const CLIP_HINTS: Record<Exclude<BigfootAnim, 'rest'>, RegExp> = {
@@ -39,6 +42,9 @@ const CLIP_HINTS: Record<Exclude<BigfootAnim, 'rest'>, RegExp> = {
   dance: /dance|danc/i,
   wave: /wave|greet|hello/i,
   stretch: /stretch|yawn|wake/i,
+  dance2: /house/i,
+  cheer: /happy/i,
+  leap: /big/i,
 };
 const HEIGHT = 1.9;
 /** Lowest bone sits this far above the surface (ankle/hip joints are inside the body). */

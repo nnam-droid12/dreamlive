@@ -6,6 +6,7 @@ import {
   MeshStandardMaterial,
   Pressed,
   RayInteractable,
+  SphereGeometry,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -19,8 +20,10 @@ import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 import { ACT_TITLE } from '../dreams/chapter_bigfoot.js';
+import { dreamNight } from '../dreams/nights.js';
 import { MemoryStore } from '../memory/store.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
+import { labelSprite } from '../visuals/label-sprite.js';
 import { buildMemoryOrb, ORB_RADIUS } from '../visuals/memory-orb.js';
 
 const cfg = Tuning.memoryShelf;
@@ -115,22 +118,34 @@ export class MemoryShelfSystem extends createSystem({
     const ledge = new Group();
     ledge.name = 'MemoryShelf';
     const wood = new MeshStandardMaterial({ color: Palette.shelfWood, roughness: 0.55, metalness: 0 });
-    const length = cfg.capacity * cfg.spacing + 0.08;
+    // One extra slot at the right end holds tomorrow's teaser.
+    const length = (cfg.capacity + 1) * cfg.spacing + 0.08;
     const board = new Mesh(bevelBox(length, LEDGE_THICK, LEDGE_DEPTH, 0.008), wood);
     board.castShadow = board.receiveShadow = true;
     ledge.add(board);
-    ledge.position.copy(this.origin);
+    ledge.position.copy(this.origin).addScaledVector(this.along, cfg.spacing / 2);
     ledge.lookAt(this.slotPos.copy(this.origin).add(this.normal));
     this.world.createTransformEntity(ledge);
 
     const saved = MemoryStore.orbs().slice(-cfg.capacity);
     saved.forEach((o, i) => {
-      const orb = buildMemoryOrb(o.momentId);
+      const orb = buildMemoryOrb(o.momentId, !!o.gold);
       orb.position.copy(this.slot(i, this.slotPos));
       const e = this.world.createTransformEntity(orb);
-      e.addComponent(MemoryOrb, { chapterId: o.chapterId, momentId: o.momentId, createdAt: o.createdAt, slot: i });
+      e.addComponent(MemoryOrb, { chapterId: o.chapterId, momentId: o.momentId, createdAt: o.createdAt, slot: i, gold: !!o.gold });
       e.addComponent(RayInteractable);
     });
+    // Tomorrow's teaser: a dim, empty orb and the next dream night's name.
+    const teaser = new Mesh(
+      new SphereGeometry(ORB_RADIUS, 20, 14),
+      new MeshStandardMaterial({ color: Palette.lockedGrey, transparent: true, opacity: 0.4, depthWrite: false }),
+    );
+    teaser.name = 'TomorrowOrb';
+    teaser.position.copy(this.slot(cfg.capacity, this.slotPos));
+    const tag = labelSprite(`Tomorrow: ${dreamNight((d.getValue(Session, 'night') ?? 1) + 1).title}`, 0.8);
+    tag.position.y = ORB_RADIUS + 0.1;
+    teaser.add(tag);
+    this.world.createTransformEntity(teaser);
     d.setValue(Session, 'shelfReady', true);
   }
 

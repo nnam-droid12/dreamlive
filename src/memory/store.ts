@@ -13,6 +13,8 @@ export interface SavedOrb {
   momentId: string;
   createdAt: string;
   night: number;
+  /** A golden memory (the night's catch goal was reached). */
+  gold?: boolean;
 }
 
 interface SaveData {

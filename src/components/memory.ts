@@ -8,4 +8,6 @@ export const MemoryOrb = createComponent('MemoryOrb', {
   createdAt: { type: Types.String, default: '' },
   /** Order on the Memory Shelf (oldest lowest); -1 while still floating to it. */
   slot: { type: Types.Int16, default: -1 },
+  /** Earned by catching tonight's goal: a golden orb. */
+  gold: { type: Types.Boolean, default: false },
 });

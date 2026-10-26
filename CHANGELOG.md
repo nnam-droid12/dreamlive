@@ -2,6 +2,38 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-26 — Judge loop #2 and fixes
+
+An independent judge sub-agent scored the build **5.25 / 10**: Innovation 6, Experience 5, Technical 5, Polish 5. Its top issues and what changed:
+
+1. **The mixed-reality path was not purposeful and the fallback was broken.**
+   - Room understanding now reads Quest scene labels. Bigfoot sleeps on the user's **real bed or couch**, and the dream plays on the user's **real TV** (`screen` label) at its real size.
+   - With no labels, his floor spot is always between the user and the TV.
+   - The fallback backdrop moved from 1.2 m to 2.2 m, and the wall search follows the tuning value (5 m).
+   - Emulator living room: Bigfoot lay on the detected couch and the TV hung on the real wall (`docs/screens/judge/09`, `10`).
+2. **The dream was a flat picture.** The dream now breaks the frame (`DreamSpillSystem`):
+   - Surf throws sea spray out of the screen.
+   - The rooftop DJ sweeps light beams through the room, drops confetti and pulses the room light at 120 BPM (`docs/screens/judge/08`).
+   - The ski run snows all around the viewer.
+   - The TV washes the room in the act's color. Memory replays spill too, at lower strength.
+3. **Thin return loop.**
+   - All three acts are open on night 1.
+   - Every later real night is a named **dream night** (`src/dreams/nights.ts`, a 7-night cycle: Sunset, Aurora, Pink Moon, Thunder Party, Golden Morning, Starfall). Each one has its own TV skies and Bigfoot moves, using three more Mixamo clips: house dance, happy bounce and big leap.
+   - **Golden memories**: catch the night's goal (3 rising to 6) and the orb is gold. It is taught at the first act, celebrated when reached and saved on the shelf.
+   - The shelf shows **"Tomorrow: <next night>"** beside a ghost orb.
+   - The arrival caption names tonight.
+- **Quick fixes:**
+  - The caption wraps or shrinks instead of being cut off.
+  - Choice seeds are 0.11 m with name labels ("Surf the city", "Rooftop DJ", "Ski the tower").
+  - Palm-out pause needs a raised hand, so waiting to catch never pauses.
+  - Leftover paper-sea sound captions were removed.
+  - Seed label sprites no longer crash pointer raycasts.
+- **Performance:**
+  - No per-frame allocations in `face()` or the flyer fades.
+  - The TV skips its render when the user looks away.
+  - No MSAA on the TV render target.
+- Not done yet from the judge's list: persisting placements with WebXR anchors, richer art in the act worlds, per-act music, adaptive quality, and bringing the showcase bed and TV within one 60° view.
+
 ## 2026-10-26 — Phase 4: Memory Shelf, nightly unlock, pause
 
 - **Memory Shelf**: a walnut ledge on the wall beside the TV. Each dream's orb lands in the next slot, and the newest 7 are shown. Orbs are saved in localStorage (`src/memory/store.ts`, all access guarded) and come back after the page is closed and reopened. **Pinch an orb** (hand ray, or gaze plus pinch) to replay its act on the TV for 12 s while no dream is playing.

@@ -12,7 +12,7 @@ import {
   VisibilityState,
   WebGLRenderTarget,
 } from '@iwsdk/core';
-import { BigfootRig, createBigfoot } from '../characters/bigfoot.js';
+import { BigfootAnim, BigfootRig, createBigfoot } from '../characters/bigfoot.js';
 import { DevControls } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
@@ -20,7 +20,8 @@ import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import type { DreamTvScene } from '../dream-tv/common.js';
-import { loadSkyline } from '../dream-tv/common.js';
+import { gradientTexture, loadSkyline } from '../dream-tv/common.js';
+import { dreamNight } from '../dreams/nights.js';
 import { djScene, introScene, skiScene, surfScene } from '../dream-tv/scenes.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 
@@ -49,6 +50,8 @@ export class DreamTvSystem extends createSystem({
   private scenes = new Map<string, DreamTvScene>();
   private active?: DreamTvScene;
   private bigfoot?: BigfootRig;
+  /** Tonight's Bigfoot moves per act (dream nights). */
+  private moves: Partial<Record<string, BigfootAnim>> = {};
   private loading = false;
   private power = 0;
   private time = 0;
@@ -75,7 +78,7 @@ export class DreamTvSystem extends createSystem({
     if (!this.screen && d.getValue(RoomSlots, 'anchorReady')) this.buildScreen(d);
     if (!this.loading) {
       this.loading = true;
-      void this.loadWorlds();
+      void this.loadWorlds(d.getValue(Session, 'night') ?? 1);
     }
     if (!this.screen) return;
     const delta = dreamDelta(d, realDelta);
@@ -110,7 +113,7 @@ export class DreamTvSystem extends createSystem({
     if (this.bigfoot) {
       s.slot.add(this.bigfoot.root);
       this.bigfoot.root.rotation.y = 0;
-      this.bigfoot.play(s.pose);
+      this.bigfoot.play(this.moves[s.key as 'surf'] ?? s.pose);
     }
   }
 
@@ -172,9 +175,13 @@ export class DreamTvSystem extends createSystem({
     this.world.createTransformEntity(tv);
   }
 
-  private async loadWorlds(): Promise<void> {
+  private async loadWorlds(night: number): Promise<void> {
     const skyline = await loadSkyline();
+    const tonight = dreamNight(night);
+    this.moves = tonight.moves;
     for (const s of [introScene(skyline), surfScene(skyline), djScene(skyline), skiScene(skyline)]) {
+      const sky = tonight.sky[s.key as 'surf'];
+      if (sky) s.scene.background = gradientTexture(sky[0], sky[1]);
       this.scenes.set(s.key, s);
     }
     this.bigfoot = await createBigfoot();
