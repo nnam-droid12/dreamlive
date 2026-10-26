@@ -3,6 +3,7 @@ import projectOptions from 'virtual:iwsdk-project';
 import { DevControls, DreamDirector, GazeRay } from './components/dream.js';
 import { Gestures } from './components/hands.js';
 import { Caption, Ritual } from './components/ritual.js';
+import { Session } from './components/session.js';
 import { RoomSlots, StageSurface } from './components/stage.js';
 import { PanelSystem } from './panel.js';
 import { AttentionSystem } from './systems/attention-system.js';
@@ -14,9 +15,11 @@ import { CaptionSystem } from './systems/caption-system.js';
 import { DreamDirectorSystem } from './systems/dream-director-system.js';
 import { DreamSeedSystem } from './systems/dream-seed-system.js';
 import { GestureSystem } from './systems/gesture-system.js';
+import { MemoryShelfSystem } from './systems/memory-shelf-system.js';
 import { NightSkySystem } from './systems/night-sky-system.js';
 import { RitualDirectorSystem } from './systems/ritual-director-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
+import { SessionSystem } from './systems/session-system.js';
 import { ShowcaseSystem } from './systems/showcase-system.js';
 import { WakingSystem } from './systems/waking-system.js';
 import { WallAnchorSystem } from './systems/wall-anchor-system.js';
@@ -35,11 +38,13 @@ World.create(
     .addComponent(DreamDirector)
     .addComponent(GazeRay)
     .addComponent(Gestures)
-    .addComponent(DevControls);
+    .addComponent(DevControls)
+    .addComponent(Session);
 
   // Order matters: sense → decide → present.
   world
     .registerSystem(GestureSystem)
+    .registerSystem(SessionSystem)
     .registerSystem(AttentionSystem)
     .registerSystem(RoomUnderstandingSystem)
     .registerSystem(RitualDirectorSystem)
@@ -51,6 +56,7 @@ World.create(
     .registerSystem(CatchSystem)
     .registerSystem(DreamSeedSystem)
     .registerSystem(WakingSystem)
+    .registerSystem(MemoryShelfSystem)
     .registerSystem(ShowcaseSystem)
     .registerSystem(AudioSystem)
     .registerSystem(CaptionSystem)

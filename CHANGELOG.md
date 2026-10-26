@@ -2,6 +2,24 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-26 — Phase 4: Memory Shelf, nightly unlock, pause
+
+- **Memory Shelf**: a walnut ledge on the wall beside the TV. Each dream's orb lands in the next slot, and the newest 7 are shown. Orbs are saved in localStorage (`src/memory/store.ts`, all access guarded) and come back after the page is closed and reopened. **Pinch an orb** (hand ray, or gaze plus pinch) to replay its act on the TV for 12 s while no dream is playing.
+- **Nightly unlock**: night 1 (the first visit's local calendar date) opens surf and DJ, and ski opens on night 2. A locked act appears at the choice as a dim grey light that can't be chosen. Looking at it says "This dream opens tomorrow night." Lean-back skips it.
+- **Judges & demo: unlock all dreams**: on the pause panel and on the browser landing panel (retitled Dreamlive). It is saved and can be undone.
+- **Pause panel** (`public/ui/pause.uikitml`): hold a palm out, facing away, for 1.2 s. The panel shows the night, the memory count, and Resume, Restart dream, Unlock all and Exit. While it is open, dream time, Bigfoot, flying catches and audio all freeze. Restart puts Bigfoot back to sleep and keeps the shelf.
+- Taking the headset off still freezes the dream. Putting it back on now adds a 1 s fade-in, and so does closing the pause panel.
+- Panel buttons fire on press-then-release on the same button, not on `click`, because the pointer library drops a click when a pinch is held too long.
+- Emulator results (Quest 3 profile, NYC showcase):
+  - Palm-out paused the dream with beat time frozen.
+  - Controller presses on Resume, Unlock all and Restart each changed the expected state.
+  - A full dream shelved its orb in slot 0, and the orb was still there after a reload.
+  - Pinching it set the replay and the TV played the surf act.
+  - Production build passes.
+- Not yet proven in the emulator:
+  - The locked-seed visual: the emulator crashed while frame-stepping to the choice.
+  - The headset-off fade-in: the emulator tooling can't change visibility.
+
 ## 2026-10-26 — Bigfoot slimmed for Quest
 
 - Bigfoot cut from 151k to 30k triangles (2.1 MB) in Blender with `scripts/assets/blender-slim.py`: voxel remesh, decimate, skin-weight transfer and a re-baked color texture. All 11 animations kept.

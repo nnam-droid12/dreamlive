@@ -17,18 +17,23 @@ import {
 import { Sound } from '../audio/engine.js';
 import { DevControls, DreamDirector, DreamSeed, GazeTarget, SeedState } from '../components/dream.js';
 import { Gestures } from '../components/hands.js';
+import { Caption } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 import { RoomSlots, StageAnchor, StageSurface } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
+import { isUnlocked } from '../dreams/chapter_bigfoot.js';
 import { findChapter } from '../dreams/registry.js';
 import { stageLocal, wallWorld } from '../dreams/stage-frame.js';
 import type { SeedDef } from '../dreams/types.js';
 import { makeDiscMaterial, makeDwellRingMaterial } from '../visuals/glow-materials.js';
+import { dreamDelta } from '../dreams/beat-context.js';
 
 const dream = Tuning.dream;
 const FALL_DISTANCE = 0.3;
 const FALL_SEC = 14;
 const CATCH_PULL = 3;
+const LOCKED_CAPTION = 'This dream opens tomorrow night.';
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 type SeedStateValue = (typeof SeedState)[keyof typeof SeedState];
@@ -58,7 +63,7 @@ interface SeedVisual {
  * you look away. Dwell, a pinch, or (for catchable seeds) cupped hands bloom it.
  */
 export class DreamSeedSystem extends createSystem({
-  director: { required: [DreamDirector, DevControls, StageSurface, RoomSlots, Gestures] },
+  director: { required: [DreamDirector, DevControls, StageSurface, RoomSlots, Gestures, Session, Caption] },
   stage: { required: [StageAnchor] },
   seeds: { required: [DreamSeed, GazeTarget] },
   pressed: { required: [DreamSeed, Pressed] },
@@ -71,12 +76,15 @@ export class DreamSeedSystem extends createSystem({
   private cup = new Vector3();
   private blooming = new Set<string>();
   private snapshot: Entity[] = [];
+  private generation = 0;
+  private toldLocked = false;
 
   init(): void {
     this.cleanupFuncs.push(
       this.queries.pressed.subscribe('qualify', (e) => {
         const state = e.getValue(DreamSeed, 'state');
         if (state !== SeedState.Idle && state !== SeedState.Appearing) return;
+        if (e.getValue(DreamSeed, 'locked')) return;
         if (this.blooming.has(e.getValue(DreamSeed, 'beatId') ?? '')) return;
         this.bloom(e, 'pinch');
       }),
@@ -87,8 +95,13 @@ export class DreamSeedSystem extends createSystem({
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
     const d = this.queries.director.entities.values().next().value;
     if (!d) return;
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
     this.time += delta;
+    if (d.getValue(Session, 'generation') !== this.generation) {
+      // "Restart dream": the same choice beat must spawn its seeds again.
+      this.generation = d.getValue(Session, 'generation') ?? 0;
+      this.spawnedBeat = '';
+    }
     const beatId = d.getValue(DreamDirector, 'beatId') ?? '';
     const completed = !!d.getValue(DreamDirector, 'completed');
     const beat = findChapter(d.getValue(DreamDirector, 'chapterId') ?? '')?.beats[beatId];
@@ -127,6 +140,10 @@ export class DreamSeedSystem extends createSystem({
         continue;
       }
       v.age += delta;
+      if (s.getValue(DreamSeed, 'locked')) {
+        this.animateLocked(d, s, v, state, t);
+        continue;
+      }
       if (state === SeedState.Idle) this.move(s, v, cupped, delta);
       this.animate(s, v, state, t, delta);
     }
@@ -209,6 +226,26 @@ export class DreamSeedSystem extends createSystem({
     v.ring.lookAt(this.camPos);
   }
 
+  /** A dream that isn't open yet: a dim, still light; a look explains why. */
+  private animateLocked(d: Entity, s: Entity, v: SeedVisual, state: SeedStateValue, t: number): void {
+    let scale = 0.75;
+    if (state === SeedState.Appearing) {
+      scale *= ease(clamp01(t / dream.seedAppearSec));
+      if (t >= dream.seedAppearSec) this.setState(s, SeedState.Idle);
+    } else if (state === SeedState.Fading) {
+      scale *= 1 - ease(clamp01(t / dream.seedFadeSec));
+    } else if (s.getValue(GazeTarget, 'focused') && !this.toldLocked) {
+      this.toldLocked = true;
+      d.setValue(Caption, 'text', LOCKED_CAPTION);
+      d.setValue(Caption, 'ttl', 4);
+    }
+    v.core.scale.setScalar(Math.max(0.001, scale));
+    v.coreMat.emissiveIntensity = 0.12;
+    v.haloMat.uniforms.opacity.value = 0.12 * scale;
+    v.ringMat.uniforms.opacity.value = 0;
+    v.halo.lookAt(this.camPos);
+  }
+
   private bloom(s: Entity, how: 'gaze' | 'pinch' | 'catch'): void {
     this.setState(s, SeedState.Blooming);
     s.setValue(DreamSeed, 'bloomedBy', how);
@@ -232,7 +269,8 @@ export class DreamSeedSystem extends createSystem({
     } else {
       stageLocal(seed, d.getValue(StageSurface, 'width') ?? 0.6, d.getValue(StageSurface, 'depth') ?? 0.4, pos);
     }
-    const color = new Color(Palette[seed.color]);
+    const locked = !isUnlocked(seed.branch, d.getValue(Session, 'night') ?? 1, !!d.getValue(Session, 'unlockAll'));
+    const color = new Color(locked ? Palette.lockedGrey : Palette[seed.color]);
     const root = new Group();
     root.name = `Seed-${seed.id}`;
     root.position.copy(pos);
@@ -240,7 +278,7 @@ export class DreamSeedSystem extends createSystem({
     const core = new Mesh(new SphereGeometry(seed.radius, 20, 14), coreMat);
     core.castShadow = !onWall;
     core.scale.setScalar(0.001);
-    const haloMat = makeDiscMaterial(Palette[seed.color]);
+    const haloMat = makeDiscMaterial(locked ? Palette.lockedGrey : Palette[seed.color]);
     const halo = new Mesh(new PlaneGeometry(seed.radius * 5, seed.radius * 5), haloMat);
     const ringMat = makeDwellRingMaterial(Palette.starWhite);
     const ring = new Mesh(new PlaneGeometry(seed.radius * 3.4, seed.radius * 3.4), ringMat);
@@ -249,9 +287,9 @@ export class DreamSeedSystem extends createSystem({
     const entity = onWall || !stage
       ? this.world.createTransformEntity(root)
       : this.world.createTransformEntity(root, { parent: stage });
-    entity.addComponent(DreamSeed, { seedId: seed.id, branch: seed.branch, beatId, state: SeedState.Appearing });
+    entity.addComponent(DreamSeed, { seedId: seed.id, branch: seed.branch, beatId, state: SeedState.Appearing, locked });
     entity.addComponent(GazeTarget, { radius: seed.radius });
-    entity.addComponent(RayInteractable);
+    if (!locked) entity.addComponent(RayInteractable);
     this.visuals.set(entity, {
       root, core, coreMat, halo, haloMat, ring, ringMat,
       base: pos.clone(),

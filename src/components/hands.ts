@@ -27,4 +27,8 @@ export const Gestures = createComponent('Gestures', {
   hushHold: { type: Types.Float32, default: 0 },
   /** Hush completed this frame (one palm flat over the stage, held). */
   hush: { type: Types.Boolean, default: false },
+  /** Seconds a palm has been held out, facing away ("stop"). */
+  palmOutHold: { type: Types.Float32, default: 0 },
+  /** Palm-out completed this frame: opens the pause panel. */
+  palmOut: { type: Types.Boolean, default: false },
 });

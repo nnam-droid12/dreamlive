@@ -11,6 +11,11 @@ export default defineAssets({
     name: 'Bigfoot',
     priority: 'lazy',
   },
+  'pause-panel': {
+    url: publicAssetUrl('ui/pause.uikitml'),
+    type: AssetType.UIKitML,
+    name: 'Pause Panel',
+  },
   'welcome-panel': {
     url: publicAssetUrl('ui/welcome.uikitml'),
     type: AssetType.UIKitML,

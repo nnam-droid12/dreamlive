@@ -1,13 +1,14 @@
 import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core';
 import { Sound, SOUND_CAPTIONS } from '../audio/engine.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 
 const SOUND_CAPTION_SEC = 3.5;
 const SOUND_TEXTS = new Set<string>(Object.values(SOUND_CAPTIONS));
 
 /**
  * Bridges the procedural audio engine to the session: starts sound when XR is
- * visible and suspends it when the headset comes off, keeps the HRTF listener
+ * visible and suspends it when the headset comes off or the dream is paused, keeps the HRTF listener
  * on the head, scores each ritual phase (hum → music box + pad → waking swell)
  * and shows captions for story-relevant sounds.
  */
@@ -22,7 +23,9 @@ export class AudioSystem extends createSystem({
   private gestureHooked = false;
 
   update(): void {
-    if (this.visibilityState.peek() !== VisibilityState.Visible) {
+    const d0 = this.queries.director.entities.values().next().value;
+    const paused = !!d0?.hasComponent(Session) && !!d0.getValue(Session, 'paused');
+    if (this.visibilityState.peek() !== VisibilityState.Visible || paused) {
       Sound.suspend();
       return;
     }

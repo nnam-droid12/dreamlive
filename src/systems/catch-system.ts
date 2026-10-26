@@ -19,7 +19,7 @@ import { DevControls, DreamDirector } from '../components/dream.js';
 import { Gestures, HandGestureState } from '../components/hands.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
-import { newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 
 const SPAWN_EVERY = 2.4;
 const FLIGHT_SEC = 2.2;
@@ -76,7 +76,7 @@ export class CatchSystem extends createSystem({
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
     const d = this.queries.director.entities.values().next().value;
     if (!d || !d.getValue(RoomSlots, 'anchorReady')) return;
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
     const dreaming = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = this.beat.scene;
     const kind = dreaming && (scene === 'surf' || scene === 'dj' || scene === 'ski') ? scene : undefined;

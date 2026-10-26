@@ -18,7 +18,7 @@ import { DevControls, GazeTarget } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
-import { newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 
 /** Look at sleeping Bigfoot this long to slip into his dream; else it starts by itself. */
@@ -70,13 +70,13 @@ export class BigfootSystem extends createSystem({
       void this.spawn(d);
     }
     if (!this.rig || !this.entity) return;
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
     const phase = d.getValue(Ritual, 'phase');
     const phaseTime = d.getValue(Ritual, 'phaseTime') ?? 0;
 
     if (phase === RitualPhase.Arrival || phase === RitualPhase.Idle) {
       this.lieDown();
-      this.waitForGaze(d, realDelta, phaseTime);
+      this.waitForGaze(d, delta > 0 ? realDelta : 0, phaseTime);
     } else if (phase === RitualPhase.Asleep) {
       if (!readBeat(d, this.beat)) this.lieDown();
       else if (this.beat.scene === 'sleepwalk') this.sleepwalk(this.beat.time);

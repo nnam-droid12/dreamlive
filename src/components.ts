@@ -4,6 +4,7 @@ import { DevControls, DreamDirector, DreamSeed, GazeRay, GazeTarget } from './co
 import { Gestures, HandGestureState } from './components/hands.js';
 import { MemoryOrb } from './components/memory.js';
 import { Caption, Ritual } from './components/ritual.js';
+import { Session } from './components/session.js';
 import { RoomSlots, StageAnchor, StageSurface } from './components/stage.js';
 
 export default defineComponents([
@@ -21,4 +22,5 @@ export default defineComponents([
   GazeTarget,
   DreamSeed,
   MemoryOrb,
+  Session,
 ]);

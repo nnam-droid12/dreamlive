@@ -4,6 +4,7 @@ import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
 import { Chapters, findChapter } from '../dreams/registry.js';
 import type { BeatDef } from '../dreams/types.js';
+import { dreamDelta } from '../dreams/beat-context.js';
 
 const dream = Tuning.dream;
 
@@ -26,7 +27,7 @@ export class DreamDirectorSystem extends createSystem({
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
     const d = this.queries.director.entities.values().next().value;
     if (!d || d.getValue(Ritual, 'phase') !== RitualPhase.Asleep) return;
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
 
     if (!d.getValue(DreamDirector, 'started')) {
       if ((d.getValue(Ritual, 'phaseTime') ?? 0) < dream.startDelaySec) return;
@@ -65,7 +66,7 @@ export class DreamDirectorSystem extends createSystem({
     let fallback: Entity | undefined;
     let first: Entity | undefined;
     for (const s of this.queries.seeds.entities) {
-      if (s.getValue(DreamSeed, 'beatId') !== beat.id) continue;
+      if (s.getValue(DreamSeed, 'beatId') !== beat.id || s.getValue(DreamSeed, 'locked')) continue;
       const state = s.getValue(DreamSeed, 'state');
       if (state === SeedState.Blooming) {
         blooming = true;

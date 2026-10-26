@@ -1,0 +1,66 @@
+<!--
+  Pause panel: opened by holding a palm out ("stop"). Dream time, Bigfoot and
+  sound freeze while it is open. Panel, Divider, Button and ButtonLabel come from
+  the bundled Horizon kit.
+-->
+<style>
+  .panel-root {
+    flex-direction: column;
+    width: 300px;
+  }
+
+  .panel-content {
+    align-items: center;
+    flex-direction: column;
+    padding-top: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .heading {
+    height: 40px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 24px;
+    color: #272727;
+  }
+
+  .status {
+    color: #4a4a4a;
+    font-size: 13px;
+    line-height: 18px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .button {
+    margin-left: 24px;
+    margin-right: 24px;
+    margin-top: 10px;
+  }
+
+  .last {
+    margin-bottom: 22px;
+  }
+</style>
+<Panel class="panel-root">
+  <div class="panel-content">
+    <div class="heading">Dream paused</div>
+    <Divider></Divider>
+    <div id="pause-status" class="status">Night 1 - 0 memories on your shelf</div>
+  </div>
+  <Button id="btn-resume" class="button">
+    <ButtonLabel>Resume</ButtonLabel>
+  </Button>
+  <Button id="btn-restart" class="button">
+    <ButtonLabel>Restart dream</ButtonLabel>
+  </Button>
+  <Button id="btn-unlock" class="button">
+    <ButtonLabel id="unlock-label">Judges and demo: unlock all dreams</ButtonLabel>
+  </Button>
+  <Button id="btn-exit" class="button last">
+    <ButtonLabel>Exit</ButtonLabel>
+  </Button>
+</Panel>

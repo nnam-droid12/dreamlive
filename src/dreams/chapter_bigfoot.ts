@@ -36,3 +36,17 @@ export const chapterBigfoot: ChapterDef = {
 
 /** The act a scene/seed id belongs to ('surf' | 'dj' | 'ski'), or ''. */
 export const actOf = (id: string): string => id.replace(/-2$/, '');
+
+/** The real night each act opens (one new dream per night; night 1 = first visit). */
+export const ACT_NIGHT: Record<string, number> = { surf: 1, dj: 1, ski: 2 };
+
+/** What each kept memory shows when replayed from the shelf. */
+export const ACT_TITLE: Record<string, string> = {
+  surf: 'Surfing a wave through New York',
+  dj: 'DJing a rooftop party',
+  ski: 'Skiing down a skyscraper',
+};
+
+/** Whether a seed/branch/act is open tonight. */
+export const isUnlocked = (id: string, night: number, unlockAll: boolean): boolean =>
+  unlockAll || night >= (ACT_NIGHT[actOf(id)] ?? 1);

@@ -46,3 +46,4 @@ pids/
 
 # Raw downloads awaiting optimization
 incoming/
+artifacts/

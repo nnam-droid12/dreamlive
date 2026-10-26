@@ -17,7 +17,11 @@
         "asset": "welcome-panel"
       },
       "transform": {
-        "position": [0, 1.6, -2],
+        "position": [
+          0,
+          1.6,
+          -2
+        ],
         "scale": 0.4
       },
       "components": {
@@ -28,6 +32,25 @@
           "width": "25vw",
           "height": "40%"
         }
+      }
+    },
+    {
+      "id": "pause-panel",
+      "name": "Pause Panel",
+      "content": {
+        "type": "asset",
+        "asset": "pause-panel"
+      },
+      "transform": {
+        "position": [
+          0,
+          -10,
+          0
+        ],
+        "scale": 0.12
+      },
+      "components": {
+        "RayInteractable": {}
       }
     }
   ]

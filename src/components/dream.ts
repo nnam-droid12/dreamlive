@@ -66,4 +66,6 @@ export const DreamSeed = createComponent('DreamSeed', {
   beatId: { type: Types.String, default: '' },
   /** How it bloomed: 'gaze' | 'pinch' | 'leanBack'. */
   bloomedBy: { type: Types.String, default: '' },
+  /** Its act opens on a later night: shown dim, can't be chosen. */
+  locked: { type: Types.Boolean, default: false },
 });

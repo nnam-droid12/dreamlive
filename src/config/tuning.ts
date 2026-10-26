@@ -106,7 +106,13 @@ export const Tuning = {
     cupMaxSpacing: 0.22,
     /** A cup this close (horizontally) to a falling star catches it. */
     catchRadius: 0.25,
-    palmOutHoldSec: 1,
+    /** Palm-out "stop" pose (opens the pause panel): held still this long. */
+    palmOutHoldSec: 1.2,
+    /** Palm must face away from the user within this angle of the view direction. */
+    palmOutMaxAngleDeg: 35,
+    /** ...and be at least this far in front of the head (an outstretched arm). */
+    palmOutMinReach: 0.25,
+    palmOutMaxSpeed: 0.25,
     pinchStartDistance: 0.02,
     pinchEndDistance: 0.035,
     /** Ignore a repeat of the same gesture inside this window. */
@@ -138,6 +144,17 @@ export const Tuning = {
     seedAppearSec: 0.8,
     seedBloomSec: 0.9,
     seedFadeSec: 0.7,
+  },
+
+  memoryShelf: {
+    /** Orbs shown on the ledge (newest kept; storage keeps more). */
+    capacity: 7,
+    spacing: 0.125,
+    /** Ledge center: this far right of the TV center along the wall, and this far down. */
+    offsetRight: 1.75,
+    drop: 0.12,
+    /** A pinched orb replays its act on the TV for this long. */
+    replaySec: 12,
   },
 
   performance: {

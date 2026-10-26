@@ -2,6 +2,7 @@ import { createSystem, VisibilityState } from '@iwsdk/core';
 import { DevControls } from '../components/dream.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
+import { dreamDelta } from '../dreams/beat-context.js';
 
 const r = Tuning.ritual;
 const RINGS_TOTAL_SEC = r.ringGrowSec + r.ringMergeSec + r.ringFadeSec;
@@ -22,7 +23,7 @@ export class RitualDirectorSystem extends createSystem({
     if (!d) return;
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
 
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
     let phase = d.getValue(Ritual, 'phase');
     if (phase === RitualPhase.Idle) {
       phase = RitualPhase.Arrival;

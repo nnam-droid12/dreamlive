@@ -51,17 +51,21 @@
     margin-bottom: 24px;
   }
 
+  .unlock {
+    margin-top: 0px;
+  }
+
   .button-label {
     transform-translate-y: 1px;
   }
 </style>
 <Panel class="panel-root">
   <div class="panel-content">
-    <div class="heading">Hello, Immersive Web!</div>
+    <div class="heading">Dreamlive</div>
     <Divider></Divider>
     <div class="sub-heading">
-      Build interactive browser, mixed-reality, and virtual-reality experiences
-      with Immersive Web SDK.
+      Bigfoot is asleep. Put on your headset, look at him, and slip into his
+      dream. One new dream opens every night.
     </div>
   </div>
   <Button id="xr-button" class="button">
@@ -69,6 +73,9 @@
       <RectangleGoggles></RectangleGoggles>
     </ButtonIcon>
     <ButtonLabel class="button-label">Enter XR</ButtonLabel>
+  </Button>
+  <Button id="unlock-button" class="button unlock">
+    <ButtonLabel id="unlock-button-label" class="button-label">Judges and demo: unlock all dreams</ButtonLabel>
   </Button>
   <Button id="exit-button" class="button" style="display: none">
     <ButtonIcon>

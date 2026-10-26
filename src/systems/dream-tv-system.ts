@@ -14,9 +14,10 @@ import {
 import { BigfootRig, createBigfoot } from '../characters/bigfoot.js';
 import { DevControls } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
+import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
-import { newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import type { DreamTvScene } from '../dream-tv/common.js';
 import { loadSkyline } from '../dream-tv/common.js';
 import { djScene, introScene, skiScene, surfScene } from '../dream-tv/scenes.js';
@@ -38,7 +39,7 @@ const SCENE_FOR: Record<string, string> = { intro: 'intro', finale: 'intro', sur
  * follows the dream director; Bigfoot performs inside it.
  */
 export class DreamTvSystem extends createSystem({
-  director: { required: [Ritual, RoomSlots, DevControls] },
+  director: { required: [Ritual, RoomSlots, DevControls, Session] },
 }) {
   private rt!: WebGLRenderTarget;
   private cam!: PerspectiveCamera;
@@ -74,11 +75,13 @@ export class DreamTvSystem extends createSystem({
       void this.loadWorlds();
     }
     if (!this.screen) return;
-    const delta = realDelta * (d.getValue(DevControls, 'timeScale') ?? 1);
+    const delta = dreamDelta(d, realDelta);
     this.time += delta;
 
     const dreaming = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat);
-    const key = dreaming ? SCENE_FOR[this.beat.scene] : undefined;
+    // Outside a dream, a memory pinched on the shelf replays its act.
+    const replay = dreaming ? '' : (d.getValue(Session, 'replay') ?? '');
+    const key = dreaming ? SCENE_FOR[this.beat.scene] : replay ? SCENE_FOR[replay] : undefined;
     const on = !!key || (dreaming && this.beat.scene === 'sleepwalk' && this.beat.progress > 0.86);
     this.power += Math.sign((on ? 1 : 0) - this.power) * Math.min(Math.abs((on ? 1 : 0) - this.power), delta * POWER_RATE);
     this.screen.visible = this.power > 0.01;

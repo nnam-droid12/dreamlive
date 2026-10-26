@@ -1,9 +1,11 @@
 import { createComponent, Types } from '@iwsdk/core';
 
-/** A kept dream moment. Persisted to the Memory Shelf in Phase 4. */
+/** A kept dream moment. Lives on the Memory Shelf and in localStorage (src/memory/store.ts). */
 export const MemoryOrb = createComponent('MemoryOrb', {
   chapterId: { type: Types.String, default: '' },
   momentId: { type: Types.String, default: '' },
   /** ISO timestamp of the night it was kept. */
   createdAt: { type: Types.String, default: '' },
+  /** Order on the Memory Shelf (oldest lowest); -1 while still floating to it. */
+  slot: { type: Types.Int16, default: -1 },
 });

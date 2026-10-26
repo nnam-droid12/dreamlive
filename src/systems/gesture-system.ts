@@ -1,4 +1,4 @@
-import { createSystem, Entity, Matrix4, Vector3 } from '@iwsdk/core';
+import { createSystem, Entity, Matrix4, Quaternion, Vector3 } from '@iwsdk/core';
 import { Gestures, HandGestureState, Handedness } from '../components/hands.js';
 import { StageSurface } from '../components/stage.js';
 import { Tuning } from '../config/tuning.js';
@@ -22,7 +22,7 @@ const HUSH_MAX_SPEED = 0.15;
 /**
  * Reads hand joints straight from WebXR and classifies each hand's palm pose
  * into HandGestureState (tracked, palmDown, still, center, normal, speed).
- * Phase 1 only needs "flat palm, still"; later phases add cupped/hush/pinch/palm-out.
+ * Two-hand summaries: cupped hands, the hush palm and the palm-out "stop".
  */
 export class GestureSystem extends createSystem({
   hands: { required: [HandGestureState] },
@@ -36,6 +36,10 @@ export class GestureSystem extends createSystem({
   private normal = new Vector3();
   private cosMaxTilt = Math.cos((cfg.maxPalmTiltDeg * Math.PI) / 180);
   private cosMaxCup = Math.cos((gest.cupMaxTiltDeg * Math.PI) / 180);
+  private cosPalmOut = Math.cos((gest.palmOutMaxAngleDeg * Math.PI) / 180);
+  private head = new Vector3();
+  private viewFwd = new Vector3();
+  private headQuat = new Quaternion();
   private a = new Vector3();
   private b = new Vector3();
   private left?: Entity;
@@ -141,6 +145,25 @@ export class GestureSystem extends createSystem({
     const hush = hold >= gest.hushHoldSec;
     d.setValue(Gestures, 'hush', hush);
     d.setValue(Gestures, 'hushHold', hush ? 0 : hold);
+
+    // Palm out: an outstretched, still hand whose palm faces away along the view.
+    this.player.head.getWorldPosition(this.head);
+    this.player.head.getWorldQuaternion(this.headQuat);
+    this.viewFwd.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
+    let out = false;
+    for (const h of [l, r]) {
+      if (!h || !h.getValue(HandGestureState, 'tracked')) continue;
+      if ((h.getValue(HandGestureState, 'speed') ?? 1) > gest.palmOutMaxSpeed) continue;
+      this.a.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
+      if (this.a.dot(this.viewFwd) < this.cosPalmOut) continue;
+      this.b.fromArray(h.getVectorView(HandGestureState, 'palmCenter')).sub(this.head);
+      if (this.b.dot(this.viewFwd) >= gest.palmOutMinReach) out = true;
+    }
+    let outHold = d.getValue(Gestures, 'palmOutHold') ?? 0;
+    outHold = out ? outHold + delta : 0;
+    const palmOut = outHold >= gest.palmOutHoldSec;
+    d.setValue(Gestures, 'palmOut', palmOut);
+    d.setValue(Gestures, 'palmOutHold', palmOut ? -gest.cooldownSec : outHold);
   }
 
   /** Fills this.center / this.normal in world space. Returns false if untracked. */

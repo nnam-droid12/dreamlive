@@ -21,6 +21,10 @@ export const Palette = {
   nightTint: 0x0d0b26,
   seaDeep: 0x26307a,
   seaShallow: 0x5a73d6,
+  /** A dream that opens on a later night. */
+  lockedGrey: 0x8a8f99,
+  /** Memory Shelf ledge (walnut). */
+  shelfWood: 0x5b3b24,
 } as const;
 
 export type PaletteKey = keyof typeof Palette;

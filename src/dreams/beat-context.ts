@@ -1,5 +1,6 @@
 import type { Entity } from '@iwsdk/core';
-import { DreamDirector } from '../components/dream.js';
+import { DevControls, DreamDirector } from '../components/dream.js';
+import { Session } from '../components/session.js';
 import { findChapter } from './registry.js';
 
 /** The current beat as set pieces see it. */
@@ -31,4 +32,13 @@ export const newBeatContext = (): BeatContext => ({ id: '', scene: '', time: 0, 
 export function foldAmount(phase: string, phaseTime: number, foldSec: number): number {
   if (phase !== 'waking' && phase !== 'awake') return 0;
   return Math.min(1, phaseTime / foldSec);
+}
+
+/**
+ * Dream seconds for this frame: real time × the dev time scale, and zero while
+ * the pause panel is open. Every system that advances the dream uses this.
+ */
+export function dreamDelta(d: Entity, realDelta: number): number {
+  if (d.hasComponent(Session) && d.getValue(Session, 'paused')) return 0;
+  return realDelta * (d.hasComponent(DevControls) ? (d.getValue(DevControls, 'timeScale') ?? 1) : 1);
 }

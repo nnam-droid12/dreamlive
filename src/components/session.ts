@@ -1,0 +1,23 @@
+import { createComponent, Types } from '@iwsdk/core';
+
+/** Session-wide state that outlives one dream: pause, unlocks, the shelf and replays. */
+export const Session = createComponent('Session', {
+  /** Pause panel open: dream time, animation and audio are frozen. */
+  paused: { type: Types.Boolean, default: false },
+  /** "Judges & demo: unlock all dreams". */
+  unlockAll: { type: Types.Boolean, default: false },
+  /** Real nights since the first visit, 1-based (local calendar dates). */
+  night: { type: Types.Int16, default: 1 },
+  /** Bumped by "Restart dream"; systems with private dream state reset on change. */
+  generation: { type: Types.Int16, default: 0 },
+  /** Act whose memory is replaying on the TV ('' = none). */
+  replay: { type: Types.String, default: '' },
+  replayTime: { type: Types.Float32, default: 0 },
+  /** Memory Shelf built; `shelfNext` is where the next orb lands. */
+  shelfReady: { type: Types.Boolean, default: false },
+  shelfNext: { type: Types.Vec3, default: [0, 0, 0] },
+  /** Slot number the next orb to land takes (one past the newest on the shelf). */
+  shelfNextSlot: { type: Types.Int16, default: 0 },
+  /** Seconds left of the fade-in after the headset comes back or the pause ends. */
+  fadeIn: { type: Types.Float32, default: 0 },
+});
