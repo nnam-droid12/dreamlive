@@ -36,7 +36,15 @@ export class WallAnchorSystem extends createSystem({
     this.dir.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
     this.center.copy(this.head);
     let backdrop = true;
-    if (d.getValue(RoomSlots, 'wallFound')) {
+    let screen = false;
+    if (d.getValue(RoomSlots, 'screenFound')) {
+      // The user's own TV: the dream plays on it, centered on the real screen.
+      this.point.fromArray(d.getVectorView(RoomSlots, 'screenCenter'));
+      this.normal.fromArray(d.getVectorView(RoomSlots, 'screenNormal'));
+      d.setValue(RoomSlots, 'anchorWidth', Math.max(0.8, d.getValue(RoomSlots, 'screenWidth') ?? 0));
+      screen = true;
+      backdrop = false;
+    } else if (d.getValue(RoomSlots, 'wallFound')) {
       this.wall.fromArray(d.getVectorView(RoomSlots, 'wallCenter'));
       this.normal.fromArray(d.getVectorView(RoomSlots, 'wallNormal'));
       const facing = this.dir.dot(this.normal);
@@ -53,10 +61,11 @@ export class WallAnchorSystem extends createSystem({
       this.normal.copy(this.dir).negate();
       this.buildBackdrop();
     }
-    this.point.y = this.head.y + 0.05;
+    if (!screen) this.point.y = this.head.y + 0.05;
     this.point.toArray(d.getVectorView(RoomSlots, 'anchorPoint'));
     this.normal.toArray(d.getVectorView(RoomSlots, 'anchorNormal'));
     d.setValue(RoomSlots, 'anchorIsBackdrop', backdrop);
+    d.setValue(RoomSlots, 'anchorIsScreen', screen);
     d.setValue(RoomSlots, 'anchorReady', true);
   }
 

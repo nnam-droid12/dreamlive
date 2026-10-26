@@ -24,8 +24,6 @@ import { loadSkyline } from '../dream-tv/common.js';
 import { djScene, introScene, skiScene, surfScene } from '../dream-tv/scenes.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 
-const SCREEN_W = 2.18;
-const SCREEN_H = 1.226;
 const RT_W = 1024;
 const RT_H = 576;
 const PARALLAX = 0.45;
@@ -153,18 +151,21 @@ export class DreamTvSystem extends createSystem({
     tv.position.copy(this.anchor).addScaledVector(this.normal, 0.012);
     tv.lookAt(this.rel.copy(tv.position).add(this.normal));
     this.screenMat = new MeshBasicMaterial({ map: this.rt.texture, toneMapped: false });
-    this.screen = new Mesh(new PlaneGeometry(SCREEN_W, SCREEN_H), this.screenMat);
+    // 16:9 at the anchor's width: the showcase plasma, the user's real TV, or a hung one.
+    const w = d.getValue(RoomSlots, 'anchorWidth') ?? 2.18;
+    const h = (w * 9) / 16;
+    this.screen = new Mesh(new PlaneGeometry(w, h), this.screenMat);
     this.screen.name = 'DreamTvScreen';
     this.screen.visible = false;
     tv.add(this.screen);
-    if (!Showcase.enabled) {
-      // In passthrough there is no plasma on the wall: hang a slim one there.
+    if (!Showcase.enabled && !d.getValue(RoomSlots, 'anchorIsScreen')) {
+      // In passthrough with no real TV found: hang a slim one on the wall.
       const frame = new Mesh(
-        bevelBox(SCREEN_W + 0.04, SCREEN_H + 0.04, 0.03, 0.004),
+        bevelBox(w + 0.04, h + 0.04, 0.03, 0.004),
         new MeshStandardMaterial({ color: 0x18191c, roughness: 0.35, metalness: 0.6 }),
       );
       frame.position.z = -0.018;
-      const glass = new Mesh(new PlaneGeometry(SCREEN_W, SCREEN_H), new MeshStandardMaterial({ color: 0x050608, roughness: 0.08 }));
+      const glass = new Mesh(new PlaneGeometry(w, h), new MeshStandardMaterial({ color: 0x050608, roughness: 0.08 }));
       glass.position.z = -0.002;
       tv.add(frame, glass);
     }

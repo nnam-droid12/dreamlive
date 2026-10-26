@@ -12,9 +12,8 @@ interface DetectedPlane {
 const stage = Tuning.stage;
 
 /**
- * Picks the stage table (nearest plausible horizontal surface within reach, in
- * front of the seated user), the stage wall (vertical plane most in front) and
- * the ceiling from detected planes. Writes RoomSlots; never errors when plane
+ * Reads detected planes: Bigfoot's bed (nearest labeled bed/couch), the user's
+ * real TV ('screen'), the wall most in front, a table within reach and the ceiling. Writes RoomSlots; never errors when plane
  * detection is missing — RoomSlots simply stays "not found".
  */
 export class RoomUnderstandingSystem extends createSystem({
@@ -33,6 +32,10 @@ export class RoomUnderstandingSystem extends createSystem({
   private bestTable = new Vector3();
   private bestWall = new Vector3();
   private bestWallNormal = new Vector3();
+  private bestRest = new Vector3();
+  private bestRestAxis = new Vector3();
+  private bestScreen = new Vector3();
+  private bestScreenNormal = new Vector3();
 
   update(delta: number): void {
     this.timer -= delta;
@@ -54,6 +57,10 @@ export class RoomUnderstandingSystem extends createSystem({
     let ceilingFound = false;
     let ceilingHeight = 0;
     let count = 0;
+    let restScore = Infinity;
+    let restLength = 0;
+    let screenScore = 0.3;
+    let screenWidth = 0;
 
     for (const entity of this.queries.planes.entities) {
       const plane = entity.getValue(XRPlane, '_plane') as DetectedPlane | undefined;
@@ -76,7 +83,20 @@ export class RoomUnderstandingSystem extends createSystem({
       const depth = maxZ - minZ;
       const label = plane.semanticLabel ?? '';
 
-      if (Math.abs(this.axisY.y) > 0.85) {
+      if (Math.abs(this.axisY.y) > 0.85 && (label === 'bed' || label === 'couch')) {
+        // Bigfoot's bed: the nearest labeled bed or couch top.
+        const y = this.center.y;
+        this.toPlane.subVectors(this.center, this.head).setY(0);
+        const dist = this.toPlane.length();
+        if (y < stage.restMinHeight || y > stage.restMaxHeight || dist > stage.maxRestDistance) continue;
+        const score = dist - (label === 'bed' ? 0.5 : 0);
+        if (score >= restScore) continue;
+        restScore = score;
+        this.bestRest.copy(this.center);
+        // Long axis: plane-local X if wider than deep, else plane-local Z.
+        this.bestRestAxis.set(width >= depth ? 1 : 0, 0, width >= depth ? 0 : 1).applyQuaternion(this.quat).setY(0).normalize();
+        restLength = Math.max(width, depth);
+      } else if (Math.abs(this.axisY.y) > 0.85) {
         const y = this.center.y;
         if (label === 'ceiling' || y > this.head.y + 0.3) {
           ceilingFound = true;
@@ -96,6 +116,18 @@ export class RoomUnderstandingSystem extends createSystem({
         tableYaw = Math.atan2(-this.axisX.z, this.axisX.x);
         tableW = width;
         tableD = depth;
+      } else if (Math.abs(this.axisY.y) < 0.3 && label === 'screen') {
+        // The user's real TV: the dream plays on it.
+        this.toPlane.subVectors(this.center, this.head).setY(0);
+        if (this.toPlane.length() > stage.maxWallDistance) continue;
+        this.axisY.setY(0).normalize();
+        if (this.axisY.dot(this.toPlane) > 0) this.axisY.negate();
+        const frontness = this.toPlane.normalize().dot(this.forward);
+        if (frontness <= screenScore) continue;
+        screenScore = frontness;
+        this.bestScreen.copy(this.center);
+        this.bestScreenNormal.copy(this.axisY);
+        screenWidth = width;
       } else if (Math.abs(this.axisY.y) < 0.3 && label !== 'door' && label !== 'window') {
         this.toPlane.subVectors(this.center, this.head).setY(0);
         const dist = this.toPlane.length();
@@ -123,6 +155,18 @@ export class RoomUnderstandingSystem extends createSystem({
     if (wallFound) {
       this.bestWall.toArray(room.getVectorView(RoomSlots, 'wallCenter'));
       this.bestWallNormal.toArray(room.getVectorView(RoomSlots, 'wallNormal'));
+    }
+    room.setValue(RoomSlots, 'restFound', restScore < Infinity);
+    if (restScore < Infinity) {
+      this.bestRest.toArray(room.getVectorView(RoomSlots, 'restCenter'));
+      this.bestRestAxis.toArray(room.getVectorView(RoomSlots, 'restAxis'));
+      room.setValue(RoomSlots, 'restLength', restLength);
+    }
+    room.setValue(RoomSlots, 'screenFound', screenScore > 0.3);
+    if (screenScore > 0.3) {
+      this.bestScreen.toArray(room.getVectorView(RoomSlots, 'screenCenter'));
+      this.bestScreenNormal.toArray(room.getVectorView(RoomSlots, 'screenNormal'));
+      room.setValue(RoomSlots, 'screenWidth', screenWidth);
     }
     room.setValue(RoomSlots, 'ceilingFound', ceilingFound);
     room.setValue(RoomSlots, 'ceilingHeight', ceilingHeight);

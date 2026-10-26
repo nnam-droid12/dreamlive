@@ -286,12 +286,23 @@ export class BigfootSystem extends createSystem({
       this.restAxis.set(-1, 0, 0);
       this.exitTop.set(bed.top.x + bed.length / 2 - 0.25, bed.top.y, bed.top.z);
       this.exit.set(bed.top.x + bed.length / 2 + 0.45, 0, bed.top.z);
+    } else if (d.getValue(RoomSlots, 'restFound')) {
+      // Passthrough: the user's real bed or couch. Head toward the end farther from the TV.
+      this.restPos.fromArray(d.getVectorView(RoomSlots, 'restCenter'));
+      this.restAxis.fromArray(d.getVectorView(RoomSlots, 'restAxis'));
+      if (this.restAxis.dot(this.tmp.subVectors(this.tvFloor, this.restPos)) > 0) this.restAxis.negate();
+      const half = (d.getValue(RoomSlots, 'restLength') ?? 2) / 2;
+      this.exitTop.copy(this.restPos).addScaledVector(this.restAxis, -(half - 0.25));
+      this.exit.copy(this.restPos).addScaledVector(this.restAxis, -(half + 0.45)).setY(0);
     } else {
-      // Passthrough: a cozy spot on the floor ahead-left (bed/couch detection comes later).
+      // Passthrough, no bed or couch found: a cozy floor spot ahead-left, always
+      // between the user and the TV so he never sleeps behind the screen.
       this.player.head.getWorldPosition(this.head);
-      const fwd = new Vector3().subVectors(this.tvFloor, this.head).setY(0).normalize();
+      const fwd = this.tmp2.subVectors(this.tvFloor, this.head).setY(0);
+      const toTv = fwd.length();
+      fwd.normalize();
       const left = new Vector3().crossVectors(UP, fwd);
-      this.restPos.copy(this.head).setY(0.02).addScaledVector(fwd, 1.5).addScaledVector(left, 0.9);
+      this.restPos.copy(this.head).setY(0.02).addScaledVector(fwd, Math.min(1.5, toTv * 0.5)).addScaledVector(left, 0.9);
       this.restAxis.copy(left);
       this.exitTop.copy(this.restPos).addScaledVector(fwd, 0.5);
       this.exit.copy(this.exitTop);

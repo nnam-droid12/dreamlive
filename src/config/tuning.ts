@@ -29,7 +29,7 @@ export const Tuning = {
     minWidth: 0.4,
     minDepth: 0.3,
     /** Floating paper backdrop distance when no wall is detected. */
-    backdropDistance: 1.2,
+    backdropDistance: 2.2,
     defaultWidth: 0.6,
     defaultDepth: 0.4,
     maxWidth: 0.9,
@@ -40,6 +40,11 @@ export const Tuning = {
     /** Re-scan detected planes this often. */
     roomScanIntervalSec: 0.5,
     maxWallDistance: 5,
+    /** A labeled bed/couch this far away (horizontal) or less can be Bigfoot's bed. */
+    maxRestDistance: 4.5,
+    /** Seat/top heights that count as a bed or couch surface. */
+    restMinHeight: 0.25,
+    restMaxHeight: 0.9,
   },
 
   palmCalibration: {

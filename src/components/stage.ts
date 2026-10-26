@@ -37,11 +37,25 @@ export const RoomSlots = createComponent('RoomSlots', {
   ceilingFound: { type: Types.Boolean, default: false },
   ceilingHeight: { type: Types.Float32, default: 0 },
   planeCount: { type: Types.Int16, default: 0 },
+  /** A real bed or couch (Quest scene labels) where Bigfoot sleeps: top-surface center and long axis. */
+  restFound: { type: Types.Boolean, default: false },
+  restCenter: { type: Types.Vec3, default: [0, 0, 0] },
+  restAxis: { type: Types.Vec3, default: [1, 0, 0] },
+  restLength: { type: Types.Float32, default: 0 },
+  /** A real TV (Quest 'screen' label): the dream maps onto it. */
+  screenFound: { type: Types.Boolean, default: false },
+  screenCenter: { type: Types.Vec3, default: [0, 0, 0] },
+  screenNormal: { type: Types.Vec3, default: [0, 0, 1] },
+  screenWidth: { type: Types.Float32, default: 0 },
   /** Set by showcase mode: the layout is authored, so detection must not overwrite it. */
   locked: { type: Types.Boolean, default: false },
   /** Where wall moments happen: on the real wall ahead, or a paper backdrop. */
   anchorReady: { type: Types.Boolean, default: false },
   anchorIsBackdrop: { type: Types.Boolean, default: false },
+  /** The anchor is the user's real TV (no virtual TV frame is hung). */
+  anchorIsScreen: { type: Types.Boolean, default: false },
+  /** Width of the dream picture at the anchor, meters (16:9). */
+  anchorWidth: { type: Types.Float32, default: 2.18 },
   anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },
   /** Unit normal of the anchor surface, pointing toward the user. */
   anchorNormal: { type: Types.Vec3, default: [0, 0, 1] },
