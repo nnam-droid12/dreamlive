@@ -4,16 +4,25 @@
  * real room (backdrop), a real wooden table and solid hands around the dream,
  * standing in for the passthrough view a headset user gets.
  *
- * On: in the desktop emulator (localhost dev), or anywhere with `?showcase`.
- * Off: on a real headset, which reaches dev over the network address and uses
- * its own passthrough as the stage. (The emulator reports a Quest user agent,
- * so the host name — not the user agent — is the reliable signal.)
+ * On: wherever the built-in headset emulator runs (a computer: localhost dev
+ * or the published site), or anywhere with `?showcase`. Off: on a real headset
+ * (Meta Quest Browser uses its own WebXR and passthrough as the stage), or with
+ * `?passthrough`.
  */
 const params = new URLSearchParams(typeof location === 'undefined' ? '' : location.search);
 const onLocalhost = typeof location !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+/** The built-in headset emulator is running (a computer, not a real headset). */
+const emulated = () =>
+  typeof window !== 'undefined' &&
+  !!(window as unknown as { __IWSDK_EMULATION_PROFILE?: { active?: boolean } }).__IWSDK_EMULATION_PROFILE?.active;
+let decided: boolean | undefined;
 
 export const Showcase = {
-  enabled: params.has('showcase') || (import.meta.env.DEV && onLocalhost && !params.has('passthrough')),
+  /** Decided on first use (after the emulator has started), then fixed for the session. */
+  get enabled(): boolean {
+    decided ??= params.has('showcase') || ((emulated() || (import.meta.env.DEV && onLocalhost)) && !params.has('passthrough'));
+    return decided;
+  },
   /** Backdrop brightness while awake, and while the Dreamer sleeps (room dims). */
   dayIntensity: 1,
   nightIntensity: 0.32,

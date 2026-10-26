@@ -52,6 +52,8 @@
   "dev": {
     "emulator": {
       "device": "metaQuest3",
+      "injectOnBuild": true,
+      "activation": "always",
       "environment": "living_room"
     }
   }

@@ -8,7 +8,7 @@ Dreamlive is a seated, hands-first mixed-reality experience for Meta Quest 3 / 3
 
 **Play:** https://nnam-droid12.github.io/dreamlive/ — open in Meta Quest Browser, sit facing your TV wall, press *Enter XR*. Judges: *Unlock all dreams (judges)* is on the start panel and the pause panel.
 
-**No headset?** The full experience runs on desktop in the Immersive Web Emulator: clone the repo, `npm install`, `npm run dev`. That opens it in a New York high-rise bedroom at night (the showcase room used for the video). Adding `?showcase` to the live link shows that room in a desktop browser, but entering the dream needs a headset or the emulator.
+**No headset?** Open the same link on a computer: it plays in a built-in headset emulator (IWSDK's Immersive Web Emulator) inside a New York high-rise bedroom at night. Press *Enter XR*, then use the emulator's on-screen controls to look around.
 
 ## How to play
 
