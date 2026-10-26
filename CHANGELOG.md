@@ -2,6 +2,29 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — Phase 7: hardening (robustness matrix)
+
+The matrix from BUILD_PLAN.md §8 was adapted to the Bigfoot design: the table and surface items became room-detection checks. All runs were in the IWER emulator.
+
+| # | Test | Result |
+|---|---|---|
+| 1 | Living room (MR) | Pass: 17 planes. Bigfoot sleeps on the detected couch and the TV hangs on the real wall. |
+| 2 | Office (MR, Meta VR Glasses profile) | Pass: 10 planes. No usable wall ahead, so the backdrop goes in at 2.2 m. No couch, so Bigfoot uses the floor spot between the user and the TV. |
+| 3/5 | No wall or no planes, fallbacks | Pass: same fallback path as #2. |
+| 4 | Tiny surface | N/A: there is no table stage in the Bigfoot design. |
+| 6 | Zero input for a whole session | Pass: lean-back choices, waking and the orb on the shelf. |
+| 7 | Hands lost mid-dream | Pass: the dream continues and the caption "Hands out of view - the dream carries on." shows once (new). |
+| 8 | Rapid repeated gestures | Pass: palm-out has a cooldown, seeds bloom once, and the B button toggles cleanly. |
+| 9 | Pause / resume ×3 mid-act | Pass: dream time is frozen exactly while paused and continues after resume. |
+| 10 | Gaze + hands (Glasses) | Pass: eye gaze with the head held forward chose the non-default ski act. |
+| 11 | Controllers only | Pass: the trigger presses panel buttons and seeds, and **B / Y / Menu now open and close the pause panel** (new; palm-out needs hands). |
+| 12 | Fresh profile, first launch | Store falls back to night 1 when storage is empty. To be re-checked on the deployed URL. |
+| 13 | Reload after collecting orbs | Pass (Phase 4): the shelf is restored. |
+| 14 | Soak run | Pass: after about 32 minutes of dream time, the JS heap is flat (125 → 128 MB), audio nodes are collected (1,248 → 233), and frames run at p50 16.7 ms. |
+
+- Zero console errors across a full showcase dream. No `console.*` calls in `src/`.
+- An early slowdown to about 1 fps in the emulator was Chrome throttling the hidden emulator window, not the app; with a profiler attached, frames ran at 16–33 ms.
+
 ## 2026-10-27 — Phase 6: polish (audio, accessibility, quality, framing, act worlds) and Bigfoot grounding
 
 - **Bigfoot floated: root cause fixed.** The self-grounding nudged his model along the room's vertical. While he lay down, that vertical ran sideways through his body, and the nudges piled up there and stayed when he stood up (measured 1.2 m off). The correction is now one height value, rebuilt every frame.

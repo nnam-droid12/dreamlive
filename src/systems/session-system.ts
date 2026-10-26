@@ -1,6 +1,7 @@
 import {
   BackSide,
   createSystem,
+  InputComponent,
   Entity,
   Mesh,
   MeshBasicMaterial,
@@ -13,7 +14,7 @@ import {
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
 import { DreamDirector } from '../components/dream.js';
-import { Gestures } from '../components/hands.js';
+import { Gestures, HandGestureState } from '../components/hands.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
@@ -33,6 +34,7 @@ const UNLOCK_ON = 'All unlocked - tap to undo';
  */
 export class SessionSystem extends createSystem({
   director: { required: [Session, Ritual, DreamDirector, Gestures, Caption] },
+  hands: { required: [HandGestureState] },
 }) {
   private panel?: Entity;
   private pauseBound = false;
@@ -41,6 +43,9 @@ export class SessionSystem extends createSystem({
   private fade!: Mesh;
   private fadeMat!: MeshBasicMaterial;
   private lastVisibility: string = VisibilityState.NonImmersive;
+  private seenHands = false;
+  private handsGone = 0;
+  private toldHandsGone = false;
   private head = new Vector3();
   private quat = new Quaternion();
   private fwd = new Vector3();
@@ -106,6 +111,12 @@ export class SessionSystem extends createSystem({
 
     const phase = d.getValue(Ritual, 'phase');
     if (d.getValue(Gestures, 'palmOut') && !d.getValue(Session, 'paused') && phase !== RitualPhase.Idle) this.pause(d);
+    // Controllers: B, Y or Menu toggles the pause panel (palm-out needs hands).
+    if (phase !== RitualPhase.Idle && this.menuPressed()) {
+      if (d.getValue(Session, 'paused')) this.resume();
+      else this.pause(d);
+    }
+    this.watchHands(d, phase ?? '', realDelta);
 
     this.player.head.getWorldPosition(this.head);
     const fadeIn = Math.max(0, (d.getValue(Session, 'fadeIn') ?? 0) - realDelta);
@@ -113,6 +124,33 @@ export class SessionSystem extends createSystem({
     this.fade.visible = fadeIn > 0;
     this.fade.position.copy(this.head);
     this.fadeMat.opacity = fadeIn / Tuning.session.resumeFadeSec;
+  }
+
+  private menuPressed(): boolean {
+    for (const pad of [this.input.xr.gamepads.left, this.input.xr.gamepads.right]) {
+      if (!pad) continue;
+      if (pad.getButtonDown(InputComponent.B_Button) || pad.getButtonDown(InputComponent.Y_Button) || pad.getButtonDown(InputComponent.Menu)) return true;
+    }
+    return false;
+  }
+
+  /** Hand tracking lost mid-dream: say so once; the dream never needs hands to go on. */
+  private watchHands(d: Entity, phase: string, realDelta: number): void {
+    let tracked = false;
+    for (const h of this.queries.hands.entities) if (h.getValue(HandGestureState, 'tracked')) tracked = true;
+    if (tracked) {
+      this.seenHands = true;
+      this.handsGone = 0;
+      this.toldHandsGone = false;
+      return;
+    }
+    if (!this.seenHands || phase !== RitualPhase.Asleep) return;
+    this.handsGone += realDelta;
+    if (this.handsGone > Tuning.session.handsLostNoticeSec && !this.toldHandsGone) {
+      this.toldHandsGone = true;
+      d.setValue(Caption, 'text', 'Hands out of view - the dream carries on.');
+      d.setValue(Caption, 'ttl', 4);
+    }
   }
 
   private pause(d: Entity): void {

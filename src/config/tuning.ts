@@ -9,6 +9,8 @@ export const Tuning = {
     firstMagicBudgetSec: 45,
     /** Fade-in after the headset is put back on. */
     resumeFadeSec: 1,
+    /** Hands untracked this long during the dream before the notice shows. */
+    handsLostNoticeSec: 3,
   },
 
   fov: {
