@@ -153,6 +153,23 @@ export const Tuning = {
     seedFadeSec: 0.7,
   },
 
+  spill: {
+    /** Act progress (0..1) over which the room effects fade in, and out. */
+    rampIn: [0.05, 0.16] as const,
+    rampOut: [0.86, 0.97] as const,
+    /** Effects reach this strength during a memory replay. */
+    replayLevel: 0.6,
+    fadeRate: 2,
+    sprayCount: 700,
+    confettiCount: 500,
+    snowCount: 900,
+    bpm: 120,
+    beamLength: 6,
+    beamRadius: 0.7,
+    lightIntensity: 2.4,
+    lightDistance: 7,
+  },
+
   memoryShelf: {
     /** Orbs shown on the ledge (newest kept; storage keeps more). */
     capacity: 7,

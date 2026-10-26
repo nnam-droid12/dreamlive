@@ -14,6 +14,7 @@ import { DreamTvSystem } from './systems/dream-tv-system.js';
 import { CaptionSystem } from './systems/caption-system.js';
 import { DreamDirectorSystem } from './systems/dream-director-system.js';
 import { DreamSeedSystem } from './systems/dream-seed-system.js';
+import { DreamSpillSystem } from './systems/dream-spill-system.js';
 import { GestureSystem } from './systems/gesture-system.js';
 import { MemoryShelfSystem } from './systems/memory-shelf-system.js';
 import { NightSkySystem } from './systems/night-sky-system.js';
@@ -53,6 +54,7 @@ World.create(
     .registerSystem(BigfootSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)
+    .registerSystem(DreamSpillSystem)
     .registerSystem(CatchSystem)
     .registerSystem(DreamSeedSystem)
     .registerSystem(WakingSystem)

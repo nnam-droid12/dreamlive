@@ -331,6 +331,8 @@ function seedLabel(text: string, radius: number): Sprite {
   map.colorSpace = SRGBColorSpace;
   const sprite = new Sprite(new SpriteMaterial({ map, transparent: true, depthWrite: false }));
   sprite.name = 'SeedLabel';
+  // Labels are decoration: pointer rays must pass through (Sprite raycasts need a camera and would throw).
+  sprite.raycast = () => {};
   const width = radius * 3.6;
   sprite.scale.set(width, (width * 112) / 512, 1);
   sprite.position.y = -radius * 2.1;
