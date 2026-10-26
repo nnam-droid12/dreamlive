@@ -21,8 +21,8 @@ import { MemoryStore } from '../memory/store.js';
 
 const PANEL_DISTANCE = 0.6;
 const PANEL_DROP = 0.08;
-const UNLOCK_OFF = 'Judges and demo: unlock all dreams';
-const UNLOCK_ON = 'All dreams unlocked (tap to undo)';
+const UNLOCK_OFF = 'Unlock all dreams (judges)';
+const UNLOCK_ON = 'All unlocked - tap to undo';
 
 /**
  * Session handling: loads the night and unlocks from the Memory Shelf store,

@@ -10,9 +10,9 @@ import type { ChapterDef, SeedDef } from './types.js';
  * distinct from a seated viewer ~4 m away, and well inside the central FoV cone.
  */
 const actSeeds = (suffix: string): SeedDef[] => [
-  { id: `surf${suffix}`, branch: `surf${suffix}`, anchor: 'wall', position: [-0.62, -0.15, 1.2], color: 'moonBlue', radius: 0.07 },
-  { id: `dj${suffix}`, branch: `dj${suffix}`, anchor: 'wall', position: [0, 0.32, 1.2], color: 'pinkSoft', radius: 0.07 },
-  { id: `ski${suffix}`, branch: `ski${suffix}`, anchor: 'wall', position: [0.62, -0.15, 1.2], color: 'starWhite', radius: 0.07 },
+  { id: `surf${suffix}`, branch: `surf${suffix}`, anchor: 'wall', position: [-0.85, -0.12, 1.2], color: 'moonBlue', radius: 0.11, label: 'Surf the city' },
+  { id: `dj${suffix}`, branch: `dj${suffix}`, anchor: 'wall', position: [0, 0.38, 1.2], color: 'pinkSoft', radius: 0.11, label: 'Rooftop DJ' },
+  { id: `ski${suffix}`, branch: `ski${suffix}`, anchor: 'wall', position: [0.85, -0.12, 1.2], color: 'starWhite', radius: 0.11, label: 'Ski the tower' },
 ];
 
 export const chapterBigfoot: ChapterDef = {

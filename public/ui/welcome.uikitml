@@ -75,7 +75,7 @@
     <ButtonLabel class="button-label">Enter XR</ButtonLabel>
   </Button>
   <Button id="unlock-button" class="button unlock">
-    <ButtonLabel id="unlock-button-label" class="button-label">Judges and demo: unlock all dreams</ButtonLabel>
+    <ButtonLabel id="unlock-button-label" class="button-label">Unlock all dreams (judges)</ButtonLabel>
   </Button>
   <Button id="exit-button" class="button" style="display: none">
     <ButtonIcon>

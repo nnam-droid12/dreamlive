@@ -17,6 +17,8 @@ export interface SeedDef {
   color: PaletteKey;
   /** Visual radius in meters; also widens the gaze hit cone. */
   radius: number;
+  /** Short name shown under the seed, so the choice is readable at a glance. */
+  label?: string;
 }
 
 export interface BeatDef {

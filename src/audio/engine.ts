@@ -7,10 +7,7 @@ type Vec = { x: number; y: number; z: number };
 
 /** Captions for sounds that matter to the story (accessibility). */
 export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
-  bell: 'A bell rings in the distance.',
-  splash: 'Something gentle and big surfaces.',
-  door: 'A little door creaks open.',
-  rainStart: 'Rain begins to fall upward.',
+  wake: 'Bigfoot yawns and stretches.',
 };
 
 export type SoundName =

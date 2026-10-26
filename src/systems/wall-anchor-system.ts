@@ -5,12 +5,11 @@ import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { makeSoftRectMaterial } from '../visuals/glow-materials.js';
 
-const MAX_WALL_DISTANCE = 3;
 const BACKDROP_W = 1.3;
 const BACKDROP_H = 0.85;
 
 /**
- * Chooses where wall moments happen (lighthouse beam, door, memory shelf): the
+ * Chooses where the TV portal and Memory Shelf go: the
  * point on the real wall straight ahead of the seated user, at eye level. With
  * no usable wall, a soft floating paper backdrop stands in 1.2 m ahead.
  * Computed once, at arrival.
@@ -43,7 +42,7 @@ export class WallAnchorSystem extends createSystem({
       const facing = this.dir.dot(this.normal);
       if (facing < -0.5) {
         const t = this.wall.clone().sub(this.center).dot(this.normal) / facing;
-        if (t > 0.05 && t < MAX_WALL_DISTANCE) {
+        if (t > 0.05 && t < Tuning.stage.maxWallDistance) {
           this.point.copy(this.center).addScaledVector(this.dir, t - 0.01);
           backdrop = false;
         }

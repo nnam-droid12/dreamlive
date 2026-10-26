@@ -157,7 +157,7 @@ export class GestureSystem extends createSystem({
       this.a.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
       if (this.a.dot(this.viewFwd) < this.cosPalmOut) continue;
       this.b.fromArray(h.getVectorView(HandGestureState, 'palmCenter')).sub(this.head);
-      if (this.b.dot(this.viewFwd) >= gest.palmOutMinReach) out = true;
+      if (this.b.dot(this.viewFwd) >= gest.palmOutMinReach && this.b.y >= gest.palmOutMinHeight) out = true;
     }
     let outHold = d.getValue(Gestures, 'palmOutHold') ?? 0;
     outHold = out ? outHold + delta : 0;

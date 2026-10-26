@@ -6,6 +6,7 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   PlaneGeometry,
+  Quaternion,
   SRGBColorSpace,
   Vector3,
   VisibilityState,
@@ -29,6 +30,8 @@ const RT_W = 1024;
 const RT_H = 576;
 const PARALLAX = 0.45;
 const POWER_RATE = 1.6;
+/** Render the dream only while the screen is within ~70° of where the user looks. */
+const COS_VIEW = Math.cos((70 * Math.PI) / 180);
 /** Beats whose scene plays inside the TV; 'finale' reuses the intro world. */
 const SCENE_FOR: Record<string, string> = { intro: 'intro', finale: 'intro', surf: 'surf', dj: 'dj', ski: 'ski' };
 
@@ -58,9 +61,11 @@ export class DreamTvSystem extends createSystem({
   private up = new Vector3(0, 1, 0);
   private head = new Vector3();
   private rel = new Vector3();
+  private fwd = new Vector3();
+  private headQuat = new Quaternion();
 
   init(): void {
-    this.rt = new WebGLRenderTarget(RT_W, RT_H, { samples: 2 });
+    this.rt = new WebGLRenderTarget(RT_W, RT_H);
     this.rt.texture.colorSpace = SRGBColorSpace;
     this.cam = new PerspectiveCamera(40, RT_W / RT_H, 0.1, 200);
   }
@@ -98,7 +103,8 @@ export class DreamTvSystem extends createSystem({
     const flash = Math.max(0, 1 - this.power) * 2;
     this.screenMat.color.setScalar(this.power + flash * this.power);
     this.parallax();
-    this.renderDream();
+    // Looking away: keep the last picture instead of paying for a second scene render.
+    if (this.facingScreen()) this.renderDream();
   }
 
   private enter(s: DreamTvScene): void {
@@ -118,6 +124,13 @@ export class DreamTvSystem extends createSystem({
     const dy = this.rel.dot(this.up);
     this.cam.position.set(s.eye[0] - dx * PARALLAX, s.eye[1] - dy * PARALLAX, s.eye[2]);
     this.cam.lookAt(s.target[0], s.target[1], s.target[2]);
+  }
+
+  private facingScreen(): boolean {
+    this.player.head.getWorldQuaternion(this.headQuat);
+    this.fwd.set(0, 0, -1).applyQuaternion(this.headQuat);
+    this.rel.subVectors(this.anchor, this.head).normalize();
+    return this.fwd.dot(this.rel) > COS_VIEW;
   }
 
   private renderDream(): void {

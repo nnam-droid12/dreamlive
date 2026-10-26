@@ -13,7 +13,9 @@ import { Caption } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
 
 const CANVAS_W = 1024;
-const CANVAS_H = 128;
+const CANVAS_H = 208;
+const PAD_X = 36;
+const MAX_TEXT_W = CANVAS_W - 2 * PAD_X - 40;
 const WIDTH_M = 0.62;
 const FOLLOW_RATE = 4;
 const FADE_RATE = 3;
@@ -91,21 +93,44 @@ export class CaptionSystem extends createSystem({
     this.mesh.lookAt(this.head);
   }
 
+  /** One line if it fits, else two balanced lines; the font shrinks until both fit. */
   private draw(text: string): void {
     const g = this.canvas.getContext('2d');
     if (!g) return;
     g.clearRect(0, 0, CANVAS_W, CANVAS_H);
-    g.font = '500 54px system-ui, "Segoe UI", Roboto, sans-serif';
-    const textW = Math.min(CANVAS_W - 40, g.measureText(text).width + 72);
-    g.fillStyle = 'rgba(14, 12, 40, 0.72)';
+    let size = 54;
+    let lines = [text];
+    const font = (px: number) => `500 ${px}px system-ui, "Segoe UI", Roboto, sans-serif`;
+    g.font = font(size);
+    if (g.measureText(text).width > MAX_TEXT_W) {
+      lines = splitBalanced(text);
+      while (size > 30 && Math.max(...lines.map((l) => g.measureText(l).width)) > MAX_TEXT_W) {
+        size -= 2;
+        g.font = font(size);
+      }
+    }
+    const lineH = size * 1.25;
+    const textW = Math.min(CANVAS_W - 8, Math.max(...lines.map((l) => g.measureText(l).width)) + 2 * PAD_X);
+    const boxH = lines.length * lineH + 30;
+    g.fillStyle = 'rgba(14, 12, 40, 0.78)';
     g.beginPath();
-    g.roundRect((CANVAS_W - textW) / 2, 14, textW, CANVAS_H - 28, 48);
+    g.roundRect((CANVAS_W - textW) / 2, (CANVAS_H - boxH) / 2, textW, boxH, Math.min(48, boxH / 2));
     g.fill();
     g.fillStyle = '#fdfcff';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(text, CANVAS_W / 2, CANVAS_H / 2 + 2);
+    lines.forEach((l, i) => g.fillText(l, CANVAS_W / 2, CANVAS_H / 2 + (i - (lines.length - 1) / 2) * lineH + 2));
     this.texture.needsUpdate = true;
     this.shownText = text;
   }
+}
+
+/** Splits at the space nearest the middle. */
+function splitBalanced(text: string): string[] {
+  const mid = text.length / 2;
+  let best = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === ' ' && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i;
+  }
+  return best < 0 ? [text] : [text.slice(0, best), text.slice(best + 1)];
 }

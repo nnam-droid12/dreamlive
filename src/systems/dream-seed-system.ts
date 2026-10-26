@@ -1,4 +1,5 @@
 import {
+  CanvasTexture,
   Color,
   createSystem,
   Entity,
@@ -11,6 +12,9 @@ import {
   RayInteractable,
   ShaderMaterial,
   SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -284,6 +288,7 @@ export class DreamSeedSystem extends createSystem({
     const ring = new Mesh(new PlaneGeometry(seed.radius * 3.4, seed.radius * 3.4), ringMat);
     ring.renderOrder = 3;
     root.add(core, halo, ring);
+    if (seed.label) core.add(seedLabel(locked ? `${seed.label} - tomorrow` : seed.label, seed.radius));
     const entity = onWall || !stage
       ? this.world.createTransformEntity(root)
       : this.world.createTransformEntity(root, { parent: stage });
@@ -302,4 +307,33 @@ export class DreamSeedSystem extends createSystem({
       bloomSounded: false,
     });
   }
+}
+
+/** A readable name tag under a seed (camera-facing). Lives in the seed's core, so it grows and fades with it. */
+function seedLabel(text: string, radius: number): Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 112;
+  const g = canvas.getContext('2d');
+  if (g) {
+    g.font = '600 52px system-ui, "Segoe UI", Roboto, sans-serif';
+    const w = Math.min(500, g.measureText(text).width + 56);
+    g.fillStyle = 'rgba(14, 12, 40, 0.72)';
+    g.beginPath();
+    g.roundRect((512 - w) / 2, 12, w, 88, 44);
+    g.fill();
+    g.fillStyle = '#fdfcff';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, 256, 58);
+  }
+  const map = new CanvasTexture(canvas);
+  map.colorSpace = SRGBColorSpace;
+  const sprite = new Sprite(new SpriteMaterial({ map, transparent: true, depthWrite: false }));
+  sprite.name = 'SeedLabel';
+  const width = radius * 3.6;
+  sprite.scale.set(width, (width * 112) / 512, 1);
+  sprite.position.y = -radius * 2.1;
+  sprite.renderOrder = 4;
+  return sprite;
 }

@@ -60,6 +60,7 @@ export class BigfootSystem extends createSystem({
   private tmp2 = new Vector3();
   private head = new Vector3();
   private m = new Matrix4();
+  private faceQuat = new Quaternion();
 
   update(realDelta: number): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
@@ -134,8 +135,9 @@ export class BigfootSystem extends createSystem({
     this.rig!.play('rest');
   }
 
+  /** Yaw facing from → to. Returns a shared scratch quaternion: copy or slerp it at once. */
   private face(from: Vector3, to: Vector3): Quaternion {
-    return new Quaternion().setFromAxisAngle(UP, Math.atan2(to.x - from.x, to.z - from.z));
+    return this.faceQuat.setFromAxisAngle(UP, Math.atan2(to.x - from.x, to.z - from.z));
   }
 
   /** Position along a hop from a to b at k (0..1), peaking `height` above the line. */

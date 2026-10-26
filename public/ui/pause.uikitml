@@ -27,8 +27,8 @@
   }
 
   .status {
-    color: #4a4a4a;
-    font-size: 13px;
+    color: #2a2a2a;
+    font-size: 16px;
     line-height: 18px;
     margin-top: 8px;
     margin-bottom: 4px;
@@ -58,7 +58,7 @@
     <ButtonLabel>Restart dream</ButtonLabel>
   </Button>
   <Button id="btn-unlock" class="button">
-    <ButtonLabel id="unlock-label">Judges and demo: unlock all dreams</ButtonLabel>
+    <ButtonLabel id="unlock-label">Unlock all dreams (judges)</ButtonLabel>
   </Button>
   <Button id="btn-exit" class="button last">
     <ButtonLabel>Exit</ButtonLabel>

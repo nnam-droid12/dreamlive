@@ -39,7 +39,7 @@ export const Tuning = {
     airDrop: 0.45,
     /** Re-scan detected planes this often. */
     roomScanIntervalSec: 0.5,
-    maxWallDistance: 4,
+    maxWallDistance: 5,
   },
 
   palmCalibration: {
@@ -113,6 +113,8 @@ export const Tuning = {
     /** ...and be at least this far in front of the head (an outstretched arm). */
     palmOutMinReach: 0.25,
     palmOutMaxSpeed: 0.25,
+    /** Palm raised to face height (relative to the eyes), so waiting to catch never pauses. */
+    palmOutMinHeight: -0.12,
     pinchStartDistance: 0.02,
     pinchEndDistance: 0.035,
     /** Ignore a repeat of the same gesture inside this window. */

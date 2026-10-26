@@ -39,6 +39,8 @@ interface Flyer {
   to: Vector3;
   state: 'idle' | 'flying' | 'caught' | 'missed';
   spin: Vector3;
+  /** Its own cloned materials, faded together. */
+  mats: MeshStandardMaterial[];
 }
 
 /**
@@ -116,12 +118,12 @@ export class CatchSystem extends createSystem({
       const k = Math.min(1, f.age / 0.45);
       o.scale.setScalar(1 + k * 0.8);
       o.position.y += delta * 0.4;
-      this.fade(o, 1 - k);
+      this.fade(f, 1 - k);
       if (k >= 1) this.retire(f);
     } else {
       const k = Math.min(1, f.age / FADE_SEC);
       o.position.y -= delta * 0.25;
-      this.fade(o, 1 - k);
+      this.fade(f, 1 - k);
       if (k >= 1) this.retire(f);
     }
   }
@@ -141,12 +143,16 @@ export class CatchSystem extends createSystem({
     if (!f) {
       if (this.flyers.filter((x) => x.kind === kind).length >= POOL) return;
       const obj = this.models.get(kind)!.clone(true);
+      const mats: MeshStandardMaterial[] = [];
       obj.traverse((m) => {
         const mesh = m as Mesh;
-        if (mesh.isMesh) mesh.material = (mesh.material as MeshStandardMaterial).clone();
+        if (!mesh.isMesh) return;
+        const mat = (mesh.material as MeshStandardMaterial).clone();
+        mesh.material = mat;
+        mats.push(mat);
       });
       this.world.createTransformEntity(obj);
-      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3() };
+      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3(), mats };
       this.flyers.push(f);
     }
     this.anchor.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
@@ -166,16 +172,14 @@ export class CatchSystem extends createSystem({
     f.age = 0;
     f.obj.visible = true;
     f.obj.position.copy(f.from);
-    this.fade(f.obj, 1);
+    this.fade(f, 1);
   }
 
-  private fade(o: Object3D, a: number): void {
-    o.traverse((m) => {
-      const mat = (m as Mesh).material as MeshStandardMaterial | undefined;
-      if (!mat) return;
+  private fade(f: Flyer, a: number): void {
+    for (const mat of f.mats) {
       mat.transparent = a < 1;
       mat.opacity = a;
-    });
+    }
   }
 
   private retire(f: Flyer): void {
