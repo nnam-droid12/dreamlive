@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — Phase 8: submission materials
+
+- **Director mode** (`?director`, development only) for the demo video:
+  - A scripted camera follows the real dream: the opening view with the title, a push-in on sleeping Bigfoot (the camera's gaze starts the dream), following him to the TV, the camera's gaze choosing DJ then ski, the acts spilling into the room, the finale, waking, and the orb landing.
+  - Flying items are caught automatically, and an end card shows the play link.
+  - The app records its own canvas and sound to `dreamlive-demo.webm`, so emulator overlays are not captured. The full take is about 2 min 20 s.
+  - Verified in the emulator: the gaze chose DJ, then ski; 16 catches (golden); clean console.
+- **SUBMISSION.md**: name, tagline (102 characters), track, judge testing instructions, description (492 words), hand interactions with the comfort rationale, launch target, team, screenshot list, and steps to record the video.
+- The site is live at https://nnam-droid12.github.io/dreamlive/ (the repo is public and Pages deploys on push).
+
 ## 2026-10-27 — Judge loop #3 and safe fixes
 
 The second independent judge pass scored the build **6.0 / 10** (Innovation 7, Experience 6, Technical 5, Polish 6; it was 5.25). Safe fixes applied:
