@@ -71,7 +71,7 @@ function pbr(set: MapSet, tile: number, params: Partial<ConstructorParameters<ty
   const arm = rep(set.arm);
   // Wood, plaster and fabric are dielectric: use the scan's AO + roughness, never its metal channel.
   return new MeshStandardMaterial({
-    map: rep(set.diff),
+    map: rep(set.diff) ?? null,
     normalMap: rep(set.nor),
     aoMap: arm,
     roughnessMap: arm,

@@ -22,8 +22,6 @@ import {
   MeshStandardMaterial,
   Object3D,
   Quaternion,
-  Skeleton,
-  SkinnedMesh,
   SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
@@ -94,14 +92,12 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   model.traverse((o) => {
     if ((o as Bone).isBone) bones.push(o);
   });
+  // Each bone's local rest transform as authored (= the bind pose). Restored for 'rest';
+  // Skeleton.pose() can't be used: it rebuilds from inverse binds and drops the parents' scale.
+  const restPose = bones.map((b) => ({ p: b.position.clone(), q: b.quaternion.clone(), s: b.scale.clone() }));
   const headBone = bones.find((b) => /Head$/.test(b.name));
   const chest = bones.find((b) => /Spine2$/.test(b.name)) ?? bones.find((b) => /Spine1?$/.test(b.name));
   let breath = 0;
-  const skeletons = new Set<Skeleton>();
-  model.traverse((o) => {
-    const sm = o as SkinnedMesh;
-    if (sm.isSkinnedMesh) skeletons.add(sm.skeleton);
-  });
   const inv = new Matrix4();
   const q = new Quaternion();
   const p = new Vector3();
@@ -120,8 +116,12 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       if (anim === 'rest') {
         if (rig.current !== 'rest') {
           mixer.stopAllAction();
-          // Snap the skeleton back to its bind (modelling) pose: straight, arms relaxed.
-          for (const s of skeletons) s.pose();
+          // Snap back to the modelling pose: straight, arms relaxed.
+          bones.forEach((b, i) => {
+            b.position.copy(restPose[i].p);
+            b.quaternion.copy(restPose[i].q);
+            b.scale.copy(restPose[i].s);
+          });
           active = undefined;
           rig.current = 'rest';
         }

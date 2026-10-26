@@ -2,6 +2,22 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-26 — Bigfoot slimmed for Quest
+
+- Bigfoot cut from 151k to 30k triangles (2.1 MB) in Blender with `scripts/assets/blender-slim.py`: voxel remesh, decimate, skin-weight transfer and a re-baked color texture. All 11 animations kept.
+- Fixed his lying pose: the 'rest' pose now restores each bone's authored local transform. Three.js `Skeleton.pose()` lost the parents' scale on the new export and launched him 22 m into the air.
+- Fixed the "map is undefined" console warning on the velvet bed material.
+- Emulator results (Quest 3 profile, NYC showcase), all with a clean console:
+  - Bigfoot lies face up on the king bed.
+  - He sleep-walks to the TV with his feet on the floor.
+  - The DJ act plays inside the TV.
+
+## 2026-10-24 — Direction change: Bigfoot and the dream TV
+
+- See BUILD_PLAN.md §2b. Bigfoot sleeps on the bed, sleep-walks into a 100-inch TV and dreams inside it. Gaze picks surf, DJ or ski twice, and things fly out of the screen to catch. Then he climbs back to bed and leaves a memory orb.
+- Added the NYC high-rise bedroom showcase for video and desktop: CC0 scanned materials, an Unsplash skyline and night lighting. On the headset the dream plays in the user's real room (passthrough).
+- Retired the paper-sea chapter and the Dreamer.
+
 ## 2026-10-23 — Phase 2: Dream engine and gaze
 
 - **Chapters as data** (`src/dreams/`): linear beats and choice beats with 2–3 seeds, each leading to a branch. Chapter 1's branching structure (lighthouse or fish, storm, star or door, island) is in place with placeholder scenes.

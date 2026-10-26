@@ -4,7 +4,7 @@ const publicAssetUrl = (filePath: string): string =>
   `${import.meta.env.BASE_URL}${filePath.replace(/^\/+/u, '')}`;
 
 export default defineAssets({
-  // The hero: owner-made in Meshy (CC BY 4.0), rigged and animated with Mixamo.
+  // The hero: Meshy concept -> TRELLIS.2 mesh -> Mixamo rig/animations -> Blender slim (see CREDITS.md).
   bigfoot: {
     url: publicAssetUrl('models/bigfoot.glb'),
     type: AssetType.GLTF,
