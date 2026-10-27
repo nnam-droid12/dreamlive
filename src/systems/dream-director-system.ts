@@ -3,7 +3,8 @@ import { DevControls, DreamDirector, DreamSeed, GazeTarget, SeedState } from '..
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Tuning } from '../config/tuning.js';
 import { actOf } from '../dreams/chapter_bigfoot.js';
-import { Chapters, findChapter } from '../dreams/registry.js';
+import { chooseChapter, findChapter } from '../dreams/registry.js';
+import { Session } from '../components/session.js';
 import type { BeatDef } from '../dreams/types.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 
@@ -32,7 +33,7 @@ export class DreamDirectorSystem extends createSystem({
 
     if (!d.getValue(DreamDirector, 'started')) {
       if ((d.getValue(Ritual, 'phaseTime') ?? 0) < dream.startDelaySec) return;
-      const chapter = Chapters[0];
+      const chapter = chooseChapter(d.getValue(Session, 'night') ?? 1, !!d.getValue(Session, 'unlockAll'), d.getValue(Session, 'generation') ?? 0);
       d.setValue(DreamDirector, 'chapterId', chapter.id);
       d.setValue(DreamDirector, 'started', true);
       this.goTo(d, chapter.start);

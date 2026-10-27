@@ -21,6 +21,7 @@ import { GestureSystem } from './systems/gesture-system.js';
 import { MemoryShelfSystem } from './systems/memory-shelf-system.js';
 import { NightSkySystem } from './systems/night-sky-system.js';
 import { RitualDirectorSystem } from './systems/ritual-director-system.js';
+import { RooftopPartySystem } from './systems/rooftop-party-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
 import { SessionSystem } from './systems/session-system.js';
@@ -56,6 +57,7 @@ World.create(
     .registerSystem(DreamDirectorSystem)
     .registerSystem(WallAnchorSystem)
     .registerSystem(BigfootSystem)
+    .registerSystem(RooftopPartySystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)
     .registerSystem(DreamSpillSystem)

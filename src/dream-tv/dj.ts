@@ -31,7 +31,7 @@ const CROWD = 34;
 const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
 
 /** One partygoer, origin at the feet; `armsUp` adds raised arms. */
-function personGeometry(armsUp: boolean) {
+export function personGeometry(armsUp: boolean) {
   const parts = [new CapsuleGeometry(0.2, 0.62, 4, 10).translate(0, 0.62, 0), new SphereGeometry(0.13, 12, 8).translate(0, 1.32, 0)];
   if (armsUp) {
     for (const s of [-1, 1]) parts.push(new CapsuleGeometry(0.05, 0.5, 3, 6).rotateZ(-s * 0.35).translate(s * 0.28, 1.45, 0));

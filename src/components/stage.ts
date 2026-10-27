@@ -56,6 +56,14 @@ export const RoomSlots = createComponent('RoomSlots', {
   anchorIsScreen: { type: Types.Boolean, default: false },
   /** Width of the dream picture at the anchor, meters (16:9). */
   anchorWidth: { type: Types.Float32, default: 2.18 },
+  /** The window Bigfoot leaves through (Rooftop Party): floor point at its center,
+   * unit vectors out of the window and along the wall. */
+  windowReady: { type: Types.Boolean, default: false },
+  windowOrigin: { type: Types.Vec3, default: [0, 0, 0] },
+  windowOut: { type: Types.Vec3, default: [1, 0, 0] },
+  windowAlong: { type: Types.Vec3, default: [0, 0, 1] },
+  /** 0 closed .. 1 slid fully open (the music pours in as it opens). */
+  windowOpen: { type: Types.Float32, default: 0 },
   anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },
   /** Unit normal of the anchor surface, pointing toward the user. */
   anchorNormal: { type: Types.Vec3, default: [0, 0, 1] },

@@ -35,6 +35,8 @@ const FALL_DISTANCE = 0.3;
 const FALL_SEC = 14;
 const CATCH_PULL = 3;
 const LOCKED_CAPTION = 'This dream opens tomorrow night.';
+/** Window seeds hang at this height above the floor. */
+const WINDOW_SEED_HEIGHT = 1.45;
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 type SeedStateValue = (typeof SeedState)[keyof typeof SeedState];
@@ -261,10 +263,16 @@ export class DreamSeedSystem extends createSystem({
 
   private spawn(d: Entity, seed: SeedDef, beatId: string): void {
     const stage = this.queries.stage.entities.values().next().value;
-    const onWall = seed.anchor === 'wall';
+    const onWall = seed.anchor === 'wall' || seed.anchor === 'window';
     if (!stage && !onWall) return;
     const pos = new Vector3();
-    if (onWall) {
+    if (seed.anchor === 'window') {
+      if (!d.getValue(RoomSlots, 'windowReady')) return;
+      // Eye height at the window bay, facing back into the room.
+      const o = d.getVectorView(RoomSlots, 'windowOrigin');
+      const out = d.getVectorView(RoomSlots, 'windowOut');
+      wallWorld(seed, [o[0], o[1] + WINDOW_SEED_HEIGHT, o[2]], [-out[0], -out[1], -out[2]], pos);
+    } else if (onWall) {
       if (!d.getValue(RoomSlots, 'anchorReady')) return;
       wallWorld(seed, d.getVectorView(RoomSlots, 'anchorPoint'), d.getVectorView(RoomSlots, 'anchorNormal'), pos);
     } else {

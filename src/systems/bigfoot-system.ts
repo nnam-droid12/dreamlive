@@ -18,13 +18,18 @@ import { DevControls, GazeTarget } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
+import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
+import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 
 /** Look at sleeping Bigfoot this long to slip into his dream; else it starts by itself. */
 const DREAM_DWELL_SEC = 1.5;
 const DREAM_AUTO_SEC = 12;
 const UP = new Vector3(0, 1, 0);
+const ROOFTOP_SCENES = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back', 'to-bed']);
+/** How long each throwing motion lasts (the cadence is Tuning.rooftop.throwEvery). */
+const THROW_SEC = 0.55;
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 type State = (typeof BigfootState)[keyof typeof BigfootState];
@@ -61,6 +66,14 @@ export class BigfootSystem extends createSystem({
   private head = new Vector3();
   private m = new Matrix4();
   private faceQuat = new Quaternion();
+  // Rooftop Party route (world space), fixed once the window is known.
+  private roofReady = false;
+  private inside = new Vector3();
+  private ledge = new Vector3();
+  private landing = new Vector3();
+  private djSpot = new Vector3();
+  private djLook = new Vector3();
+  private frame = { origin: new Vector3(), out: new Vector3(), along: new Vector3() };
 
   update(realDelta: number): void {
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
@@ -72,6 +85,7 @@ export class BigfootSystem extends createSystem({
     }
     if (!this.rig || !this.entity) return;
     const delta = dreamDelta(d, realDelta);
+    if (!this.roofReady) this.layoutRooftop(d);
     const phase = d.getValue(Ritual, 'phase');
     const phaseTime = d.getValue(Ritual, 'phaseTime') ?? 0;
 
@@ -82,6 +96,7 @@ export class BigfootSystem extends createSystem({
       if (!readBeat(d, this.beat)) this.lieDown();
       else if (this.beat.scene === 'sleepwalk') this.sleepwalk(this.beat.time);
       else if (this.beat.scene === 'finale') this.returnToBed(this.beat.time);
+      else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
     } else if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) {
       this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
@@ -275,6 +290,128 @@ export class BigfootSystem extends createSystem({
   }
 
   /** Where he sleeps, where he gets off, and the walk to the TV (world space). */
+  /** The Rooftop Party route, from the window frame. */
+  private layoutRooftop(d: Entity): void {
+    if (!d.getValue(RoomSlots, 'windowReady')) return;
+    const f = this.frame;
+    f.origin.fromArray(d.getVectorView(RoomSlots, 'windowOrigin'));
+    f.out.fromArray(d.getVectorView(RoomSlots, 'windowOut'));
+    f.along.fromArray(d.getVectorView(RoomSlots, 'windowAlong'));
+    frameToWorld(f, Rooftop.insideSpot, this.inside);
+    frameToWorld(f, Rooftop.ledgeSpot, this.ledge);
+    frameToWorld(f, Rooftop.landing, this.landing);
+    // He DJs on the stage behind the booth, facing the crowd and the window.
+    frameToWorld(f, Rooftop.djSpot, this.djSpot);
+    frameToWorld(f, { x: Rooftop.djSpot.x - 3, y: Rooftop.djSpot.y, z: Rooftop.djSpot.z }, this.djLook);
+    this.roofReady = true;
+  }
+
+  /** Rooftop Party choreography (all times in dream seconds within the beat). */
+  private rooftop(scene: string, t: number): void {
+    if (!this.roofReady) return;
+    const r = this.rig!.root;
+    r.scale.setScalar(1);
+    if (scene === 'to-window') {
+      this.setState(BigfootState.Sleepwalking);
+      if (t < 1) {
+        const k = ease(t);
+        r.quaternion.copy(this.lying).slerp(this.face(this.exitTop, this.exit), k);
+        r.position.lerpVectors(this.lyingPosition(this.tmp), this.exitTop, k);
+        this.rig!.play('stretch');
+      } else if (t < 1.8) {
+        this.arc(this.exitTop, this.exit, (t - 1) / 0.8, 0.25, r.position);
+        r.quaternion.copy(this.face(this.exit, this.inside));
+        this.rig!.play('jump', { once: true });
+      } else if (t < 6.8) {
+        r.position.lerpVectors(this.exit, this.inside, (t - 1.8) / 5);
+        r.quaternion.copy(this.face(this.exit, this.inside));
+        this.rig!.play('walk');
+      } else if (t < 8.3) {
+        // At the glass while it slides open.
+        r.position.copy(this.inside);
+        r.quaternion.copy(this.face(this.inside, this.ledge));
+        this.rig!.play('idle');
+      } else {
+        r.position.lerpVectors(this.inside, this.ledge, clamp01((t - 8.3) / 0.7));
+        r.quaternion.copy(this.face(this.inside, this.ledge));
+        this.rig!.play('walk');
+      }
+    } else if (scene === 'leap-out') {
+      this.setState(BigfootState.Partying);
+      const s = Rooftop.leap.sec;
+      r.quaternion.copy(this.face(this.ledge, this.landing));
+      if (t < 0.6) {
+        r.position.copy(this.ledge);
+        this.rig!.play('jump', { once: true });
+      } else if (t < 0.6 + s) {
+        this.arc(this.ledge, this.landing, ease((t - 0.6) / s), Rooftop.leap.arc, r.position);
+        this.rig!.play('leap', { once: true });
+      } else {
+        r.position.copy(this.landing);
+        this.rig!.play('cheer');
+      }
+    } else if (scene === 'arrive') {
+      this.setState(BigfootState.Partying);
+      if (t < 3) {
+        r.position.lerpVectors(this.landing, this.djSpot, ease(t / 3));
+        r.quaternion.copy(this.face(this.landing, this.djSpot));
+        this.rig!.play('walk');
+      } else {
+        r.position.copy(this.djSpot);
+        r.quaternion.copy(this.face(this.djSpot, this.djLook));
+        this.rig!.play('wave');
+      }
+    } else if (scene === 'party-wait' || scene.startsWith('party-')) {
+      this.setState(BigfootState.Partying);
+      r.position.copy(this.djSpot);
+      r.quaternion.copy(this.face(this.djSpot, this.djLook));
+      // Same clock as RooftopPartySystem: the goodie leaves his hand throwRelease into each throw.
+      const throwing = scene !== 'party-wait' && t > 1 && (t - 1) % Tuning.rooftop.throwEvery < THROW_SEC;
+      this.rig!.play(scene === 'party-wait' ? 'cheer' : throwing ? 'wave' : 'dance');
+    } else if (scene === 'leap-back') {
+      this.setState(BigfootState.Partying);
+      const s = Rooftop.leap.sec;
+      if (t < 2) {
+        r.position.lerpVectors(this.djSpot, this.landing, ease(t / 2));
+        r.quaternion.copy(this.face(this.djSpot, this.landing));
+        this.rig!.play('walk');
+      } else if (t < 2.4) {
+        r.position.copy(this.landing);
+        r.quaternion.copy(this.face(this.landing, this.ledge));
+        this.rig!.play('jump', { once: true });
+      } else if (t < 2.4 + s) {
+        this.arc(this.landing, this.ledge, ease((t - 2.4) / s), Rooftop.leap.arc, r.position);
+        r.quaternion.copy(this.face(this.landing, this.ledge));
+        this.rig!.play('leap', { once: true });
+      } else {
+        r.position.copy(this.ledge);
+        this.rig!.play('idle');
+      }
+    } else if (scene === 'to-bed') {
+      this.setState(BigfootState.Returning);
+      if (t < 1.2) {
+        r.position.lerpVectors(this.ledge, this.inside, t / 1.2);
+        r.quaternion.copy(this.face(this.ledge, this.inside));
+        this.rig!.play('walk');
+      } else if (t < 6.6) {
+        r.position.lerpVectors(this.inside, this.exit, (t - 1.2) / 5.4);
+        r.quaternion.copy(this.face(this.inside, this.exit));
+        this.rig!.play('walk');
+      } else {
+        const k = clamp01((t - 6.6) / 1.8);
+        if (k < 0.5) {
+          this.arc(this.exit, this.exitTop, k * 2, 0.3, r.position);
+          this.rig!.play('jump', { once: true });
+        } else {
+          const j = ease((k - 0.5) * 2);
+          r.position.lerpVectors(this.exitTop, this.lyingPosition(this.tmp), j);
+          r.quaternion.copy(this.face(this.exit, this.exitTop)).slerp(this.lying, j);
+          this.rig!.play('rest');
+        }
+      }
+    }
+  }
+
   private layout(d: Entity): void {
     const anchor = this.tmp.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
     const normal = this.tmp2.fromArray(d.getVectorView(RoomSlots, 'anchorNormal'));

@@ -6,6 +6,7 @@ import { Tuning } from '../config/tuning.js';
 import { makeSoftRectMaterial } from '../visuals/glow-materials.js';
 
 const BACKDROP_W = 1.3;
+const UP_AXIS = new Vector3(0, 1, 0);
 const BACKDROP_H = 0.85;
 
 /**
@@ -70,6 +71,18 @@ export class WallAnchorSystem extends createSystem({
     d.setValue(RoomSlots, 'anchorIsBackdrop', backdrop);
     d.setValue(RoomSlots, 'anchorIsScreen', screen);
     d.setValue(RoomSlots, 'anchorReady', true);
+    if (!d.getValue(RoomSlots, 'windowReady')) this.placeDreamWindow(d);
+  }
+
+  /** The Rooftop Party's dream window: on the same wall, just right of the TV. */
+  private placeDreamWindow(d: import('@iwsdk/core').Entity): void {
+    const along = this.dir.crossVectors(UP_AXIS, this.normal).normalize();
+    const shift = (d.getValue(RoomSlots, 'anchorWidth') ?? 2.18) / 2 + Tuning.stage.dreamWindowGap;
+    this.wall.copy(this.point).addScaledVector(along, shift).setY(0);
+    this.wall.toArray(d.getVectorView(RoomSlots, 'windowOrigin'));
+    d.getVectorView(RoomSlots, 'windowOut').set([-this.normal.x, 0, -this.normal.z]);
+    along.toArray(d.getVectorView(RoomSlots, 'windowAlong'));
+    d.setValue(RoomSlots, 'windowReady', true);
   }
 
   private buildBackdrop(): void {

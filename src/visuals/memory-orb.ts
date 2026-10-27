@@ -17,6 +17,9 @@ const MOMENT_COLOR: Record<string, PaletteKey> = {
   surf: 'moonBlue',
   dj: 'pinkSoft',
   ski: 'starWhite',
+  disco: 'pinkSoft',
+  afro: 'lanternAmber',
+  house: 'moonBlue',
 };
 
 /** The glowing glass keepsake of one dream act (wave blue, party pink, snow white; gold when earned). */

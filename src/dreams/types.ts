@@ -8,7 +8,7 @@ export interface SeedDef {
   /** 'stage' (default): [u, y, v] — u, v in -1..1 of the stage half-size, y meters
    * above the table; +v is toward the user. 'wall': [right, up, out] meters from
    * the wall anchor (real wall ahead, or the paper backdrop). */
-  anchor?: 'stage' | 'wall';
+  anchor?: 'stage' | 'wall' | 'window';
   position: readonly [number, number, number];
   /** 'fall': drifts slowly down toward the table while the choice waits. */
   motion?: 'fall';

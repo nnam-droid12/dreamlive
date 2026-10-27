@@ -1,11 +1,14 @@
 import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core';
-import { Sound, SOUND_CAPTIONS } from '../audio/engine.js';
+import { ActName, Sound, SOUND_CAPTIONS } from '../audio/engine.js';
+import { songOf } from '../dreams/chapter_rooftop.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 
 const SOUND_CAPTION_SEC = 3.5;
+/** Rooftop Party beats where the party music is heard. */
+const ROOFTOP_MUSIC = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back']);
 const SOUND_TEXTS = new Set<string>(Object.values(SOUND_CAPTIONS));
 
 /**
@@ -26,6 +29,8 @@ export class AudioSystem extends createSystem({
   private beat = newBeatContext();
   private tv = new Vector3();
   private lastAct = '';
+  /** The song playing on the rooftop before the first choice, and between beats. */
+  private lastSong: ActName = 'afro';
 
   update(): void {
     const d0 = this.queries.director.entities.values().next().value;
@@ -62,20 +67,39 @@ export class AudioSystem extends createSystem({
       if (phase === RitualPhase.Awake) Sound.setMusic(0.45);
     }
     // The act on the TV plays its own music from the TV; the music box steps back.
-    let act: '' | 'surf' | 'dj' | 'ski' = '';
+    // The act on the TV plays from the TV; the rooftop songs play from the rooftop.
+    let act: ActName = '';
+    let rooftop = false;
     if (phase === RitualPhase.Asleep && readBeat(d, this.beat)) {
       const s = this.beat.scene;
       if (s === 'surf' || s === 'dj' || s === 'ski') act = s;
+      else if (ROOFTOP_MUSIC.has(s) || s.startsWith('party-')) {
+        rooftop = true;
+        const song = songOf(s);
+        act = song === 'disco' || song === 'afro' || song === 'house' ? song : this.lastSong;
+      }
     } else if (d.hasComponent(Session)) {
       const r = d.getValue(Session, 'replay') ?? '';
       if (r === 'surf' || r === 'dj' || r === 'ski') act = r;
+      if (r === 'disco' || r === 'afro' || r === 'house') {
+        act = r;
+        rooftop = true;
+      }
     }
+    if (act === 'disco' || act === 'afro' || act === 'house') this.lastSong = act;
     if (act !== this.lastAct && d.hasComponent(RoomSlots) && d.getValue(RoomSlots, 'anchorReady')) {
       this.lastAct = act;
-      this.tv.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
+      if (rooftop && d.getValue(RoomSlots, 'windowReady')) {
+        const o = d.getVectorView(RoomSlots, 'windowOrigin');
+        const out = d.getVectorView(RoomSlots, 'windowOut');
+        this.tv.set(o[0] + out[0] * 10, o[1] - 1, o[2] + out[2] * 10);
+      } else {
+        this.tv.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
+      }
       Sound.setAct(act, this.tv);
-      if (phase === RitualPhase.Asleep) Sound.setMusic(act ? 0.2 : 0.6);
+      if (phase === RitualPhase.Asleep) Sound.setMusic(act ? 0.15 : 0.6);
     }
+    if (d.hasComponent(RoomSlots)) Sound.setActOpenness(rooftop ? (d.getValue(RoomSlots, 'windowOpen') ?? 0) : 1);
     Sound.tick();
 
     // Story captions (teaching, closing) outrank sound captions: never interrupt them.

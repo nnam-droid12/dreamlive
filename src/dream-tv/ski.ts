@@ -52,7 +52,7 @@ function snowTexture(): CanvasTexture {
 }
 
 /** A tall lit facade (canvas windows), for the tower's flanks and the city around. */
-function facadeTexture(): CanvasTexture {
+export function facadeTexture(): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 512;

@@ -38,8 +38,11 @@ export const NycLayout = {
   /** Top of the king mattress where Bigfoot sleeps (center), and the bed's long axis (+X). */
   bed: { top: new Vector3(-2.25, 0.62, -1.9), length: 2.3, width: 2.0 },
   sideTable: { center: new Vector3(1.06, 0.6, -0.5), radius: 0.28 },
-  /** The viewer's chair (floor point) and facing (yaw, radians; 0 = -Z): between the bed and the TV. */
-  seat: { position: new Vector3(0.6, 0, -0.2), yaw: 0.567 },
+  /** The viewer's chair (floor point) and facing (yaw, radians; 0 = -Z, negative = right):
+   * turned between the bed and the window, where the Rooftop Party plays out. */
+  seat: { position: new Vector3(-0.8, 0, 1.0), yaw: -0.7 },
+  /** The window bay Bigfoot slides open: floor point at its center on the glass. */
+  window: { origin: new Vector3(3.6, 0, -1.8), out: new Vector3(1, 0, 0), along: new Vector3(0, 0, 1), width: 1.6 },
 } as const;
 
 type MapSet = { diff?: Texture; nor?: Texture; arm?: Texture };
@@ -171,8 +174,24 @@ export async function buildNycBedroom(): Promise<Group> {
     depthWrite: false,
     side: DoubleSide,
   });
-  const pane = new Mesh(new PlaneGeometry(D, R.height), glass);
-  room.add(place(pane, R.maxX, R.height / 2, cz, -Math.PI / 2));
+  // One pane per bay between mullions; the bay at the window frame slides open.
+  const bay = D / 4;
+  const win = NycLayout.window;
+  for (let i = 0; i < 4; i++) {
+    const z = R.minZ + bay * (i + 0.5);
+    const pane = new Mesh(new PlaneGeometry(bay - 0.02, R.height), glass);
+    const sliding = Math.abs(z - win.origin.z) < bay / 2;
+    if (sliding) {
+      // Its own group so it can slide along the wall, just inside the fixed panes.
+      const door = new Group();
+      door.name = 'SlidingPane';
+      door.add(place(pane, 0, 0, 0, -Math.PI / 2));
+      door.position.set(R.maxX - 0.03, R.height / 2, z);
+      room.add(door);
+    } else {
+      room.add(place(pane, R.maxX, R.height / 2, z, -Math.PI / 2));
+    }
+  }
   const mullionGeo = new BoxGeometry(0.05, R.height, 0.05);
   for (let z = R.minZ; z <= R.maxZ + 1e-3; z += D / 4) add(place(new Mesh(mullionGeo, graphite), R.maxX, R.height / 2, z));
   add(place(new Mesh(new BoxGeometry(0.06, 0.06, D), graphite), R.maxX, 0.03, cz));

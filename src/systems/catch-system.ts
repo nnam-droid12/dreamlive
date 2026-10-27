@@ -15,6 +15,7 @@ import {
   VisibilityState,
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
+import { Bigfoot } from '../components/bigfoot.js';
 import { DevControls, DreamDirector } from '../components/dream.js';
 import { Gestures, HandGestureState } from '../components/hands.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
@@ -22,6 +23,8 @@ import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { dreamNight } from '../dreams/nights.js';
+import { Tuning } from '../config/tuning.js';
+import { buildGift } from '../visuals/goodies.js';
 
 const SPAWN_EVERY = 2.4;
 const FLIGHT_SEC = 2.2;
@@ -31,7 +34,7 @@ const POOL = 6;
 const TOUCH_RADIUS = 0.13;
 const CUP_RADIUS = 0.2;
 const ease = (t: number) => t * t * (3 - 2 * t);
-type Kind = 'surf' | 'dj' | 'ski';
+type Kind = 'surf' | 'dj' | 'ski' | 'gift';
 
 interface Flyer {
   obj: Object3D;
@@ -43,6 +46,9 @@ interface Flyer {
   spin: Vector3;
   /** Its own cloned materials, faded together. */
   mats: MeshStandardMaterial[];
+  /** Seconds of flight and arc height (gifts thrown from the rooftop fly further and higher). */
+  flight: number;
+  arc: number;
 }
 
 /**
@@ -54,6 +60,7 @@ interface Flyer {
 export class CatchSystem extends createSystem({
   director: { required: [DreamDirector, Ritual, RoomSlots, DevControls, Gestures] },
   hands: { required: [HandGestureState] },
+  bigfoot: { required: [Bigfoot] },
 }) {
   private flyers: Flyer[] = [];
   private models = new Map<Kind, Object3D>();
@@ -77,6 +84,7 @@ export class CatchSystem extends createSystem({
     this.models.set('surf', starfish());
     this.models.set('dj', discoBall());
     this.models.set('ski', snowball());
+    this.models.set('gift', buildGift(0xff5fb8));
   }
 
   update(realDelta: number): void {
@@ -86,11 +94,14 @@ export class CatchSystem extends createSystem({
     const delta = dreamDelta(d, realDelta);
     const dreaming = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = this.beat.scene;
-    const kind = dreaming && (scene === 'surf' || scene === 'dj' || scene === 'ski') ? scene : undefined;
+    const tvAct = scene === 'surf' || scene === 'dj' || scene === 'ski';
+    const party = scene.startsWith('party-') && scene !== 'party-wait';
+    const kind: Kind | undefined = !dreaming ? undefined : tvAct ? (scene as Kind) : party ? 'gift' : undefined;
     if (kind && this.beat.progress > 0.08 && this.beat.progress < 0.9) {
       this.timer -= delta;
       if (this.timer <= 0) {
-        this.timer = SPAWN_EVERY;
+        // From the rooftop only now and then: most of his goodies go down to the street.
+        this.timer = kind === 'gift' ? Tuning.rooftop.viewerThrowEvery : SPAWN_EVERY;
         this.launch(d, kind);
       }
     }
@@ -104,13 +115,13 @@ export class CatchSystem extends createSystem({
     f.age += delta;
     const o = f.obj;
     if (f.state === 'flying') {
-      const k = Math.min(1, f.age / (FLIGHT_SEC * this.slow));
-      o.position.lerpVectors(f.from, f.to, ease(k)).addScaledVector(this.up, Math.sin(Math.PI * k) * 0.35);
+      const k = Math.min(1, f.age / (f.flight * this.slow));
+      o.position.lerpVectors(f.from, f.to, ease(k)).addScaledVector(this.up, Math.sin(Math.PI * k) * f.arc);
       if (k >= 1) o.position.y += Math.sin(f.age * 3) * 0.01;
       o.scale.setScalar(0.4 + 0.6 * Math.min(1, k * 2));
       o.rotation.x += f.spin.x * delta;
       o.rotation.y += f.spin.y * delta;
-      if (this.touched(o.position, cupped) || (k >= 1 && f.age > FLIGHT_SEC * this.slow + 0.35 && !!d.getValue(DevControls, 'autoCatch'))) {
+      if (this.touched(o.position, cupped) || (k >= 1 && f.age > f.flight * this.slow + 0.35 && !!d.getValue(DevControls, 'autoCatch'))) {
         f.state = 'caught';
         f.age = 0;
         const caught = (d.getValue(DreamDirector, 'catches') ?? 0) + 1;
@@ -121,7 +132,7 @@ export class CatchSystem extends createSystem({
           d.setValue(Caption, 'ttl', 3);
         }
         Sound.play('catch', o.position, 0.6);
-      } else if (f.age > FLIGHT_SEC * this.slow + HOVER_SEC) {
+      } else if (f.age > f.flight * this.slow + HOVER_SEC) {
         f.state = 'missed';
         f.age = 0;
       }
@@ -172,7 +183,7 @@ export class CatchSystem extends createSystem({
         mats.push(mat);
       });
       this.world.createTransformEntity(obj);
-      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3(), mats };
+      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3(), mats, flight: FLIGHT_SEC, arc: 0.35 };
       this.flyers.push(f);
     }
     this.anchor.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
@@ -182,8 +193,19 @@ export class CatchSystem extends createSystem({
     this.player.head.getWorldQuaternion(this.headQuat);
     this.fwd.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
     this.side.crossVectors(this.up, this.fwd).normalize();
-    f.from.copy(this.anchor).addScaledVector(this.normal, 0.08).addScaledVector(this.right, (Math.random() - 0.5) * 1.0);
-    f.from.y += (Math.random() - 0.5) * 0.5;
+    const thrower = kind === 'gift' ? this.queries.bigfoot.entities.values().next().value?.object3D : undefined;
+    if (thrower) {
+      // Thrown by Bigfoot from the rooftop, in through the open window.
+      thrower.getWorldPosition(f.from);
+      f.from.y += 1.5;
+      f.flight = Tuning.rooftop.viewerFlightSec;
+      f.arc = Tuning.rooftop.viewerArc;
+    } else {
+      f.from.copy(this.anchor).addScaledVector(this.normal, 0.08).addScaledVector(this.right, (Math.random() - 0.5) * 1.0);
+      f.from.y += (Math.random() - 0.5) * 0.5;
+      f.flight = FLIGHT_SEC;
+      f.arc = 0.35;
+    }
     // Ends floating within easy reach: ahead of the chest, a little below the eyes.
     const calm = !!d.getValue(Session, 'reducedMotion');
     this.slow = calm ? 1.6 : 1;

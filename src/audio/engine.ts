@@ -13,7 +13,7 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 export type SoundName =
   | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush';
 export type LoopName = 'waves' | 'wind' | 'snore';
-export type ActName = '' | 'surf' | 'dj' | 'ski';
+export type ActName = '' | 'surf' | 'dj' | 'ski' | 'disco' | 'afro' | 'house';
 
 export interface LoopHandle {
   setPosition(p: Vec): void;
@@ -23,7 +23,15 @@ export interface LoopHandle {
 
 const MELODY = [72, 76, 79, 84, 83, 79, 76, 74, 72, 74, 76, 79, 77, 74, 71, 67];
 /** Act tempos (BPM) and patterns, one entry per 16th step. */
-const ACT_BPM: Record<Exclude<ActName, ''>, number> = { surf: 100, dj: 120, ski: 140 };
+const ACT_BPM: Record<Exclude<ActName, ''>, number> = { surf: 100, dj: 120, ski: 140, disco: 118, afro: 104, house: 124 };
+// Rooftop Party songs (one entry per 16th step; 0 = rest).
+const DISCO_BASS = [41, 53, 41, 53, 41, 53, 41, 53, 38, 50, 38, 50, 43, 55, 43, 55];
+const DISCO_CHORDS = [[65, 69, 72], [62, 65, 69], [67, 71, 74], [64, 67, 72]];
+const AFRO_BASS = [33, 0, 0, 33, 0, 0, 36, 0, 0, 0, 38, 0, 36, 0, 0, 0];
+const AFRO_BELL = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0];
+const AFRO_PLUCK = [74, 0, 0, 76, 0, 79, 0, 0, 81, 0, 79, 0, 76, 0, 74, 0];
+const HOUSE_BASS = [0, 0, 36, 0, 0, 0, 36, 0, 0, 0, 39, 0, 0, 0, 34, 0];
+const HOUSE_STABS = [[60, 63, 67, 70], [58, 62, 65, 69], [56, 60, 63, 67], [58, 62, 65, 68]];
 const DJ_BASS = [36, 0, 36, 48, 0, 36, 0, 46, 34, 0, 34, 46, 0, 34, 41, 43];
 const DJ_CHORDS = [[60, 64, 67], [58, 62, 65], [57, 60, 64], [55, 59, 62]];
 const SURF_PLUCKS = [72, 0, 76, 0, 79, 0, 76, 81, 79, 0, 76, 0, 74, 0, 72, 0];
@@ -48,6 +56,8 @@ class AudioEngine {
   private act: ActName = '';
   private actBus?: GainNode;
   private actPanner?: PannerNode;
+  /** Low-pass between the act and the room: the party heard through closed glass. */
+  private actFilter?: BiquadFilterNode;
   private actLoop?: LoopHandle;
   private actStart = 0;
   private nextStep = 0;
@@ -259,7 +269,10 @@ class AudioEngine {
       this.actBus = c.createGain();
       this.actBus.gain.value = 0;
       this.actPanner = this.panner(at);
-      this.actBus.connect(this.actPanner).connect(this.sfx);
+      this.actFilter = c.createBiquadFilter();
+      this.actFilter.type = 'lowpass';
+      this.actFilter.frequency.value = 20000;
+      this.actBus.connect(this.actFilter).connect(this.actPanner).connect(this.sfx);
     }
     this.place(this.actPanner!, at);
     this.actBus.gain.setTargetAtTime(act ? 0.9 : 0, c.currentTime, act ? 0.6 : 0.8);
@@ -269,6 +282,13 @@ class AudioEngine {
       this.actStart = this.nextStep = c.currentTime + 0.1;
       this.step = 0;
     }
+  }
+
+  /** How open the way to the act is (0 = behind closed glass, muffled; 1 = open air). */
+  setActOpenness(open: number): void {
+    const c = this.ctx;
+    if (!c || !this.actFilter) return;
+    this.actFilter.frequency.setTargetAtTime(500 + 19500 * open * open, c.currentTime, 0.25);
   }
 
   /** 0..1 position within the current act beat (1 = on the beat). For visuals that pulse in time. */
@@ -324,6 +344,27 @@ class AudioEngine {
         if (s === 0 || s === 10) {
           for (const n of DJ_CHORDS[bar % 4]) this.synth(midi(n), t, sixteenth * 2.5, 0.05, 'square', 1800, out);
         }
+      } else if (this.act === 'disco') {
+        if (s % 4 === 0) this.kick(t, out);
+        if (s % 4 === 2) this.noiseBurst(t, 0.14, 8000, 0.07, out);
+        if (s === 4 || s === 12) this.noiseBurst(t, 0.16, 2400, 0.08, out);
+        if (s % 2 === 0) this.synth(midi(DISCO_BASS[s]), t, sixteenth * 1.8, 0.15, 'sawtooth', 900, out);
+        if (s === 4 || s === 12) for (const n of DISCO_CHORDS[bar % 4]) this.synth(midi(n), t, sixteenth * 3, 0.045, 'sawtooth', 2600, out);
+      } else if (this.act === 'afro') {
+        if (s === 0 || s === 6 || s === 8 || s === 14) this.kick(t, out);
+        this.noiseBurst(t, 0.05, 9000, s % 2 ? 0.025 : 0.04, out);
+        if (AFRO_BELL[s]) this.tone(midi(s % 4 === 0 ? 88 : 84), t, 0.18, 0.05, out);
+        const b = AFRO_BASS[s];
+        if (b) this.synth(midi(b), t, sixteenth * 3, 0.2, 'sine', 500, out);
+        const p = AFRO_PLUCK[s];
+        if (p && bar % 2 === 1) this.tone(midi(p), t, 0.5, 0.06, out);
+      } else if (this.act === 'house') {
+        if (s % 4 === 0) this.kick(t, out);
+        if (s % 4 === 2) this.noiseBurst(t, 0.06, 9500, 0.05, out);
+        if (s === 4 || s === 12) this.noiseBurst(t, 0.2, 1800, 0.1, out);
+        const b = HOUSE_BASS[s];
+        if (b) this.synth(midi(b), t, sixteenth * 1.6, 0.18, 'sawtooth', 600, out);
+        if (s === 3 || s === 10) for (const n of HOUSE_STABS[bar % 4]) this.tone(midi(n), t, 0.35, 0.04, out);
       } else if (this.act === 'surf') {
         const n = SURF_PLUCKS[s];
         if (n) this.tone(midi(n), t, 0.9, 0.07, out);

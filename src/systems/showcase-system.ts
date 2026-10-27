@@ -105,6 +105,11 @@ export class ShowcaseSystem extends createSystem({
     d.getVectorView(RoomSlots, 'anchorNormal').set([0, 0, 1]);
     d.setValue(RoomSlots, 'anchorIsBackdrop', false);
     d.setValue(RoomSlots, 'anchorReady', true);
+    const win = NycLayout.window;
+    win.origin.toArray(d.getVectorView(RoomSlots, 'windowOrigin'));
+    win.out.toArray(d.getVectorView(RoomSlots, 'windowOut'));
+    win.along.toArray(d.getVectorView(RoomSlots, 'windowAlong'));
+    d.setValue(RoomSlots, 'windowReady', true);
   }
 
   /** Swap the passthrough-style outline hands for solid skin-shaded hands. */

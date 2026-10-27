@@ -46,6 +46,8 @@ export const Tuning = {
     anchorWaitSec: 2.5,
     /** Picture width when the TV hangs on the floating backdrop (fits the 60° cone). */
     backdropTvWidth: 1.4,
+    /** Headset: the dream window opens this far beyond the TV's right edge. */
+    dreamWindowGap: 0.9,
     /** A labeled bed/couch this far away (horizontal) or less can be Bigfoot's bed. */
     maxRestDistance: 4.5,
     /** Seat/top heights that count as a bed or couch surface. */
@@ -176,6 +178,22 @@ export const Tuning = {
     beamRadius: 0.7,
     lightIntensity: 2.4,
     lightDistance: 10,
+  },
+
+  rooftop: {
+    /** Party energy across the street before Bigfoot arrives (music, lights, crowd). */
+    idleEnergy: 0.35,
+    /** He throws a goodie every this many seconds while DJing; it leaves his hand this late in the throw. */
+    throwEvery: 1.8,
+    throwRelease: 0.3,
+    /** Seconds of the thrown arc, then the parachute's sink rate (m/s) to the street. */
+    throwSec: 1.6,
+    fallSpeed: 3.2,
+    streetPool: 14,
+    /** Now and then a goodie flies across into the room to be caught: cadence, flight time, arc. */
+    viewerThrowEvery: 3.6,
+    viewerFlightSec: 2.8,
+    viewerArc: 2.2,
   },
 
   memoryShelf: {

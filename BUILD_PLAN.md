@@ -73,6 +73,16 @@ Decided by the owner after the first judge review and a look at the 2025 winners
 - **Dropped**: the tabletop paper sea chapter and Chapter 2 (staircase); the tiny moth-cloud Dreamer is replaced by Bigfoot.
 - **Constraints unchanged**: hands-first, seated (Bigfoot comes to the forward hemisphere; the TV is ahead), FoV cone, family-friendly, no brands/logos (generic TV, no real logos in the skyline image), ≥60 fps target on Quest 3S, owner has no headset (emulator-only testing).
 
+## 2c. Direction change — 2026-10-27: the Rooftop Party (main event)
+
+Decided by the owner after seeing the TV-portal build live:
+
+- **Main event:** Bigfoot leaves the bedroom **through the glass**. He slides a floor-to-ceiling panel open, steps onto the ledge and leaps across the street to the **rooftop of the neighbouring high-rise**, where a DJ party is on. He DJs and **throws goodies from the rooftop down to the ground floor**: most parachute down to a cheering street crowd, and a few fly across through the open window for the user to catch by hand. Then he leaps back, climbs in and goes back to bed; the memory orb and shelf stay.
+- **Viewer:** stays seated **in the bedroom, watching through the window**; the seated rules are unchanged. Gaze picks the songs (Disco / Afrobeats / House), which change the music, lights and goodies.
+- **The TV dream stays as an extra.** Odd nights play the rooftop party (night 1 first), even nights play the TV dream. With "Unlock all (judges)", *Restart dream* alternates between them.
+- **Headset (MR):** a dream window opens in the user's real wall and the rooftop party lies beyond it.
+- **Physical note:** a seated viewer cannot see a street 45 m below through floor-level glass. Goodies are visible as they parachute below the roof edge and the crowd is heard cheering; the demo video adds a look-down shot from the glass.
+
 ## 3. Experience design (the full script)
 
 ### 3.1 Session structure (about 8–9 minutes total)

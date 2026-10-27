@@ -49,6 +49,9 @@ export const ACT_TITLE: Record<string, string> = {
   surf: 'Surfing a wave through New York',
   dj: 'DJing a rooftop party',
   ski: 'Skiing down a skyscraper',
+  disco: 'A disco party on the rooftop',
+  afro: 'An Afrobeats party on the rooftop',
+  house: 'A house party on the rooftop',
 };
 
 /** Whether a seed/branch/act is open tonight. */

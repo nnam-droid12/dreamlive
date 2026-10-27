@@ -4,6 +4,8 @@ export const BigfootState = {
   Sleeping: 'sleeping',
   Sleepwalking: 'sleepwalking',
   InTv: 'inTv',
+  /** Out on the neighbouring rooftop (Rooftop Party). */
+  Partying: 'partying',
   Returning: 'returning',
   Stretching: 'stretching',
   Awake: 'awake',
