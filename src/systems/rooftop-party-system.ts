@@ -172,6 +172,7 @@ export class RooftopPartySystem extends createSystem({
       const g = this.newGift(i);
       g.state = 'placed';
       this.pileSlot(i, g.obj.position);
+      g.obj.rotation.y = (i * 1.9) % (Math.PI * 2);
       g.obj.visible = true;
     }
   }
@@ -279,15 +280,17 @@ export class RooftopPartySystem extends createSystem({
     return g;
   }
 
-  /** Stack position i on the pile: 3 x 3 per layer, a little jumbled. */
+  /** Heap position i: 9 on the floor, 4 resting on them, 1 on top (a loose pyramid). */
   private pileSlot(i: number, out: Vector3): Vector3 {
-    const layer = Math.floor(i / 9);
-    const cell = i % 9;
+    const layer = i < 9 ? 0 : i < 13 ? 1 : 2;
+    const n = layer === 0 ? 3 : layer === 1 ? 2 : 1;
+    const cell = layer === 0 ? i : layer === 1 ? i - 9 : 0;
     const jitter = ((i * 0.618) % 1) - 0.5;
+    const half = (n - 1) / 2;
     out.copy(this.pileAt)
-      .addScaledVector(this.frame.out, ((cell % 3) - 1) * 0.33 + jitter * 0.05)
-      .addScaledVector(this.frame.along, (Math.floor(cell / 3) - 1) * 0.33 - jitter * 0.04);
-    out.y = this.pileAt.y + 0.13 + layer * 0.27;
+      .addScaledVector(this.frame.out, ((cell % n) - half) * 0.34 + jitter * 0.08)
+      .addScaledVector(this.frame.along, (Math.floor(cell / n) - half) * 0.34 - jitter * 0.06);
+    out.y = this.pileAt.y + 0.13 + layer * 0.26;
     return out;
   }
 
@@ -327,7 +330,7 @@ export class RooftopPartySystem extends createSystem({
       const k = clamp01((g.age - F - 0.6) / 0.45);
       this.pileSlot(g.slot, this.tmp);
       g.obj.position.lerpVectors(g.from, this.tmp, ease(k)).addScaledVector(UP, Math.sin(Math.PI * k) * 0.25);
-      g.obj.rotation.set(0, (g.slot * 0.7) % 1.2, 0);
+      g.obj.rotation.set(0, (g.slot * 1.9) % (Math.PI * 2), 0);
       if (k >= 1) {
         g.state = 'placed';
         MemoryStore.setGiftPile(Math.min(cfg.pileMax, this.gifts.filter((x) => x.state === 'placed').length));

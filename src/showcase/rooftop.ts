@@ -221,12 +221,12 @@ export function buildRooftop(): RooftopWorld {
   crowd[1].count = Math.floor(spots.length / 2);
   const faceDj = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI);
 
-  // The raised VIP deck the viewer is brought to (railing on the open sides).
+  // The raised VIP deck the viewer is brought to (railing behind them, view kept clear).
   const D = Rooftop.deck;
   const deck = new Mesh(bevelBox(D.x1 - D.x0, D.height, D.z1 - D.z0, 0.03), trim);
   deck.position.set((D.x0 + D.x1) / 2, B.roofY + D.height / 2, (D.z0 + D.z1) / 2);
   root.add(deck);
-  for (const [x, z, rw, rd] of [[D.x0, (D.z0 + D.z1) / 2, 0.05, D.z1 - D.z0], [(D.x0 + D.x1) / 2, D.z0, D.x1 - D.x0, 0.05]] as const) {
+  for (const [x, z, rw, rd] of [[D.x1, (D.z0 + D.z1) / 2, 0.05, D.z1 - D.z0], [(D.x0 + D.x1) / 2, D.z0, D.x1 - D.x0, 0.05]] as const) {
     const rail = new Mesh(new BoxGeometry(rw, 0.05, rd), trim);
     rail.position.set(x, B.roofY + D.height + 1.0, z);
     root.add(rail);
@@ -264,7 +264,10 @@ export function buildRooftop(): RooftopWorld {
   light.position.set((C.x0 + C.x1) / 2, B.roofY + 4, (C.z0 + C.z1) / 2);
   const key = new PointLight(0xffe2c4, 9, 7, 1.4);
   key.position.set(Rooftop.djSpot.x - 1.2, Rooftop.djSpot.y + 2.6, Rooftop.djSpot.z + 2.2);
-  root.add(light, key);
+  // And one on the front row, where Bigfoot dances.
+  const key2 = new PointLight(0xffe8d0, 6, 6, 1.4);
+  key2.position.set(Rooftop.danceSpot.x + 1.2, Rooftop.danceSpot.y + 3.0, Rooftop.danceSpot.z - 0.8);
+  root.add(light, key, key2);
 
   const pos = new Vector3();
   const scl = new Vector3();

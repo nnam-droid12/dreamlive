@@ -26,10 +26,10 @@ export const Rooftop = {
   booth: new Vector3(8.8, 6.4, -4.4),
   djSpot: new Vector3(8.8, 6.4, -5.05),
   /** The dance floor beyond the booth. */
-  crowd: { x0: 8.4, x1: 15.0, z0: -1.6, z1: 5.6 },
+  crowd: { x0: 8.4, x1: 12.2, z0: -1.6, z1: 5.6 },
   /** Where his leap up lands, and where he dances in the crowd. */
   landing: new Vector3(8.0, 6.0, -0.6),
-  danceSpot: new Vector3(10.6, 6.0, 1.4),
+  danceSpot: new Vector3(10.0, 6.0, -0.9),
   /** Leaping home he takes off from the roof's near edge. */
   edgeSpot: new Vector3(7.6, 6.0, -0.4),
   /** The street ("ground floor") between the two towers. */
@@ -41,14 +41,14 @@ export const Rooftop = {
   pile: new Vector3(-1.5, 0, 1.2),
   /** Where a thrown gift meets his hands (relative to the inside spot, chest height). */
   catchHeight: 1.25,
-  /** A raised VIP deck in the far corner: the party viewpoint, over the crowd's heads. */
-  deck: { x0: 15.4, x1: 18.2, z0: 5.2, z1: 7.6, height: 1.2 },
+  /** A raised VIP deck beside the stage: the party viewpoint, close to the DJ and the front row. */
+  deck: { x0: 12.8, x1: 15.2, z0: -2.2, z1: 0.4, height: 1.0 },
   /**
    * Viewpoints for the comfortable "tour" (floor point + the point looked at):
    * the VIP deck over the party, and the party roof's edge looking down and across.
    */
   views: {
-    party: { at: new Vector3(16.6, 7.2, 6.4), look: new Vector3(9.6, 6.9, -3.0) },
+    party: { at: new Vector3(14.0, 7.0, -0.9), look: new Vector3(9.3, 7.0, -2.6) },
     edge: { at: new Vector3(7.5, 6.0, 2.6), look: new Vector3(0, 1.5, -0.4) },
   },
 } as const;
