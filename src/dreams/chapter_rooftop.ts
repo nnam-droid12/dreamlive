@@ -1,18 +1,19 @@
 import type { ChapterDef, SeedDef } from './types.js';
 
 /**
- * "Bigfoot's Rooftop Party" (the main event). Bigfoot slides the bedroom glass
- * open, leaps across the street to the neighbouring rooftop where a DJ party is
- * on, takes over the decks and throws goodies down to the street (a few fly into
- * the room to be caught). Twice the user's gaze picks the song. Then he leaps
- * back and goes to bed. Seeds hang just inside the window bay, facing the viewer.
+ * "Bigfoot's Rooftop Party" (the main event). Bigfoot slides his bedroom glass
+ * open and leaps up onto the roof of the taller skyscraper opposite, where his
+ * Yeti cousin is DJing a party. He dances with the crowd (the user's gaze picks
+ * the song), leaps back down home, then catches the gifts the DJ throws across
+ * and stacks them on his floor (a few come to the user to catch).
+ * The song lights hang in front of the viewer, wherever the tour has taken them.
  */
 const songSeeds = (suffix: string): SeedDef[] => [
-  { id: `disco${suffix}`, branch: `disco${suffix}`, anchor: 'window', position: [-0.75, -0.1, 1.2], color: 'pinkSoft', radius: 0.11, label: 'Disco' },
-  { id: `afro${suffix}`, branch: `afro${suffix}`, anchor: 'window', position: [0, 0.35, 1.2], color: 'lanternAmber', radius: 0.11, label: 'Afrobeats' },
-  { id: `house${suffix}`, branch: `house${suffix}`, anchor: 'window', position: [0.75, -0.1, 1.2], color: 'moonBlue', radius: 0.11, label: 'House' },
+  { id: `disco${suffix}`, branch: `disco${suffix}`, anchor: 'view', position: [-0.55, -0.1, 0], color: 'pinkSoft', radius: 0.09, label: 'Disco' },
+  { id: `afro${suffix}`, branch: `afro${suffix}`, anchor: 'view', position: [0, 0.22, 0], color: 'lanternAmber', radius: 0.09, label: 'Afrobeats' },
+  { id: `house${suffix}`, branch: `house${suffix}`, anchor: 'view', position: [0.55, -0.1, 0], color: 'moonBlue', radius: 0.09, label: 'House' },
 ];
-const party = (id: string, next: string) => ({ id, duration: 26, scene: `party-${id.replace(/-2$/, '')}`, tint: 'pinkSoft' as const, next });
+const party = (id: string) => ({ id, duration: 24, scene: `party-${id}`, tint: 'pinkSoft' as const, next: 'leap-back' });
 
 export const chapterRooftop: ChapterDef = {
   id: 'rooftop-party',
@@ -20,17 +21,14 @@ export const chapterRooftop: ChapterDef = {
   start: 'to-window',
   beats: {
     'to-window': { id: 'to-window', duration: 9, scene: 'to-window', tint: 'moonBlue', next: 'leap-out' },
-    'leap-out': { id: 'leap-out', duration: 4, scene: 'leap-out', tint: 'moonBlue', next: 'arrive' },
+    'leap-out': { id: 'leap-out', duration: 4.6, scene: 'leap-out', tint: 'moonBlue', next: 'arrive' },
     arrive: { id: 'arrive', duration: 4, scene: 'arrive', tint: 'pinkSoft', next: 'choice-1' },
     'choice-1': { id: 'choice-1', duration: 0, scene: 'party-wait', tint: 'pinkSoft', defaultSeed: 'afro', seeds: songSeeds('') },
-    disco: party('disco', 'choice-2'),
-    afro: party('afro', 'choice-2'),
-    house: party('house', 'choice-2'),
-    'choice-2': { id: 'choice-2', duration: 0, scene: 'party-wait', tint: 'pinkSoft', defaultSeed: 'disco-2', seeds: songSeeds('-2') },
-    'disco-2': party('disco-2', 'leap-back'),
-    'afro-2': party('afro-2', 'leap-back'),
-    'house-2': party('house-2', 'leap-back'),
-    'leap-back': { id: 'leap-back', duration: 5, scene: 'leap-back', tint: 'moonBlue', next: 'to-bed' },
+    disco: party('disco'),
+    afro: party('afro'),
+    house: party('house'),
+    'leap-back': { id: 'leap-back', duration: 6.4, scene: 'leap-back', tint: 'moonBlue', next: 'gifts' },
+    gifts: { id: 'gifts', duration: 22, scene: 'gifts', tint: 'lanternGlow', next: 'to-bed' },
     'to-bed': { id: 'to-bed', duration: 9, scene: 'to-bed', tint: 'lanternGlow' },
   },
 };

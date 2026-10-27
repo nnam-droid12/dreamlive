@@ -64,6 +64,8 @@ export const RoomSlots = createComponent('RoomSlots', {
   windowAlong: { type: Types.Vec3, default: [0, 0, 1] },
   /** 0 closed .. 1 slid fully open (the music pours in as it opens). */
   windowOpen: { type: Types.Float32, default: 0 },
+  /** The viewpoint tour has taken the viewer outside (party roof or its edge). */
+  viewOutside: { type: Types.Boolean, default: false },
   anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },
   /** Unit normal of the anchor surface, pointing toward the user. */
   anchorNormal: { type: Types.Vec3, default: [0, 0, 1] },

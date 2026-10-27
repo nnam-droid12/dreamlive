@@ -23,6 +23,8 @@ interface SaveData {
   unlockAll: boolean;
   orbs: SavedOrb[];
   settings: Settings;
+  /** Gifts Bigfoot has caught and stacked on his floor, across all nights. */
+  giftPile: number;
 }
 
 export interface Settings {
@@ -48,6 +50,7 @@ function read(): SaveData {
     firstNight: typeof data?.firstNight === 'string' ? data.firstNight : localDate(new Date()),
     unlockAll: data?.unlockAll === true,
     orbs: Array.isArray(data?.orbs) ? data.orbs.filter((o) => typeof o?.momentId === 'string') : [],
+    giftPile: typeof data?.giftPile === 'number' && data.giftPile >= 0 ? Math.floor(data.giftPile) : 0,
     settings: {
       highContrast: data?.settings?.highContrast === true,
       reducedMotion: data?.settings?.reducedMotion === true,
@@ -87,6 +90,13 @@ export const MemoryStore = {
   },
   setUnlockAll(on: boolean): void {
     read().unlockAll = on;
+    write();
+  },
+  giftPile(): number {
+    return read().giftPile;
+  },
+  setGiftPile(n: number): void {
+    read().giftPile = n;
     write();
   },
   settings(): Readonly<Settings> {

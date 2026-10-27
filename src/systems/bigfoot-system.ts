@@ -27,9 +27,7 @@ import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 const DREAM_DWELL_SEC = 1.5;
 const DREAM_AUTO_SEC = 12;
 const UP = new Vector3(0, 1, 0);
-const ROOFTOP_SCENES = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back', 'to-bed']);
-/** How long each throwing motion lasts (the cadence is Tuning.rooftop.throwEvery). */
-const THROW_SEC = 0.55;
+const ROOFTOP_SCENES = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back', 'gifts', 'to-bed']);
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 type State = (typeof BigfootState)[keyof typeof BigfootState];
@@ -71,8 +69,10 @@ export class BigfootSystem extends createSystem({
   private inside = new Vector3();
   private ledge = new Vector3();
   private landing = new Vector3();
-  private djSpot = new Vector3();
-  private djLook = new Vector3();
+  private danceSpot = new Vector3();
+  private edgeSpot = new Vector3();
+  private djAt = new Vector3();
+  private pileAt = new Vector3();
   private frame = { origin: new Vector3(), out: new Vector3(), along: new Vector3() };
 
   update(realDelta: number): void {
@@ -300,9 +300,10 @@ export class BigfootSystem extends createSystem({
     frameToWorld(f, Rooftop.insideSpot, this.inside);
     frameToWorld(f, Rooftop.ledgeSpot, this.ledge);
     frameToWorld(f, Rooftop.landing, this.landing);
-    // He DJs on the stage behind the booth, facing the crowd and the window.
-    frameToWorld(f, Rooftop.djSpot, this.djSpot);
-    frameToWorld(f, { x: Rooftop.djSpot.x - 3, y: Rooftop.djSpot.y, z: Rooftop.djSpot.z }, this.djLook);
+    frameToWorld(f, Rooftop.danceSpot, this.danceSpot);
+    frameToWorld(f, Rooftop.edgeSpot, this.edgeSpot);
+    frameToWorld(f, Rooftop.djSpot, this.djAt);
+    frameToWorld(f, Rooftop.pile, this.pileAt);
     this.roofReady = true;
   }
 
@@ -310,6 +311,7 @@ export class BigfootSystem extends createSystem({
   private rooftop(scene: string, t: number): void {
     if (!this.roofReady) return;
     const r = this.rig!.root;
+    const rig = this.rig!;
     r.scale.setScalar(1);
     if (scene === 'to-window') {
       this.setState(BigfootState.Sleepwalking);
@@ -317,96 +319,123 @@ export class BigfootSystem extends createSystem({
         const k = ease(t);
         r.quaternion.copy(this.lying).slerp(this.face(this.exitTop, this.exit), k);
         r.position.lerpVectors(this.lyingPosition(this.tmp), this.exitTop, k);
-        this.rig!.play('stretch');
+        rig.play('stretch');
       } else if (t < 1.8) {
         this.arc(this.exitTop, this.exit, (t - 1) / 0.8, 0.25, r.position);
         r.quaternion.copy(this.face(this.exit, this.inside));
-        this.rig!.play('jump', { once: true });
+        rig.play('jump', { once: true });
       } else if (t < 6.8) {
         r.position.lerpVectors(this.exit, this.inside, (t - 1.8) / 5);
         r.quaternion.copy(this.face(this.exit, this.inside));
-        this.rig!.play('walk');
+        rig.play('walk');
       } else if (t < 8.3) {
-        // At the glass while it slides open.
         r.position.copy(this.inside);
         r.quaternion.copy(this.face(this.inside, this.ledge));
-        this.rig!.play('idle');
+        rig.play('idle');
       } else {
         r.position.lerpVectors(this.inside, this.ledge, clamp01((t - 8.3) / 0.7));
         r.quaternion.copy(this.face(this.inside, this.ledge));
-        this.rig!.play('walk');
+        rig.play('walk');
       }
     } else if (scene === 'leap-out') {
+      // Up across the street onto the taller tower's roof.
       this.setState(BigfootState.Partying);
-      const s = Rooftop.leap.sec;
+      const L = Rooftop.leapUp;
       r.quaternion.copy(this.face(this.ledge, this.landing));
-      if (t < 0.6) {
+      if (t < 0.7) {
         r.position.copy(this.ledge);
-        this.rig!.play('jump', { once: true });
-      } else if (t < 0.6 + s) {
-        this.arc(this.ledge, this.landing, ease((t - 0.6) / s), Rooftop.leap.arc, r.position);
-        this.rig!.play('leap', { once: true });
+        rig.play('jump', { once: true });
+      } else if (t < 0.7 + L.sec) {
+        this.arc(this.ledge, this.landing, ease((t - 0.7) / L.sec), L.arc, r.position);
+        rig.play('leap', { once: true });
       } else {
         r.position.copy(this.landing);
-        this.rig!.play('cheer');
+        rig.play('cheer');
       }
     } else if (scene === 'arrive') {
       this.setState(BigfootState.Partying);
       if (t < 3) {
-        r.position.lerpVectors(this.landing, this.djSpot, ease(t / 3));
-        r.quaternion.copy(this.face(this.landing, this.djSpot));
-        this.rig!.play('walk');
+        r.position.lerpVectors(this.landing, this.danceSpot, ease(t / 3));
+        r.quaternion.copy(this.face(this.landing, this.danceSpot));
+        rig.play('walk');
       } else {
-        r.position.copy(this.djSpot);
-        r.quaternion.copy(this.face(this.djSpot, this.djLook));
-        this.rig!.play('wave');
+        r.position.copy(this.danceSpot);
+        r.quaternion.copy(this.face(this.danceSpot, this.djAt));
+        rig.play('wave');
       }
     } else if (scene === 'party-wait' || scene.startsWith('party-')) {
+      // Dancing with the crowd, facing the Yeti DJ.
       this.setState(BigfootState.Partying);
-      r.position.copy(this.djSpot);
-      r.quaternion.copy(this.face(this.djSpot, this.djLook));
-      // Same clock as RooftopPartySystem: the goodie leaves his hand throwRelease into each throw.
-      const throwing = scene !== 'party-wait' && t > 1 && (t - 1) % Tuning.rooftop.throwEvery < THROW_SEC;
-      this.rig!.play(scene === 'party-wait' ? 'cheer' : throwing ? 'wave' : 'dance');
+      r.position.copy(this.danceSpot);
+      r.quaternion.copy(this.face(this.danceSpot, this.djAt));
+      rig.play(scene === 'party-wait' ? 'cheer' : Math.floor(t / 8) % 2 ? 'dance2' : 'dance');
     } else if (scene === 'leap-back') {
+      // To the roof's edge, then down across the street onto his own ledge.
       this.setState(BigfootState.Partying);
-      const s = Rooftop.leap.sec;
-      if (t < 2) {
-        r.position.lerpVectors(this.djSpot, this.landing, ease(t / 2));
-        r.quaternion.copy(this.face(this.djSpot, this.landing));
-        this.rig!.play('walk');
-      } else if (t < 2.4) {
-        r.position.copy(this.landing);
-        r.quaternion.copy(this.face(this.landing, this.ledge));
-        this.rig!.play('jump', { once: true });
-      } else if (t < 2.4 + s) {
-        this.arc(this.landing, this.ledge, ease((t - 2.4) / s), Rooftop.leap.arc, r.position);
-        r.quaternion.copy(this.face(this.landing, this.ledge));
-        this.rig!.play('leap', { once: true });
+      const L = Rooftop.leapDown;
+      if (t < 2.5) {
+        r.position.lerpVectors(this.danceSpot, this.edgeSpot, ease(t / 2.5));
+        r.quaternion.copy(this.face(this.danceSpot, this.edgeSpot));
+        rig.play('walk');
+      } else if (t < 3.0) {
+        r.position.copy(this.edgeSpot);
+        r.quaternion.copy(this.face(this.edgeSpot, this.ledge));
+        rig.play('jump', { once: true });
+      } else if (t < 3.0 + L.sec) {
+        this.arc(this.edgeSpot, this.ledge, ease((t - 3.0) / L.sec), L.arc, r.position);
+        r.quaternion.copy(this.face(this.edgeSpot, this.ledge));
+        rig.play('leap', { once: true });
       } else {
         r.position.copy(this.ledge);
-        this.rig!.play('idle');
+        r.quaternion.copy(this.face(this.ledge, this.inside));
+        rig.play('cheer');
+      }
+    } else if (scene === 'gifts') {
+      // Back inside: catch each gift the DJ throws, set it on the pile, turn back for the next.
+      this.setState(BigfootState.Returning);
+      if (t < 1) {
+        r.position.lerpVectors(this.ledge, this.inside, t);
+        r.quaternion.copy(this.face(this.ledge, this.inside));
+        rig.play('walk');
+        return;
+      }
+      r.position.copy(this.inside);
+      const P = Tuning.rooftop.giftEvery;
+      const u = (t - 1) % P;
+      const toDj = this.face(this.inside, this.djAt);
+      if (u < Tuning.rooftop.giftFlightSec - 0.2) {
+        r.quaternion.copy(toDj);
+        rig.play('idle');
+      } else if (u < Tuning.rooftop.giftFlightSec + 0.4) {
+        r.quaternion.copy(toDj);
+        rig.play('cheer');
+      } else if (u < P - 0.4) {
+        r.quaternion.copy(toDj).slerp(this.face(this.inside, this.pileAt), ease(clamp01((u - Tuning.rooftop.giftFlightSec - 0.4) / 0.4)));
+        rig.play('wave');
+      } else {
+        r.quaternion.copy(this.face(this.inside, this.pileAt)).slerp(toDj, ease((u - (P - 0.4)) / 0.4));
+        rig.play('idle');
       }
     } else if (scene === 'to-bed') {
       this.setState(BigfootState.Returning);
-      if (t < 1.2) {
-        r.position.lerpVectors(this.ledge, this.inside, t / 1.2);
-        r.quaternion.copy(this.face(this.ledge, this.inside));
-        this.rig!.play('walk');
-      } else if (t < 6.6) {
-        r.position.lerpVectors(this.inside, this.exit, (t - 1.2) / 5.4);
+      if (t < 1.4) {
+        r.position.copy(this.inside);
         r.quaternion.copy(this.face(this.inside, this.exit));
-        this.rig!.play('walk');
+        rig.play('idle');
+      } else if (t < 6.6) {
+        r.position.lerpVectors(this.inside, this.exit, (t - 1.4) / 5.2);
+        r.quaternion.copy(this.face(this.inside, this.exit));
+        rig.play('walk');
       } else {
         const k = clamp01((t - 6.6) / 1.8);
         if (k < 0.5) {
           this.arc(this.exit, this.exitTop, k * 2, 0.3, r.position);
-          this.rig!.play('jump', { once: true });
+          rig.play('jump', { once: true });
         } else {
           const j = ease((k - 0.5) * 2);
           r.position.lerpVectors(this.exitTop, this.lyingPosition(this.tmp), j);
           r.quaternion.copy(this.face(this.exit, this.exitTop)).slerp(this.lying, j);
-          this.rig!.play('rest');
+          rig.play('rest');
         }
       }
     }

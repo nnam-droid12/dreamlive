@@ -7,6 +7,7 @@ import {
   MeshStandardMaterial,
   Object3D,
   PlaneGeometry,
+  Quaternion,
   Pressed,
   RayInteractable,
   ShaderMaterial,
@@ -37,6 +38,8 @@ const CATCH_PULL = 3;
 const LOCKED_CAPTION = 'This dream opens tomorrow night.';
 /** Window seeds hang at this height above the floor. */
 const WINDOW_SEED_HEIGHT = 1.45;
+/** View-anchored seeds hang this far ahead of the viewer. */
+const VIEW_SEED_DISTANCE = 1.4;
 const ease = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 type SeedStateValue = (typeof SeedState)[keyof typeof SeedState];
@@ -263,10 +266,17 @@ export class DreamSeedSystem extends createSystem({
 
   private spawn(d: Entity, seed: SeedDef, beatId: string): void {
     const stage = this.queries.stage.entities.values().next().value;
-    const onWall = seed.anchor === 'wall' || seed.anchor === 'window';
+    const onWall = seed.anchor === 'wall' || seed.anchor === 'window' || seed.anchor === 'view';
     if (!stage && !onWall) return;
     const pos = new Vector3();
-    if (seed.anchor === 'window') {
+    if (seed.anchor === 'view') {
+      // Just ahead of the viewer, wherever they are, facing them.
+      const head = this.player.head.getWorldPosition(new Vector3());
+      const fwd = new Vector3(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(new Quaternion())).setY(0).normalize();
+      const at = head.clone().addScaledVector(fwd, VIEW_SEED_DISTANCE);
+      at.y -= 0.05;
+      wallWorld(seed, [at.x, at.y, at.z], [-fwd.x, 0, -fwd.z], pos);
+    } else if (seed.anchor === 'window') {
       if (!d.getValue(RoomSlots, 'windowReady')) return;
       // Eye height at the window bay, facing back into the room.
       const o = d.getVectorView(RoomSlots, 'windowOrigin');

@@ -6,9 +6,9 @@ import { Vector3 } from '@iwsdk/core';
  * into the city, +y up, +z along the window wall. In the showcase room the frame
  * sits on the glass wall; on a headset it sits on the dream window in the real wall.
  *
- * Staging: the DJ is on a raised stage at the far side of the roof, facing the
- * window; the crowd fills the floor between the stage and the near edge, facing
- * him; the street ("ground floor") is the gap between the two buildings.
+ * Staging: the party is on the roof of a taller skyscraper opposite Bigfoot's
+ * window. The Yeti DJ's booth stands at its near edge, facing the crowd (+z),
+ * with Bigfoot's window down to his left, so his gifts arc down across the street.
  */
 export const Rooftop = {
   /** The bay that slides open: width along the wall, and the ledge outside it. */
@@ -17,21 +17,40 @@ export const Rooftop = {
   /** Inside the room, just before the glass; and out on the ledge. */
   insideSpot: new Vector3(-0.55, 0, 0),
   ledgeSpot: new Vector3(0.5, 0, 0),
-  /** The neighbouring high-rise: near facade, footprint along the wall, roof height. */
-  building: { nearX: 3.0, farX: 19.0, minZ: -12.0, maxZ: 3.0, roofY: 0.0, baseY: -45 },
-  /** The DJ stage (far side of the roof): extent and height above the roof. */
-  stage: { x0: 7.0, x1: 9.0, z0: -4.4, z1: 0.4, height: 0.6 },
-  /** The booth on the stage, facing the window (-x); he stands just behind it. */
-  booth: new Vector3(7.6, 0.6, -2.0),
-  djSpot: new Vector3(8.25, 0.6, -2.0),
-  /** The dance floor between the near edge and the stage. */
-  crowd: { x0: 3.9, x1: 6.6, z0: -4.2, z1: -0.2 },
-  /** Where his leap lands (near corner, beside the crowd). */
-  landing: new Vector3(3.6, 0, 1.2),
-  /** The street ("ground floor") between the buildings, where most goodies land. */
-  street: { y: -45, x0: 0.6, x1: 2.4 },
-  /** Seconds and height of the leap across. */
-  leap: { sec: 1.6, arc: 1.8 },
+  /** Bigfoot's own tower: its roof, and the extent of the room's glass along the wall. */
+  home: { roofY: 3.4, glassZ0: -2.4, glassZ1: 4.0, baseY: -45 },
+  /** The taller skyscraper opposite: near facade, footprint, roof height above his floor. */
+  building: { nearX: 7.0, farX: 22.0, minZ: -7.0, maxZ: 8.0, roofY: 6.0, baseY: -45 },
+  /** The DJ's low stage and booth at the near edge (booth faces the crowd, +z). */
+  stage: { x0: 7.6, x1: 10.0, z0: -5.4, z1: -2.6, height: 0.4 },
+  booth: new Vector3(8.8, 6.4, -4.4),
+  djSpot: new Vector3(8.8, 6.4, -5.05),
+  /** The dance floor beyond the booth. */
+  crowd: { x0: 8.4, x1: 15.0, z0: -1.6, z1: 5.6 },
+  /** Where his leap up lands, and where he dances in the crowd. */
+  landing: new Vector3(8.0, 6.0, -0.6),
+  danceSpot: new Vector3(10.6, 6.0, 1.4),
+  /** Leaping home he takes off from the roof's near edge. */
+  edgeSpot: new Vector3(7.6, 6.0, -0.4),
+  /** The street ("ground floor") between the two towers. */
+  street: { y: -45, x0: 0.8, x1: 6.2 },
+  /** Seconds and extra height of the leaps (up, and back down). */
+  leapUp: { sec: 2.4, arc: 2.6 },
+  leapDown: { sec: 2.2, arc: 1.4 },
+  /** Gifts he catches pile up on his floor here, in the room beside the window. */
+  pile: new Vector3(-1.5, 0, 1.2),
+  /** Where a thrown gift meets his hands (relative to the inside spot, chest height). */
+  catchHeight: 1.25,
+  /** A raised VIP deck in the far corner: the party viewpoint, over the crowd's heads. */
+  deck: { x0: 15.4, x1: 18.2, z0: 5.2, z1: 7.6, height: 1.2 },
+  /**
+   * Viewpoints for the comfortable "tour" (floor point + the point looked at):
+   * the VIP deck over the party, and the party roof's edge looking down and across.
+   */
+  views: {
+    party: { at: new Vector3(16.6, 7.2, 6.4), look: new Vector3(9.6, 6.9, -3.0) },
+    edge: { at: new Vector3(7.5, 6.0, 2.6), look: new Vector3(0, 1.5, -0.4) },
+  },
 } as const;
 
 /** A placed window frame (world space). */

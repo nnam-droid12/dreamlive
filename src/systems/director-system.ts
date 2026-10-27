@@ -140,10 +140,10 @@ export class DirectorSystem extends createSystem({
   }
 
   /**
-   * Rooftop Party shots: follow him to the glass, watch the leap from the open
-   * bay, a dream camera out over the street for the party (close on the decks,
-   * then looking down at the goodies parachuting to the street), back inside for
-   * the song choices, then home to bed.
+   * Rooftop Party shots, following the real dream: over his shoulder to the
+   * glass; from the room as he leaps up to the taller roof; the VIP deck over the
+   * party (Bigfoot dancing, then close on the Yeti DJ); the roof's edge looking
+   * down at the street as he leaps home; the room as he catches gifts; bed.
    */
   private rooftopShot(d: Entity, seat: Vector3, root: Vector3 | undefined): void {
     const f = {
@@ -154,34 +154,26 @@ export class DirectorSystem extends createSystem({
     const at = (x: number, y: number, z: number) => frameToWorld(f, { x, y, z }, new Vector3());
     const scene = this.beat.scene;
     const t = this.beat.time;
-    const him = root ? root.clone().setY(root.y + 1.1) : at(Rooftop.djSpot.x, 1.6, Rooftop.djSpot.z);
+    const him = root ? root.clone().setY(root.y + 1.1) : at(Rooftop.danceSpot.x, 7.1, Rooftop.danceSpot.z);
     const dj = at(Rooftop.djSpot.x, Rooftop.djSpot.y + 1.4, Rooftop.djSpot.z);
+    const deck = Rooftop.views.party.at;
     if (scene === 'to-window') {
-      // Over his shoulder as he crosses the room; the glass slides open ahead of him.
-      this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.2, 1.6, 1.0), t < 6.8 ? him : at(1.5, 1.2, -0.5));
-    } else if (scene === 'leap-out' || scene === 'leap-back') {
-      // From the open bay: the leap across the street.
-      this.aim(at(-0.9, 1.5, 1.1), him);
-    } else if (scene === 'arrive') {
-      this.aim(at(1.6, 2.2, 2.6), him);
-    } else if (scene === 'party-wait') {
-      // Back inside: the song lights by the window; the camera's gaze picks one.
-      const pick = (Director.picks['rooftop-party'] ?? [])[this.beat.id === 'choice-1' ? 0 : 1] ?? '';
+      this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.4, 1.5, 1.4), t < 6.8 ? him : at(2, 2.2, -0.5));
+    } else if (scene === 'leap-out') {
+      this.aim(at(-2.2, 1.3, 1.8), him);
+    } else if (scene === 'arrive' || scene === 'party-wait') {
+      const pick = (Director.picks['rooftop-party'] ?? [])[0] ?? '';
       const seed = this.seedPos(pick);
-      this.aim(at(-3.4, 1.35, 0.6), this.beat.time > 1.8 && seed ? seed : dj);
+      this.aim(at(deck.x, deck.y + 1.3, deck.z), scene === 'party-wait' && this.beat.time > 1.8 && seed ? seed : him);
     } else if (scene.startsWith('party-')) {
-      const second = this.beat.id.endsWith('-2');
-      if (!second) {
-        // A dream camera hovering over the dance floor, close on Bigfoot at the decks.
-        const sway = Math.sin(this.clock * 0.2) * 0.8;
-        this.aim(at(4.2, 1.9, -2.0 + sway), dj);
-      } else if (t < 14) {
-        // From the ledge, looking down: goodies parachuting to the street crowd.
-        this.aim(at(0.9, 1.4, 0.9), at(1.6, -26, -2.5));
-      } else {
-        // Back in the room: the party through the window, a goodie flying in.
-        this.aim(at(-3.0, 1.3, 1.4), dj);
-      }
+      if (t < 12) this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
+      else this.aim(at(Rooftop.djSpot.x + 2.6, Rooftop.djSpot.y + 1.6, Rooftop.djSpot.z + 3.0), dj);
+    } else if (scene === 'leap-back') {
+      // From the party roof's edge: the street far below, his tower and window across.
+      const e = Rooftop.views.edge.at;
+      this.aim(at(e.x + 0.4, e.y + 1.5, e.z + 0.8), t < 2.5 ? him : at(1.5, -8, -0.5).lerp(him, 0.6));
+    } else if (scene === 'gifts') {
+      this.aim(at(-3.3, 1.5, 2.6), him.clone().lerp(at(Rooftop.insideSpot.x + 0.5, 1.3, 0), 0.5));
     } else if (scene === 'to-bed' && root) {
       const look = root.clone().setY(0.9);
       this.aim(look.clone().addScaledVector(this.toward(look, seat), 2.6).setY(1.45), look);

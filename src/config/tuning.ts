@@ -180,6 +180,12 @@ export const Tuning = {
     lightDistance: 10,
   },
 
+  tour: {
+    /** Viewpoint changes: fade to black, move, fade back in (never a gliding camera). */
+    fadeOutSec: 0.45,
+    fadeInSec: 0.7,
+  },
+
   rooftop: {
     /** Party energy across the street before Bigfoot arrives (music, lights, crowd). */
     idleEnergy: 0.35,
@@ -190,6 +196,10 @@ export const Tuning = {
     throwSec: 1.6,
     fallSpeed: 3.2,
     streetPool: 14,
+    /** Back home, the Yeti DJ throws Bigfoot a gift this often; it flies this long; his pile is capped. */
+    giftEvery: 3.4,
+    giftFlightSec: 1.9,
+    pileMax: 27,
     /** Now and then a goodie flies across into the room to be caught: cadence, flight time, arc. */
     viewerThrowEvery: 3.6,
     viewerFlightSec: 2.8,

@@ -1,8 +1,9 @@
 /**
- * The Rooftop Party world: the neighbouring high-rise across the street with a
- * DJ party on its roof, the street far below, and filler towers around. Built
- * in the window frame (see rooftop-layout.ts) so the same world stands outside
- * the showcase glass or beyond the headset's dream window. Repeats are instanced.
+ * The Rooftop Party world: the taller skyscraper opposite Bigfoot's window with
+ * a DJ party on its roof, Bigfoot's own tower (its facade, with his window cut
+ * out), other towers all around and the street far below. Built in the window
+ * frame (see rooftop-layout.ts) so it stands outside the showcase glass or
+ * beyond the headset's dream window. Repeats are instanced.
  */
 import {
   AdditiveBlending,
@@ -10,6 +11,8 @@ import {
   Color,
   ConeGeometry,
   CylinderGeometry,
+  DoubleSide,
+  FrontSide,
   Group,
   InstancedMesh,
   Matrix4,
@@ -17,9 +20,12 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
+  Path,
   PlaneGeometry,
   PointLight,
   Quaternion,
+  Shape,
+  ShapeGeometry,
   SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
@@ -30,6 +36,7 @@ import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 import { Rooftop } from './rooftop-layout.js';
 
 const B = Rooftop.building;
+const H = Rooftop.home;
 const CROWD = 40;
 const STREET_CROWD = 60;
 const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
@@ -37,43 +44,51 @@ const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
 export interface RooftopWorld {
   /** Root in window-frame coordinates (place it on the frame). */
   root: Group;
+  /** Everything on the room's side of the window wall (other towers behind it). */
+  behind: Group;
   /** Turntable platters, to spin. */
   platters: Object3D[];
-  /** The colored party light over the booth. */
-  light: PointLight;
   /** Tints the lasers, dance floor and light (the chosen song's palette). */
   setPalette(colors: readonly number[]): void;
-  /** Per frame: beat phase 0..1 (1 = on the kick), party energy 0..1, time. */
+  /** Per frame: time, beat phase 0..1 (1 = on the kick), party energy 0..1. */
   update(t: number, beat: number, energy: number): void;
 }
 
-function tower(w: number, d: number, h: number, mat: MeshStandardMaterial): Mesh {
-  const m = new Mesh(new BoxGeometry(w, h, d), mat);
-  m.position.y = h / 2;
+function towerBox(w: number, d: number, y0: number, y1: number, mat: MeshStandardMaterial): Mesh {
+  const m = new Mesh(new BoxGeometry(w, y1 - y0, d), mat);
+  m.position.y = (y0 + y1) / 2;
   return m;
+}
+
+/** An outward-facing wall plane (invisible from inside, so it never hides the room). */
+function wallPlane(w: number, h: number, mat: MeshStandardMaterial): Mesh {
+  return new Mesh(new PlaneGeometry(w, h), mat);
 }
 
 export function buildRooftop(): RooftopWorld {
   const root = new Group();
   root.name = 'RooftopParty';
+  const behind = new Group();
+  behind.name = 'BehindTheWindowWall';
+  root.add(behind);
   const facade = facadeTexture();
   facade.repeat.set(4, 10);
-  const facadeMat = new MeshStandardMaterial({ map: facade, emissiveMap: facade, emissive: new Color(0xffffff), emissiveIntensity: 0.55, roughness: 0.7 });
+  const facadeMat = new MeshStandardMaterial({ map: facade, emissiveMap: facade, emissive: new Color(0xffffff), emissiveIntensity: 0.55, roughness: 0.7, side: FrontSide });
   const concrete = new MeshStandardMaterial({ color: 0x3a3740, roughness: 0.9 });
   const trim = new MeshStandardMaterial({ color: 0x2a2730, roughness: 0.6 });
+  const m = new Matrix4();
 
-  // The neighbouring high-rise: walls with lit windows from the street up to the roof.
+  // The party skyscraper opposite, taller than Bigfoot's.
   const w = B.farX - B.nearX;
   const d = B.maxZ - B.minZ;
-  const body = tower(w, d, B.roofY - B.baseY, facadeMat);
-  body.position.set((B.nearX + B.farX) / 2, B.baseY + (B.roofY - B.baseY) / 2, (B.minZ + B.maxZ) / 2);
-  root.add(body);
+  const body = towerBox(w, d, B.baseY, B.roofY, facadeMat);
+  body.position.x = (B.nearX + B.farX) / 2;
+  body.position.z = (B.minZ + B.maxZ) / 2;
   const roof = new Mesh(new BoxGeometry(w, 0.3, d), concrete);
   roof.position.set(body.position.x, B.roofY - 0.15, body.position.z);
-  root.add(roof);
-  // Parapet: low on the street side so the party shows, taller elsewhere.
+  root.add(body, roof);
   for (const [x, z, pw, pd, ph] of [
-    [B.nearX + 0.12, (B.minZ + B.maxZ) / 2, 0.25, d, 0.55],
+    [B.nearX + 0.12, (B.minZ + B.maxZ) / 2, 0.25, d, 0.6],
     [B.farX - 0.12, (B.minZ + B.maxZ) / 2, 0.25, d, 1.1],
     [(B.nearX + B.farX) / 2, B.minZ + 0.12, w, 0.25, 1.1],
     [(B.nearX + B.farX) / 2, B.maxZ - 0.12, w, 0.25, 1.1],
@@ -82,7 +97,6 @@ export function buildRooftop(): RooftopWorld {
     p.position.set(x, B.roofY + ph / 2, z);
     root.add(p);
   }
-
   // A classic wooden water tower at the far corner.
   const wood = new MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.85 });
   const tank = new Group();
@@ -96,26 +110,95 @@ export function buildRooftop(): RooftopWorld {
     leg.position.set(lx, 1.2, lz);
     tank.add(leg);
   }
-  tank.position.set(B.farX - 3, B.roofY, B.minZ + 3);
+  tank.position.set(B.farX - 3, B.roofY, B.maxZ - 3);
   root.add(tank);
 
-  // The stage at the far side of the roof, and the DJ booth on it facing the window (-x).
+  // Bigfoot's own tower: a facade with his window cut out, its roof, sides and back.
+  // All faces point outward, so from inside the room (or a real room) they vanish.
+  const front = new Shape();
+  front.moveTo(-20, H.baseY);
+  front.lineTo(20, H.baseY);
+  front.lineTo(20, H.roofY);
+  front.lineTo(-20, H.roofY);
+  front.lineTo(-20, H.baseY);
+  const glass = new Path();
+  glass.moveTo(H.glassZ0, 0);
+  glass.lineTo(H.glassZ0, 3.0);
+  glass.lineTo(H.glassZ1, 3.0);
+  glass.lineTo(H.glassZ1, 0);
+  glass.lineTo(H.glassZ0, 0);
+  front.holes.push(glass);
+  const homeFront = new Mesh(new ShapeGeometry(front), facadeMat);
+  // Shape x → frame -z after turning to face +x; mirror so the hole lands on the glass.
+  homeFront.rotation.y = Math.PI / 2;
+  homeFront.scale.x = -1;
+  homeFront.position.x = 0.04;
+  const homeRoof = wallPlane(14, 40, facadeMat);
+  homeRoof.material = concrete;
+  homeRoof.rotation.x = -Math.PI / 2;
+  homeRoof.position.set(-7, H.roofY, 0);
+  behind.add(homeRoof);
+  for (const s of [-1, 1]) {
+    const side = wallPlane(14, H.roofY - H.baseY, facadeMat);
+    side.rotation.y = s > 0 ? 0 : Math.PI;
+    side.position.set(-7, (H.roofY + H.baseY) / 2, s * 20);
+    behind.add(side);
+  }
+  root.add(homeFront);
+  // The ledge he steps out onto.
+  const ledge = new Mesh(bevelBox(Rooftop.ledge.depth, 0.18, Rooftop.bay.width + 0.2, 0.02), concrete);
+  ledge.name = 'Ledge';
+  ledge.position.set(Rooftop.ledge.depth / 2, -0.09, 0);
+  root.add(ledge);
+
+  // Other towers all around: across the avenue, down the street, and behind his tower.
+  for (const [x, z, tw, td, top, back] of [
+    [30, -30, 12, 10, 18, 0], [34, 6, 10, 12, 30, 0], [28, 32, 12, 10, 12, 0],
+    [9, -26, 10, 10, 2, 0], [10, 28, 10, 9, 9, 0], [60, -10, 16, 14, 40, 0],
+    [-30, -36, 12, 10, 26, 1], [-28, 34, 12, 12, 14, 1], [-40, 0, 14, 16, 34, 1],
+  ] as const) {
+    const t = towerBox(tw, td, H.baseY, top, facadeMat);
+    t.position.x = x;
+    t.position.z = z;
+    (back ? behind : root).add(t);
+  }
+
+  // The street ("ground floor") far below: asphalt, lamps, and a crowd looking up.
+  const street = new Mesh(new PlaneGeometry(200, 200), new MeshStandardMaterial({ color: 0x1c1c22, roughness: 0.95 }));
+  street.rotation.x = -Math.PI / 2;
+  street.position.set(10, H.baseY, 0);
+  root.add(street);
+  const lamps = new InstancedMesh(new SphereGeometry(0.25, 8, 6), new MeshBasicMaterial({ color: 0xffd8a0 }), 16);
+  for (let i = 0; i < 16; i++) {
+    m.makeTranslation(i % 2 ? Rooftop.street.x1 : Rooftop.street.x0, H.baseY + 5, -32 + i * 4.2);
+    lamps.setMatrixAt(i, m);
+  }
+  root.add(lamps);
+  const crowdMat = new MeshStandardMaterial({ color: 0x151020, roughness: 0.9, emissive: new Color(0x3a1450), emissiveIntensity: 0.7 });
+  const streetCrowd = new InstancedMesh(personGeometry(true), crowdMat, STREET_CROWD);
+  for (let i = 0; i < STREET_CROWD; i++) {
+    const x = Rooftop.street.x0 + ((i * 0.618) % 1) * (Rooftop.street.x1 - Rooftop.street.x0);
+    m.makeTranslation(x, H.baseY, -10 + ((i * 0.377) % 1) * 20);
+    streetCrowd.setMatrixAt(i, m);
+  }
+  root.add(streetCrowd);
+
+  // The party: a low stage at the near edge with the booth facing the crowd (+z).
   const S = Rooftop.stage;
   const stage = new Mesh(bevelBox(S.x1 - S.x0, S.height, S.z1 - S.z0, 0.03), trim);
   stage.position.set((S.x0 + S.x1) / 2, B.roofY + S.height / 2, (S.z0 + S.z1) / 2);
   root.add(stage);
   const booth = buildDjBooth();
-  booth.rotation.y = -Math.PI / 2;
   booth.position.copy(Rooftop.booth);
   root.add(booth);
   const platters: Object3D[] = [];
   booth.traverse((o) => {
     if (o.name === 'Platter') platters.push(o);
   });
-  // Dance floor: glowing tiles between the near edge and the stage (one draw call).
+
+  // Dance floor tiles and the crowd, facing the DJ.
   const C = Rooftop.crowd;
-  const tiles = new InstancedMesh(new BoxGeometry(0.58, 0.04, 0.68), new MeshBasicMaterial(), 36);
-  const m = new Matrix4();
+  const tiles = new InstancedMesh(new BoxGeometry(1.0, 0.04, 1.1), new MeshBasicMaterial(), 36);
   const tilePos: Vector3[] = [];
   for (let i = 0; i < 6; i++) {
     for (let j = 0; j < 6; j++) {
@@ -126,27 +209,37 @@ export function buildRooftop(): RooftopWorld {
     }
   }
   root.add(tiles);
-
-  // The crowd on the dance floor, facing the DJ.
-  const crowdMat = new MeshStandardMaterial({ color: 0x151020, roughness: 0.9, emissive: new Color(0x3a1450), emissiveIntensity: 0.7 });
   const crowd = [new InstancedMesh(personGeometry(false), crowdMat, CROWD / 2), new InstancedMesh(personGeometry(true), crowdMat, CROWD / 2)];
   crowd.forEach((c) => root.add(c));
   const spots = Array.from({ length: CROWD }, (_, i) => ({
     p: new Vector3(C.x0 + ((i * 0.618) % 1) * (C.x1 - C.x0), B.roofY, C.z0 + ((i * 0.377) % 1) * (C.z1 - C.z0)),
     s: 0.85 + ((i * 0.53) % 1) * 0.2,
     phase: ((i * 0.29) % 1) * 0.5,
-  }));
-  // Everyone faces the stage (+x).
-  const faceDj = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+  })).filter((s) => s.p.distanceTo(Rooftop.danceSpot) > 0.9);
+  // Space is left for Bigfoot to dance among them; draw only the people placed.
+  crowd[0].count = Math.ceil(spots.length / 2);
+  crowd[1].count = Math.floor(spots.length / 2);
+  const faceDj = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Math.PI);
 
-  // String lights criss-crossing above the party.
+  // The raised VIP deck the viewer is brought to (railing on the open sides).
+  const D = Rooftop.deck;
+  const deck = new Mesh(bevelBox(D.x1 - D.x0, D.height, D.z1 - D.z0, 0.03), trim);
+  deck.position.set((D.x0 + D.x1) / 2, B.roofY + D.height / 2, (D.z0 + D.z1) / 2);
+  root.add(deck);
+  for (const [x, z, rw, rd] of [[D.x0, (D.z0 + D.z1) / 2, 0.05, D.z1 - D.z0], [(D.x0 + D.x1) / 2, D.z0, D.x1 - D.x0, 0.05]] as const) {
+    const rail = new Mesh(new BoxGeometry(rw, 0.05, rd), trim);
+    rail.position.set(x, B.roofY + D.height + 1.0, z);
+    root.add(rail);
+  }
+
+  // String lights over the dance floor.
   const strands = 3;
   const perStrand = 20;
   const bulbs = new InstancedMesh(new SphereGeometry(0.06, 8, 6), new MeshBasicMaterial(), strands * perStrand);
   const color = new Color();
   for (let s = 0; s < strands; s++) {
-    const a = new Vector3(B.nearX + 1, B.roofY + 3.2, B.maxZ - 2 - s * 4);
-    const b = new Vector3(B.farX - 2, B.roofY + 3.2, B.minZ + 4 + s * 3);
+    const a = new Vector3(B.nearX + 1, B.roofY + 3.2, C.z0 - 1 + s * 3);
+    const b = new Vector3(B.farX - 2, B.roofY + 3.2, C.z0 + s * 3.5);
     for (let i = 0; i < perStrand; i++) {
       const k = i / (perStrand - 1);
       const p = new Vector3().lerpVectors(a, b, k);
@@ -158,59 +251,20 @@ export function buildRooftop(): RooftopWorld {
   }
   root.add(bulbs);
 
-  // Lasers from behind the booth, and the party light.
+  // Lasers from the stage, the party light over the floor, and a warm key light on the DJ.
   const lasers: Mesh[] = [];
   const laserGeo = new CylinderGeometry(0.02, 0.02, 30, 6, 1, true).translate(0, 15, 0);
   for (let i = 0; i < 6; i++) {
-    const beam = new Mesh(laserGeo, new MeshBasicMaterial({ color: BULB_COLORS[i % 4], transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false }));
-    beam.position.set(S.x1 - 0.3, B.roofY + S.height + 0.3, S.z0 + (S.z1 - S.z0) * ((i + 0.5) / 6));
+    const beam = new Mesh(laserGeo, new MeshBasicMaterial({ color: BULB_COLORS[i % 4], transparent: true, opacity: 0.7, blending: AdditiveBlending, depthWrite: false, side: DoubleSide }));
+    beam.position.set(S.x0 + (S.x1 - S.x0) * ((i + 0.5) / 6), B.roofY + S.height + 0.2, S.z0 + 0.2);
     root.add(beam);
     lasers.push(beam);
   }
-  // A warm key light on the DJ, so Bigfoot reads clearly against the night.
-  const key = new PointLight(0xffe2c4, 9, 7, 1.4);
-  key.position.set(Rooftop.djSpot.x - 2.2, Rooftop.djSpot.y + 2.6, Rooftop.djSpot.z + 0.6);
-  root.add(key);
   const light = new PointLight(0xff5fb8, 0, 24, 1.2);
   light.position.set((C.x0 + C.x1) / 2, B.roofY + 4, (C.z0 + C.z1) / 2);
-  root.add(light);
-
-  // Filler towers around, so the gap reads as a Manhattan street canyon.
-  for (const [x, z, tw, td, top] of [
-    [B.nearX + 4, B.minZ - 9, 10, 8, -3],
-    [B.farX + 8, (B.minZ + B.maxZ) / 2, 9, 14, -4],
-  ] as const) {
-    const t = tower(tw, td, top - B.baseY, facadeMat);
-    t.position.set(x, B.baseY + (top - B.baseY) / 2, z);
-    root.add(t);
-  }
-  // Our own building's face below the window, and the ledge he steps onto.
-  const ownFace = new Mesh(new PlaneGeometry(40, -B.baseY), facadeMat);
-  ownFace.rotation.y = Math.PI / 2;
-  ownFace.position.set(0.02, B.baseY / 2 - 0.2, 0);
-  const ledge = new Mesh(bevelBox(Rooftop.ledge.depth, 0.18, Rooftop.bay.width + 0.2, 0.02), concrete);
-  ledge.name = 'Ledge';
-  ledge.position.set(Rooftop.ledge.depth / 2, -0.09, 0);
-  root.add(ownFace, ledge);
-
-  // The street ("ground floor") far below: asphalt, lamps, and a crowd looking up.
-  const street = new Mesh(new PlaneGeometry(60, 120), new MeshStandardMaterial({ color: 0x1c1c22, roughness: 0.95 }));
-  street.rotation.x = -Math.PI / 2;
-  street.position.set((Rooftop.street.x0 + Rooftop.street.x1) / 2, B.baseY, -10);
-  root.add(street);
-  const lamps = new InstancedMesh(new SphereGeometry(0.25, 8, 6), new MeshBasicMaterial({ color: 0xffd8a0 }), 12);
-  for (let i = 0; i < 12; i++) {
-    m.makeTranslation(i % 2 ? Rooftop.street.x1 : Rooftop.street.x0, B.baseY + 5, -30 + i * 5);
-    lamps.setMatrixAt(i, m);
-  }
-  root.add(lamps);
-  const streetCrowd = new InstancedMesh(personGeometry(true), crowdMat, STREET_CROWD);
-  for (let i = 0; i < STREET_CROWD; i++) {
-    const x = Rooftop.street.x0 + ((i * 0.618) % 1) * (Rooftop.street.x1 - Rooftop.street.x0);
-    m.makeTranslation(x, B.baseY, -8 + ((i * 0.377) % 1) * 12);
-    streetCrowd.setMatrixAt(i, m);
-  }
-  root.add(streetCrowd);
+  const key = new PointLight(0xffe2c4, 9, 7, 1.4);
+  key.position.set(Rooftop.djSpot.x - 1.2, Rooftop.djSpot.y + 2.6, Rooftop.djSpot.z + 2.2);
+  root.add(light, key);
 
   const pos = new Vector3();
   const scl = new Vector3();
@@ -218,8 +272,8 @@ export function buildRooftop(): RooftopWorld {
   let palette: readonly number[] = BULB_COLORS;
   return {
     root,
+    behind,
     platters,
-    light,
     setPalette(colors) {
       palette = colors;
       lasers.forEach((l, i) => (l.material as MeshBasicMaterial).color.setHex(colors[i % colors.length]));
@@ -227,7 +281,7 @@ export function buildRooftop(): RooftopWorld {
     update(t, beat, energy) {
       const hit = Math.pow(beat, 4);
       platters.forEach((p, i) => (p.rotation.y = t * (i ? -3.5 : 3.5)));
-      for (let i = 0; i < CROWD; i++) {
+      for (let i = 0; i < spots.length; i++) {
         const s = spots[i];
         pos.copy(s.p).setY(B.roofY + Math.abs(Math.sin((t * 2 + s.phase) * Math.PI)) * 0.12 * (0.3 + energy));
         scl.setScalar(s.s);

@@ -1,6 +1,7 @@
 import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core';
 import { ActName, Sound, SOUND_CAPTIONS } from '../audio/engine.js';
 import { songOf } from '../dreams/chapter_rooftop.js';
+import { Rooftop } from '../showcase/rooftop-layout.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
@@ -8,7 +9,7 @@ import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 
 const SOUND_CAPTION_SEC = 3.5;
 /** Rooftop Party beats where the party music is heard. */
-const ROOFTOP_MUSIC = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back']);
+const ROOFTOP_MUSIC = new Set(['to-window', 'leap-out', 'arrive', 'party-wait', 'leap-back', 'gifts']);
 const SOUND_TEXTS = new Set<string>(Object.values(SOUND_CAPTIONS));
 
 /**
@@ -90,16 +91,22 @@ export class AudioSystem extends createSystem({
     if (act !== this.lastAct && d.hasComponent(RoomSlots) && d.getValue(RoomSlots, 'anchorReady')) {
       this.lastAct = act;
       if (rooftop && d.getValue(RoomSlots, 'windowReady')) {
+        // From the Yeti's decks up on the party roof.
         const o = d.getVectorView(RoomSlots, 'windowOrigin');
         const out = d.getVectorView(RoomSlots, 'windowOut');
-        this.tv.set(o[0] + out[0] * 10, o[1] - 1, o[2] + out[2] * 10);
+        const along = d.getVectorView(RoomSlots, 'windowAlong');
+        const dj = Rooftop.djSpot;
+        this.tv.set(o[0] + out[0] * dj.x + along[0] * dj.z, o[1] + dj.y + 1, o[2] + out[2] * dj.x + along[2] * dj.z);
       } else {
         this.tv.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
       }
       Sound.setAct(act, this.tv);
       if (phase === RitualPhase.Asleep) Sound.setMusic(act ? 0.15 : 0.6);
     }
-    if (d.hasComponent(RoomSlots)) Sound.setActOpenness(rooftop ? (d.getValue(RoomSlots, 'windowOpen') ?? 0) : 1);
+    if (d.hasComponent(RoomSlots)) {
+      const outside = !!d.getValue(RoomSlots, 'viewOutside');
+      Sound.setActOpenness(rooftop && !outside ? (d.getValue(RoomSlots, 'windowOpen') ?? 0) : 1);
+    }
     Sound.tick();
 
     // Story captions (teaching, closing) outrank sound captions: never interrupt them.

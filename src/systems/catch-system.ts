@@ -25,6 +25,7 @@ import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js'
 import { dreamNight } from '../dreams/nights.js';
 import { Tuning } from '../config/tuning.js';
 import { buildGift } from '../visuals/goodies.js';
+import { Rooftop } from '../showcase/rooftop-layout.js';
 
 const SPAWN_EVERY = 2.4;
 const FLIGHT_SEC = 2.2;
@@ -95,7 +96,8 @@ export class CatchSystem extends createSystem({
     const dreaming = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = this.beat.scene;
     const tvAct = scene === 'surf' || scene === 'dj' || scene === 'ski';
-    const party = scene.startsWith('party-') && scene !== 'party-wait';
+    // Back home after the party, now and then the Yeti DJ throws a gift to the viewer too.
+    const party = scene === 'gifts' && this.beat.time > 2;
     const kind: Kind | undefined = !dreaming ? undefined : tvAct ? (scene as Kind) : party ? 'gift' : undefined;
     if (kind && this.beat.progress > 0.08 && this.beat.progress < 0.9) {
       this.timer -= delta;
@@ -193,11 +195,13 @@ export class CatchSystem extends createSystem({
     this.player.head.getWorldQuaternion(this.headQuat);
     this.fwd.set(0, 0, -1).applyQuaternion(this.headQuat).setY(0).normalize();
     this.side.crossVectors(this.up, this.fwd).normalize();
-    const thrower = kind === 'gift' ? this.queries.bigfoot.entities.values().next().value?.object3D : undefined;
-    if (thrower) {
-      // Thrown by Bigfoot from the rooftop, in through the open window.
-      thrower.getWorldPosition(f.from);
-      f.from.y += 1.5;
+    if (kind === 'gift' && d.getValue(RoomSlots, 'windowReady')) {
+      // Thrown by the Yeti DJ from the party roof, in through the open window.
+      const o = d.getVectorView(RoomSlots, 'windowOrigin');
+      const out = d.getVectorView(RoomSlots, 'windowOut');
+      const along = d.getVectorView(RoomSlots, 'windowAlong');
+      const dj = Rooftop.djSpot;
+      f.from.set(o[0] + out[0] * dj.x + along[0] * dj.z, o[1] + dj.y + 1.5, o[2] + out[2] * dj.x + along[2] * dj.z);
       f.flight = Tuning.rooftop.viewerFlightSec;
       f.arc = Tuning.rooftop.viewerArc;
     } else {
