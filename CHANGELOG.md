@@ -2,6 +2,17 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — Rooftop Party v2 (owner's refinement)
+
+- The party is on the roof of a **taller skyscraper opposite** Bigfoot's window. He slides his glass open and leaps **up** to it, dances with the crowd, and leaps **back down** home.
+- **The DJ is his Yeti cousin**: the same rigged model with snow-white fur (a shader turns the fur texture to brightened grey, keeping its detail) and DJ headphones on his head bone.
+  - During the party he tosses parachute gifts to the street crowd.
+  - Afterwards he throws gifts across to Bigfoot at his window. Bigfoot catches each one and stacks it on his floor as a loose heap; the pile is saved, so it grows night after night.
+  - Some gifts come to the viewer to catch.
+- **A comfortable viewpoint tour** (the view never glides; it fades out, moves, and fades in): his room for the start; a raised VIP deck beside the stage for the party and the song choice; the party roof's edge, looking down at the street and across at his tower as he leaps home; his room again for the gifts. On a headset, the outside viewpoints get a night sky and a lit stand-in for his room in his tower.
+- The world now includes Bigfoot's own tower (facade with his window cut out, roof and sides) and towers all round.
+- Emulator checks: the party view shows Bigfoot dancing and the Yeti at the decks; the edge view shows his tower and lit room across the street; the gift heap stands in his room. Clean console.
+
 ## 2026-10-27 — The Rooftop Party (owner's direction change, BUILD_PLAN.md §2c)
 
 - **New main event.** Bigfoot wakes and walks to the floor-to-ceiling glass. A bay slides open, he steps onto the ledge and leaps across the street onto the rooftop of the neighbouring high-rise, where a DJ party is going on.

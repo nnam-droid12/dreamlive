@@ -10,9 +10,9 @@ Dreamlive
 
 ## 2. Tagline
 
-> Bigfoot leaps from your bedroom window to the rooftop party next door, DJs, and throws goodies you catch with your hands.
+> Bigfoot leaps from his window to a rooftop party next door, then catches the gifts his DJ cousin throws home. You catch some too.
 
-(121 characters; limit 140.)
+(129 characters; limit 140.)
 
 ## 3. Track and division
 
@@ -23,9 +23,9 @@ Entertainment · New Experience
 *(Also paste these at the top of the description.)*
 
 - **Play:** https://nnam-droid12.github.io/dreamlive/ in **Meta Quest Browser** (Quest 3 / 3S; Meta VR Glasses supported). Sit facing a wall, ideally your TV wall, and press **Enter XR**.
-- **Start:** look at sleeping Bigfoot (or just wait 12 seconds). He walks to the window and leaps to the rooftop party next door.
-- **Choose:** look at a glowing light by the window (Disco · Afrobeats · House) until its ring fills. A pinch works too. Do nothing and the party chooses for you.
-- **Catch:** touch the goodies he throws in through your window with your hand. Catch the night's goal for a golden memory.
+- **Start:** look at sleeping Bigfoot (or just wait 12 seconds). He leaps from his window up to the rooftop party opposite; the view follows in soft fades.
+- **Choose:** on the VIP deck, look at a glowing light (Disco · Afrobeats · House) until its ring fills. A pinch works too. Do nothing and the party chooses for you.
+- **Catch:** back in his room, touch the gifts the Yeti DJ throws to you. Catch the night's goal for a golden memory.
 - **Pause:** hold a palm out at face height, or press B / Y / Menu on a controller. The pause panel has *Unlock all dreams (judges)*, big captions and calm motion.
 - **Length:** about 3 minutes per dream. It is fully completable with no input at all.
 - **Return:** each real night is a new dream night. Your memory orbs stay on the shelf beside the TV; pinch one to dream it again.
@@ -34,7 +34,7 @@ Entertainment · New Experience
 
 **Inspiration.** We wanted mixed reality that feels like a bedtime story happening in your own room. What if a lovable Bigfoot fell asleep on your bed, and you could watch his dream?
 
-**What it does.** Bigfoot sleeps on your real bed or couch, found with Quest's scene understanding. Look at him and he wakes, walks to the window, slides it open and leaps across the street onto the rooftop of the neighbouring high-rise, where a DJ party is going on. On a headset, a dream window opens in your real wall to show it. He takes over the decks and throws goodies off the roof: gifts on glowing parachutes drift down to the crowd on the street, and some fly across through your window for you to catch with your hands. Catch enough and the night's memory turns gold. Wherever you look, the party follows: your gaze picks the song (Disco, Afrobeats or House), with a dwell ring showing the choice forming, and the music, lights and goodies change with it. The music is muffled through the glass until the window slides open. Then he leaps back, flops into bed and leaves a memory orb on a Memory Shelf that persists between visits. On alternate nights his dream plays through your TV instead and spills into the room.
+**What it does.** Bigfoot sleeps on your real bed or couch, found with Quest's scene understanding. Look at him and he slides his window open and leaps up onto the roof of the taller skyscraper opposite, where his Yeti cousin is DJing a party. On a headset, a dream window opens in your real wall. You follow in comfortable fades: a VIP deck beside the decks, where your gaze picks the song (Disco, Afrobeats or House) with a dwell ring showing the choice forming; then the roof's edge, the street far below, as he leaps home. Back in his room, the Yeti throws gifts across the street: Bigfoot catches each one and stacks it on his floor, where the pile grows night after night, and some fly to you to catch with your hands. Catch enough and the night's memory orb turns gold. It lands on a Memory Shelf that persists between visits. On alternate nights his dream plays through your TV instead.
 
 **How we built it.**
 - Built with Meta's Immersive Web SDK (WebXR, Three.js, an entity-component system), as one system per behavior: attention (eye or head gaze), gestures read directly from hand joints, room understanding, the dream director, the TV portal, room spill, catching, the memory shelf, session and pause, audio, and adaptive quality.
