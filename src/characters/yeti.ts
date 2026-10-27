@@ -18,7 +18,8 @@ export async function createYeti(): Promise<BigfootRig> {
         '#include <map_fragment>',
         `#include <map_fragment>
         float fur = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-        diffuseColor.rgb = vec3(fur) * vec3(2.3, 2.4, 2.6);`,
+        // Lift the dark brown fur into snow white, keeping its strand detail.
+        diffuseColor.rgb = clamp(vec3(pow(fur, 0.55)) * vec3(2.55, 2.65, 2.85), 0.0, 1.0);`,
       );
     };
     mat.customProgramCacheKey = () => 'yeti-fur';
