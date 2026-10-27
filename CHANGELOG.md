@@ -2,6 +2,19 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-10-27 — The Rooftop Party (owner's direction change, BUILD_PLAN.md §2c)
+
+- **New main event.** Bigfoot wakes and walks to the floor-to-ceiling glass. A bay slides open, he steps onto the ledge and leaps across the street onto the rooftop of the neighbouring high-rise, where a DJ party is going on.
+  - He DJs on a stage facing your window, behind a booth with turntables and speaker stacks. The crowd dances on a glowing floor under string lights and lasers, beside a classic water tower.
+  - He throws goodies: wrapped gifts on glowing parachutes drift down to a crowd on the street below, and every few seconds one flies across, in through the open window, to be caught by hand. Golden memories still work.
+  - Your gaze picks the song twice (Disco / Afrobeats / House, on lights by the window). Each song has its own procedural music, light palette and colors. The music is muffled through the closed glass and pours in as it slides open.
+  - He leaps back, climbs in, and flops into bed. The memory orb lands on the shelf.
+- New world: `src/showcase/rooftop.ts` and `rooftop-layout.ts`, a "window frame" layout so the same rooftop stands outside the showcase glass or beyond the headset's dream window. New chapter: `src/dreams/chapter_rooftop.ts`. New `RooftopPartySystem`, goodies, and Bigfoot's rooftop choreography.
+- **Headset:** a glowing dream window opens in the real wall beside the TV, with a glass pane that slides. An invisible wall-plane occluder means the rooftop world shows only through the opening. Emulator living room: 17 planes, dream window placed, the full dream completed.
+- **TV dream kept as an extra:** odd nights play the Rooftop Party (night 1 first) and even nights the TV dream. With unlock-all, *Restart dream* alternates.
+- **Showcase:** the seat faces between the bed and the window. The glass is split into bays and one slides.
+- **Director mode:** rooftop shot list. It follows him to the glass, watches the leap from the open bay, uses a dream camera over the dance floor, looks down from the ledge at goodies parachuting to the street, and gazes at "House" then "Afrobeats".
+
 ## 2026-10-27 — Phase 8: submission materials
 
 - **Director mode** (`?director`, development only) for the demo video:
