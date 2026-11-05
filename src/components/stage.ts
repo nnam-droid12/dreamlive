@@ -64,8 +64,17 @@ export const RoomSlots = createComponent('RoomSlots', {
   windowAlong: { type: Types.Vec3, default: [0, 0, 1] },
   /** 0 closed .. 1 slid fully open (the music pours in as it opens). */
   windowOpen: { type: Types.Float32, default: 0 },
+  /** Bumped when the window is moved (drawn somewhere new); followers re-place themselves. */
+  windowVersion: { type: Types.Int16, default: 0 },
   /** The viewpoint tour has taken the viewer outside (party roof or its edge). */
   viewOutside: { type: Types.Boolean, default: false },
+  /** The dream's transformation of the room: 0 an ordinary bedroom .. 1 Bigfoot's penthouse
+   * (window wall to glass, ceiling to night sky). `dawn` warms the sky into sunrise. */
+  wallOpen: { type: Types.Float32, default: 0 },
+  ceilingOpen: { type: Types.Float32, default: 0 },
+  dawn: { type: Types.Float32, default: 0 },
+  /** The window drawn for Bigfoot opening in the wall (0..1). */
+  holeOpen: { type: Types.Float32, default: 0 },
   anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },
   /** Unit normal of the anchor surface, pointing toward the user. */
   anchorNormal: { type: Types.Vec3, default: [0, 0, 1] },

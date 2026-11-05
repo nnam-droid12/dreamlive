@@ -53,8 +53,8 @@ const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
  * bedroom glass on cue, keeps the party going, and runs the goodies: parachutes
  * tossed to the street during the party, then gifts thrown across to Bigfoot at
  * his window, which he catches and stacks on his floor (the pile is saved).
- * Outside viewpoints (the tour) get a night sky; on a headset they also hide the
- * real room and show a lit stand-in for Bigfoot's room in his tower.
+ * On a headset, outside viewpoints (the tour) hide the real room's side and show a
+ * lit stand-in for Bigfoot's room in his tower.
  */
 export class RooftopPartySystem extends createSystem({
   director: { required: [Ritual, DreamDirector, DevControls, Session, RoomSlots] },
@@ -63,9 +63,9 @@ export class RooftopPartySystem extends createSystem({
   private party?: RooftopWorld;
   private dj?: BigfootRig;
   private loadingDj = false;
+  private windowVersion = 0;
   private pane?: Object3D;
   private paneHome = new Vector3();
-  private sky?: Mesh;
   private standIn?: Object3D;
   private occluder?: Object3D;
   private beat = newBeatContext();
@@ -89,6 +89,7 @@ export class RooftopPartySystem extends createSystem({
     const d = this.queries.director.entities.values().next().value;
     if (!d || !d.getValue(RoomSlots, 'windowReady')) return;
     if (!this.party) this.build(d);
+    if (d.getValue(RoomSlots, 'windowVersion') !== this.windowVersion) this.follow(d);
     const delta = dreamDelta(d, realDelta);
     this.time += delta;
 
@@ -155,14 +156,7 @@ export class RooftopPartySystem extends createSystem({
       this.standIn = buildRoomStandIn();
       party.root.add(this.standIn);
     }
-    // A night sky around the outside viewpoints (and, on a headset, over the real room).
-    // Inside the camera's far plane, centred on the viewer.
-    this.sky = new Mesh(new SphereGeometry(90, 24, 12), nightSkyMaterial());
-    this.sky.visible = false;
-    this.sky.renderOrder = -20;
-    this.world.createTransformEntity(this.sky);
-    this.pane = this.scene.getObjectByName('SlidingPane') ?? undefined;
-    if (this.pane) this.paneHome.copy(this.pane.position);
+    this.findPane();
     frameToWorld(f, Rooftop.djSpot, this.djAt);
     frameToWorld(f, { x: Rooftop.insideSpot.x + 0.35, y: Rooftop.catchHeight, z: Rooftop.insideSpot.z }, this.catchAt);
     frameToWorld(f, Rooftop.pile, this.pileAt);
@@ -177,6 +171,37 @@ export class RooftopPartySystem extends createSystem({
     }
   }
 
+  /** The window was drawn elsewhere: move the city, the DJ's aims and the sliding glass with it. */
+  private follow(d: Entity): void {
+    this.windowVersion = d.getValue(RoomSlots, 'windowVersion') ?? 0;
+    const f = this.frame;
+    f.origin.fromArray(d.getVectorView(RoomSlots, 'windowOrigin'));
+    this.party!.root.position.copy(f.origin);
+    frameToWorld(f, Rooftop.djSpot, this.djAt);
+    frameToWorld(f, { x: Rooftop.insideSpot.x + 0.35, y: Rooftop.catchHeight, z: Rooftop.insideSpot.z }, this.catchAt);
+    frameToWorld(f, Rooftop.pile, this.pileAt);
+    for (const g of this.gifts) if (g.state === 'placed') this.pileSlot(g.slot, g.obj.position);
+    if (this.pane) this.pane.position.copy(this.paneHome);
+    this.findPane();
+  }
+
+  /** The glass that slides: the room's bay nearest the window (showcase), or the dream window's. */
+  private findPane(): void {
+    let best: Object3D | undefined;
+    let bestD = Infinity;
+    this.scene.traverse((o) => {
+      if (!o.name.startsWith('SlidingPane')) return;
+      o.getWorldPosition(this.tmp);
+      const dz = this.tmp.distanceTo(this.frame.origin.clone().setY(this.tmp.y));
+      if (dz < bestD) {
+        bestD = dz;
+        best = o;
+      }
+    });
+    this.pane = best;
+    if (this.pane) this.paneHome.copy(this.pane.position);
+  }
+
   /** Slides the glass: open as he reaches it, shut once he is home and inside. */
   private glass(d: Entity, scene: string, t: number): void {
     let open = 0;
@@ -187,12 +212,8 @@ export class RooftopPartySystem extends createSystem({
     if (this.pane) this.pane.position.copy(this.paneHome).addScaledVector(this.frame.along, -open * (Rooftop.bay.width - 0.1));
   }
 
-  /** Outside viewpoints: the night sky; on a headset, also hide the real room's side. */
+  /** Outside viewpoints on a headset: hide the real room's side (the sky is RoomTransformSystem's). */
   private outside(out: boolean): void {
-    if (this.sky) {
-      this.sky.visible = out;
-      this.player.head.getWorldPosition(this.sky.position);
-    }
     if (!Showcase.enabled) {
       this.party!.behind.visible = out;
       if (this.standIn) this.standIn.visible = out;
@@ -337,26 +358,6 @@ export class RooftopPartySystem extends createSystem({
       }
     }
   }
-}
-
-/** A deep night-sky gradient around the viewer, drawn behind everything. */
-function nightSkyMaterial(): MeshBasicMaterial {
-  const c = document.createElement('canvas');
-  c.width = 4;
-  c.height = 256;
-  const g = c.getContext('2d');
-  if (g) {
-    const grad = g.createLinearGradient(0, 0, 0, 256);
-    grad.addColorStop(0, '#04061a');
-    grad.addColorStop(0.5, '#1b2350');
-    grad.addColorStop(0.62, '#3a2f5c');
-    grad.addColorStop(1, '#0b0b14');
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 4, 256);
-  }
-  const map = new CanvasTexture(c);
-  map.colorSpace = SRGBColorSpace;
-  return new MeshBasicMaterial({ map, side: BackSide, depthWrite: false });
 }
 
 /**

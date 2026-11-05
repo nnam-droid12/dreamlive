@@ -31,6 +31,7 @@ import {
   Vector3,
 } from '@iwsdk/core';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
+import { makeDissolving } from '../visuals/dissolve.js';
 
 export const NycLayout = {
   room: { minX: -3.4, maxX: 3.6, minZ: -4.2, maxZ: 2.2, height: 3.0 },
@@ -42,7 +43,7 @@ export const NycLayout = {
    * turned between the bed and the window, where the Rooftop Party plays out. */
   seat: { position: new Vector3(-0.8, 0, 1.0), yaw: -0.7 },
   /** The window bay Bigfoot slides open: floor point at its center on the glass. */
-  window: { origin: new Vector3(3.6, 0, -1.8), out: new Vector3(1, 0, 0), along: new Vector3(0, 0, 1), width: 1.6 },
+  window: { origin: new Vector3(3.6, 0, -1.8), out: new Vector3(1, 0, 0), along: new Vector3(0, 0, 1), width: 1.6, bays: [-1.8, -0.2] },
 } as const;
 
 type MapSet = { diff?: Texture; nor?: Texture; arm?: Texture };
@@ -149,7 +150,11 @@ export async function buildNycBedroom(): Promise<Group> {
   add(place(back, cx, R.height / 2, R.maxZ, Math.PI), false);
   const left = new Mesh(meterPlane(D, R.height), wallMat);
   add(place(left, R.minX, R.height / 2, cz, Math.PI / 2), false);
-  const ceiling = new Mesh(meterPlane(W, D), new MeshStandardMaterial({ color: 0xf4f0ea, roughness: 0.95 }));
+  // The ceiling opens into the night sky when the dream transforms the room.
+  const ceilingMat = new MeshStandardMaterial({ color: 0xf4f0ea, roughness: 0.95 });
+  const ceiling = new Mesh(meterPlane(W, D), ceilingMat);
+  ceiling.name = 'DreamCeiling';
+  ceiling.userData.dissolve = makeDissolving(ceilingMat, 0xbfd4ff);
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.set(cx, R.height, cz);
   add(ceiling, false);
@@ -180,11 +185,13 @@ export async function buildNycBedroom(): Promise<Group> {
   for (let i = 0; i < 4; i++) {
     const z = R.minZ + bay * (i + 0.5);
     const pane = new Mesh(new PlaneGeometry(bay - 0.02, R.height), glass);
-    const sliding = Math.abs(z - win.origin.z) < bay / 2;
+    // The two middle bays can slide (Bigfoot leaves through the one drawn); the end bays sit behind curtains.
+    const sliding = i === 1 || i === 2;
     if (sliding) {
       // Its own group so it can slide along the wall, just inside the fixed panes.
       const door = new Group();
-      door.name = 'SlidingPane';
+      door.name = Math.abs(z - win.origin.z) < bay / 2 ? 'SlidingPane' : `SlidingPane_${i}`;
+      door.userData.bayZ = z;
       door.add(place(pane, 0, 0, 0, -Math.PI / 2));
       door.position.set(R.maxX - 0.03, R.height / 2, z);
       room.add(door);
@@ -192,6 +199,13 @@ export async function buildNycBedroom(): Promise<Group> {
       room.add(place(pane, R.maxX, R.height / 2, z, -Math.PI / 2));
     }
   }
+  // Until the dream, a plain plaster wall hides the glass: an ordinary bedroom. It dissolves
+  // where Bigfoot's window is drawn, then all the way, into a penthouse over New York.
+  const veilMat = wallMat.clone();
+  const veil = new Mesh(meterPlane(D, R.height), veilMat);
+  veil.name = 'DreamVeil';
+  veil.userData.dissolve = makeDissolving(veilMat);
+  room.add(place(veil, R.maxX - 0.06, R.height / 2, cz, -Math.PI / 2));
   const mullionGeo = new BoxGeometry(0.05, R.height, 0.05);
   for (let z = R.minZ; z <= R.maxZ + 1e-3; z += D / 4) add(place(new Mesh(mullionGeo, graphite), R.maxX, R.height / 2, z));
   add(place(new Mesh(new BoxGeometry(0.06, 0.06, D), graphite), R.maxX, 0.03, cz));

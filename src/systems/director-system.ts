@@ -157,7 +157,10 @@ export class DirectorSystem extends createSystem({
     const him = root ? root.clone().setY(root.y + 1.1) : at(Rooftop.danceSpot.x, 7.1, Rooftop.danceSpot.z);
     const dj = at(Rooftop.djSpot.x, Rooftop.djSpot.y + 1.4, Rooftop.djSpot.z);
     const deck = Rooftop.views.party.at;
-    if (scene === 'to-window') {
+    if (scene === 'draw-window') {
+      // The wall where Bigfoot's window is being drawn.
+      this.aim(at(-3.6, 1.45, 0.4), at(0, 1.5, 0));
+    } else if (scene === 'to-window') {
       this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.4, 1.5, 1.4), t < 6.8 ? him : at(2, 2.2, -0.5));
     } else if (scene === 'leap-out') {
       this.aim(at(-2.2, 1.3, 1.8), him);

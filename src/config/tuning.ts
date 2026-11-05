@@ -180,6 +180,33 @@ export const Tuning = {
     lightDistance: 10,
   },
 
+  drawWindow: {
+    /** With no drawing, the window starts drawing itself after this long, taking this long. */
+    autoAfterSec: 9,
+    autoDrawSec: 2.5,
+    /** The drawn window dissolves open over this long. */
+    openSec: 1.4,
+    /** The invisible drawing surface over the wall, and the smallest window accepted. */
+    padWidth: 3.6,
+    padHeight: 2.8,
+    minWidth: 0.5,
+    minHeight: 0.9,
+  },
+
+  transform: {
+    /** Without a drawn window, the opening appears this far into his walk to the window. */
+    autoHoleAt: 2.5,
+    /** Approach rates (per second) for the opening, the wall, the ceiling and the sunrise. */
+    holeRate: 1.2,
+    wallRate: 0.45,
+    ceilingRate: 0.35,
+    dawnRate: 0.3,
+    /** The ceiling starts opening once the wall is this far gone. */
+    ceilingAfter: 0.5,
+    /** How far the sky warms while he walks back to bed (sunrise completes on waking). */
+    dawnInBed: 0.45,
+  },
+
   tour: {
     /** Viewpoint changes: fade to black, move, fade back in (never a gliding camera). */
     fadeOutSec: 0.45,

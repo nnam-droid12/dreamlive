@@ -83,6 +83,20 @@ Decided by the owner after seeing the TV-portal build live:
 - **Headset (MR):** a dream window opens in the user's real wall and the rooftop party lies beyond it.
 - **Physical note:** a seated viewer cannot see a street 45 m below through floor-level glass. Goodies are visible as they parachute below the roof edge and the crowd is heard cheering; the demo video adds a look-down shot from the glass.
 
+## 2d. Stand-out plan — 2026-11-05 (after studying DreamSpace, Best Entertainment 2025)
+
+DreamSpace won by turning the user's whole real room into a dream place (walls and ceiling become a world, real furniture stays), with virtual light on the real room, hand control of time and weather, drawn windows, magical transitions, living details and a trailer made of captioned feature beats. It has no character or story; Dreamlive's Bigfoot story is our edge. The owner chose to build all of these (no headset; the trailer is emulator capture):
+
+1. **Room becomes Bigfoot's penthouse.** Showcase: the room starts as an ordinary bedroom; at the dream's start the window wall dissolves into floor-to-ceiling glass onto New York and the ceiling opens into a starry sky; sunrise floods in at the end. Headset: detected walls get city windows, the ceiling becomes stars, and real furniture stays.
+2. **Party light on the real room.** Lasers and colored washes sweep the walls and ceiling on the beat.
+3. **Draw Bigfoot a window.** Pinch and drag a rectangle on the wall; Bigfoot leaps out through it (it auto-draws after a while with no input).
+4. **You DJ too.** Palm-up mixer: a crossfader switches songs, an energy slider, and a fist-pump fires confetti and fireworks.
+5. **Living city:** birds, a helicopter searchlight, traffic far below, a fireworks finale.
+6. **Bedtime mode** after the story: the night penthouse stays, rain on the glass, Bigfoot snoring (a nightly habit).
+7. **Weather on your palm:** rain, fog, snow, and time of night.
+8. **Landmark towers:** generic art-deco spire and glass supertall, no logos.
+9. **Trailer:** Director mode with a caption on each feature beat, square format, under 3:00, logo and URL at the end.
+
 ## 3. Experience design (the full script)
 
 ### 3.1 Session structure (about 8–9 minutes total)

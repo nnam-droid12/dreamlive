@@ -66,6 +66,7 @@ export class BigfootSystem extends createSystem({
   private faceQuat = new Quaternion();
   // Rooftop Party route (world space), fixed once the window is known.
   private roofReady = false;
+  private windowVersion = 0;
   private inside = new Vector3();
   private ledge = new Vector3();
   private landing = new Vector3();
@@ -85,6 +86,10 @@ export class BigfootSystem extends createSystem({
     }
     if (!this.rig || !this.entity) return;
     const delta = dreamDelta(d, realDelta);
+    if (d.getValue(RoomSlots, 'windowVersion') !== this.windowVersion) {
+      this.windowVersion = d.getValue(RoomSlots, 'windowVersion') ?? 0;
+      this.roofReady = false;
+    }
     if (!this.roofReady) this.layoutRooftop(d);
     const phase = d.getValue(Ritual, 'phase');
     const phaseTime = d.getValue(Ritual, 'phaseTime') ?? 0;
@@ -96,6 +101,7 @@ export class BigfootSystem extends createSystem({
       if (!readBeat(d, this.beat)) this.lieDown();
       else if (this.beat.scene === 'sleepwalk') this.sleepwalk(this.beat.time);
       else if (this.beat.scene === 'finale') this.returnToBed(this.beat.time);
+      else if (this.beat.scene === 'draw-window') this.lieDown();
       else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
     } else if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) {
