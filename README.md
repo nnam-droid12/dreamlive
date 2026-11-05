@@ -12,10 +12,17 @@ Dreamlive is a seated, hands-first mixed-reality experience for Meta Quest 3 / 3
 
 ## How to play
 
+- **Draw Bigfoot a window:** pinch and drag a rectangle on the wall. The plaster dissolves open there, and his window, the city and the party all move to where you drew. Do nothing and it draws itself.
+- **Watch the room transform:** once Bigfoot lands at the party, the window wall dissolves into floor-to-ceiling glass over New York, and the ceiling opens to the stars. Lasers from the party sweep across your walls on the beat.
 - **Look** at sleeping Bigfoot to wake him (or just wait).
 - **Look** at a glowing light by the window to choose the song (or pinch it). Do nothing and the party chooses for you.
 - **Catch** the gifts the Yeti throws through the window (or what flies out of the TV) with your hand. Catch the night's goal for a golden memory.
 - **Pinch** an orb on your Memory Shelf to dream it again.
+- **Turn your left palm up** (or press X on the left controller) for the palm menu:
+  - be the DJ (pick the Yeti's song);
+  - fire confetti, or a fireworks volley over the city;
+  - change the weather (rain, fog, snow) and the time (night or sunrise);
+  - choose **Bedtime**: rain on the glass while Bigfoot snores. Bedtime also starts by itself after the story.
 - **Hold a palm out** (or press B / Y / Menu on a controller) to pause: resume, restart, unlock all, big captions, calm motion, exit.
 
 ## Develop
