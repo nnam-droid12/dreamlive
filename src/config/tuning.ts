@@ -180,6 +180,30 @@ export const Tuning = {
     lightDistance: 10,
   },
 
+  city: {
+    /** Traffic lanes in the window frame (m): cross streets past both towers' ends, the avenue beyond the party tower. */
+    lanes: [
+      { axis: 'x', at: 10.2, dir: 1, from: -40, to: 70 },
+      { axis: 'x', at: 12.4, dir: -1, from: -40, to: 70 },
+      { axis: 'x', at: -9.6, dir: 1, from: -40, to: 70 },
+      { axis: 'x', at: -11.8, dir: -1, from: -40, to: 70 },
+      { axis: 'z', at: 24.4, dir: 1, from: -60, to: 60 },
+      { axis: 'z', at: 26.8, dir: -1, from: -60, to: 60 },
+    ] as const,
+    carsPerLane: 7,
+    carSpeed: 9,
+    /** Body tints (multiplied with the car's own colours, so the lights stay bright). */
+    carColors: [0xffffff, 0xd8dcea, 0xffe2b8, 0xc4d4ff],
+    /** The helicopter circles the party tower: centre (frame x, z), radius, height, speed (rad/s). */
+    heli: { x: 15, z: 0.5, radius: 24, height: 30, speed: 0.12 },
+    /** Birds at sunrise: how many, and the line the flock flies along (frame m) and how long it takes. */
+    birds: 11,
+    flock: { from: { x: 11, y: 9, z: -35 }, to: { x: 17, y: 14, z: 45 }, sec: 22 },
+    /** Finale fireworks: this far into the leap home, and into the gifts. */
+    finaleLeapAt: 3.5,
+    finaleGiftsAt: 17,
+  },
+
   partyLight: {
     /** Laser beams from the party stage into the room: count, thickness, opacity (+ beat flash). */
     beams: 4,

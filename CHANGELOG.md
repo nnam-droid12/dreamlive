@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-05 — A living city
+
+- **Traffic:** headlight-and-taillight cars stream along the cross streets and the avenue far below (one instanced draw).
+- **A helicopter** circles the party tower, with a spinning rotor, a blinking red light and a searchlight sweeping the roof. The searchlight dims at sunrise.
+- **Birds:** a flock crosses the sky in a loose V as the sky turns to dawn.
+- **Fireworks finale:** a volley goes up as Bigfoot lands back home, and another as the last gift lands. Each fires once per dream.
+- Emulator checks:
+  - Seen: the helicopter and searchlight over the towers, and the room spotlight pooling on the floor.
+  - Not yet seen on screen: the traffic below (the view tour moved on before the shot); it will be checked in the trailer pass.
+
 ## 2026-11-05 — The party lights reach your room
 
 - While the party is loud and you are at home (Bigfoot landing, leaping back, the gifts, a replayed song, or any time you DJ), four laser beams fire from the Yeti's stage across the street, come in through the window, and sweep over your walls.
