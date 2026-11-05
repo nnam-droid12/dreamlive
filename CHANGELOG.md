@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-05 — Landmark towers on the skyline
+
+- Two new procedural landmark models, generic and not copies of real buildings:
+  - **An art-deco spire tower** (about 96 m): a limestone shaft rising in two setbacks with vertical piers, a three-tier stepped crown of glowing gilded arches, a needle spire and a red aircraft beacon.
+  - **A slim glass supertall** (about 150 m): blue-black glass tapering as it rises, scattered floors lit cool white, an open crown with a glowing ring, a mast and a beacon.
+- Lit windows come from deterministic window textures (no DOM), and the UVs count window cells, so the panes are the same size on every face.
+- Cost: the deco tower is 13 meshes (1,344 triangles; its piers are instanced); the glass tower is 6 meshes (212 triangles).
+- Placement: both stand close enough that their crowns rise above the party roof as seen from Bigfoot's room. From inside the room, the party tower hides everything below about 32° of elevation.
+- Emulator checks: isolated previews (front, back, side, top and quarter views); from the room, the deco crown sits centre-stage over the party with the supertall to the right. The production build passes.
+
 ## 2026-11-05 — Bedtime mode
 
 - **Bedtime:** a calm place to stay after the story. Choose it from the palm menu, or it starts by itself 25 seconds after the Rooftop night ends.

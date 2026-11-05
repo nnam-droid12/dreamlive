@@ -32,6 +32,8 @@ export const Rooftop = {
   danceSpot: new Vector3(10.0, 6.0, -0.9),
   /** Leaping home he takes off from the roof's near edge. */
   edgeSpot: new Vector3(7.6, 6.0, -0.4),
+  /** Landmark towers (frame x, z; yaw): close enough that their crowns rise above the party roof as seen from the room. */
+  landmarks: { deco: { x: 44, z: -21, yaw: 0.3 }, glass: { x: 54, z: 22, yaw: -0.2 } },
   /** The street ("ground floor") between the two towers. */
   street: { y: -45, x0: 0.8, x1: 6.2 },
   /** Seconds and extra height of the leaps (up, and back down). */

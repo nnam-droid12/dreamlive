@@ -32,6 +32,8 @@ import {
 import { personGeometry } from '../dream-tv/dj.js';
 import { facadeTexture } from '../dream-tv/ski.js';
 import { buildDjBooth } from '../scene-assets/dj-booth.scene-asset.js';
+import { buildDecoTower } from '../scene-assets/landmark-deco.scene-asset.js';
+import { buildGlassSupertall } from '../scene-assets/landmark-glass.scene-asset.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 import { Rooftop } from './rooftop-layout.js';
 
@@ -154,13 +156,21 @@ export function buildRooftop(): RooftopWorld {
   // Other towers all around: across the avenue, down the street, and behind his tower.
   for (const [x, z, tw, td, top, back] of [
     [30, -30, 12, 10, 18, 0], [34, 6, 10, 12, 30, 0], [28, 32, 12, 10, 12, 0],
-    [9, -26, 10, 10, 2, 0], [10, 28, 10, 9, 9, 0], [60, -10, 16, 14, 40, 0],
+    [9, -26, 10, 10, 2, 0], [10, 28, 10, 9, 9, 0], [58, 3, 14, 12, 34, 0],
     [-30, -36, 12, 10, 26, 1], [-28, 34, 12, 12, 14, 1], [-40, 0, 14, 16, 34, 1],
   ] as const) {
     const t = towerBox(tw, td, H.baseY, top, facadeMat);
     t.position.x = x;
     t.position.z = z;
     (back ? behind : root).add(t);
+  }
+
+  // Landmarks on the skyline beyond the party: an art-deco spire to the left, a glass supertall to the right.
+  for (const [build, at] of [[buildDecoTower, Rooftop.landmarks.deco], [buildGlassSupertall, Rooftop.landmarks.glass]] as const) {
+    const t = build();
+    t.position.set(at.x, H.baseY, at.z);
+    t.rotation.y = at.yaw;
+    root.add(t);
   }
 
   // The street ("ground floor") far below: asphalt, lamps, and a crowd looking up.

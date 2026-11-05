@@ -15,6 +15,13 @@ export const Palette = {
   rain: 0xaec4e8,
   snow: 0xf4f8ff,
   fog: 0x39415a,
+  /** Landmark towers: deco limestone, gilded crown, supertall glass, lit windows, aircraft beacons. */
+  decoStone: 0x8f8678,
+  decoGold: 0xffc46b,
+  supertallGlass: 0x10182a,
+  windowWarm: 0xffd9a0,
+  windowCool: 0xcfe4ff,
+  beacon: 0xff2a1e,
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,
   starWhite: 0xfff8e8,

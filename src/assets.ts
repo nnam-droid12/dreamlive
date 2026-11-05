@@ -1,5 +1,7 @@
 import { AssetType, defineAssets } from '@iwsdk/core';
 import djBooth from './scene-assets/dj-booth.scene-asset.js';
+import landmarkDeco from './scene-assets/landmark-deco.scene-asset.js';
+import landmarkGlass from './scene-assets/landmark-glass.scene-asset.js';
 import skis from './scene-assets/skis.scene-asset.js';
 import surfboard from './scene-assets/surfboard.scene-asset.js';
 
@@ -18,6 +20,8 @@ export default defineAssets({
   surfboard,
   skis,
   'dj-booth': djBooth,
+  'landmark-deco': landmarkDeco,
+  'landmark-glass': landmarkGlass,
   'palm-panel': {
     url: publicAssetUrl('ui/palm.uikitml'),
     type: AssetType.UIKitML,
