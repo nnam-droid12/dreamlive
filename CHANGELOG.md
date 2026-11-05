@@ -2,6 +2,13 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-05 — The party lights reach your room
+
+- While the party is loud and you are at home (Bigfoot landing, leaping back, the gifts, a replayed song, or any time you DJ), four laser beams fire from the Yeti's stage across the street, come in through the window, and sweep over your walls.
+- In the showcase room, two coloured spotlights also wash the walls and ceiling.
+- Colours follow the song (yours, if you are DJing) and flash on the beat. The lights fade up and down smoothly. The spotlights stay in the scene at zero intensity, so switching them on never recompiles materials.
+- Emulator check: the gifts beat shows the beams crossing the room and a coloured wash on the far wall. Clean console.
+
 ## 2026-11-05 — Palm menu: you DJ, fireworks, confetti, weather
 
 - **Palm menu.** Turn your left palm up (or press X on the left controller) and a small "Party controls" panel floats above it:

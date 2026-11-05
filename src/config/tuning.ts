@@ -180,6 +180,26 @@ export const Tuning = {
     lightDistance: 10,
   },
 
+  partyLight: {
+    /** Laser beams from the party stage into the room: count, thickness, opacity (+ beat flash). */
+    beams: 4,
+    beamRadius: 0.012,
+    beamOpacity: 0.35,
+    beamFlash: 0.5,
+    /** Where beams land, in the window frame: this far back into the room, sweeping this wide, this fast. */
+    reachBack: -6.6,
+    sweepWidth: 2.6,
+    sweepSpeed: 0.55,
+    /** Showcase room spotlights: strength (+ flash), reach, cone, sweep speed. */
+    spotIntensity: 40,
+    spotFlash: 70,
+    spotRange: 12,
+    spotAngle: 0.38,
+    spotSpeed: 0.4,
+    /** How fast the room lights come up and fade out. */
+    fadeRate: 1.2,
+  },
+
   palm: {
     /** Left palm held up this long (right hand not cupping) opens the menu; turned over this long closes it. */
     openHoldSec: 0.35,

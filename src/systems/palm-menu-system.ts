@@ -4,9 +4,9 @@ import { HandGestureState, Handedness } from '../components/hands.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
-import { SONG_TITLE } from '../dreams/chapter_rooftop.js';
 
 const cfg = Tuning.palm;
+const SONG_NAME: Record<string, string> = { disco: 'Disco', afro: 'Afrobeats', house: 'House' };
 
 /**
  * The palm menu. Turn the left palm up (or press X on the left controller) and
@@ -95,7 +95,7 @@ export class PalmMenuSystem extends createSystem({
     for (const song of ['disco', 'afro', 'house']) {
       this.on(`song-${song}`, () => {
         d.setValue(Session, 'djSong', song);
-        say(`You're the DJ: ${SONG_TITLE[song] ?? song}!`);
+        say(`You're the DJ: ${SONG_NAME[song]} on the decks!`);
       });
     }
     this.on('fx-confetti', () => {
