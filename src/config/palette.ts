@@ -11,6 +11,10 @@ export const Palette = {
   lanternAmber: 0xffb45e,
   lanternGlow: 0xffd89a,
   pinkSoft: 0xf6a8c8,
+  /** Weather: rain streaks, snowflakes, fog. */
+  rain: 0xaec4e8,
+  snow: 0xf4f8ff,
+  fog: 0x39415a,
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,
   starWhite: 0xfff8e8,
@@ -28,3 +32,9 @@ export const Palette = {
 } as const;
 
 export type PaletteKey = keyof typeof Palette;
+
+/** Colour sets for particle effects (palm menu): firework shells and confetti. */
+export const PaletteSets = {
+  fireworks: [0xff4d6d, 0xffd166, 0x6ee7ff, 0xb388ff, 0x7cff9e, 0xffffff],
+  confetti: [0xff6fae, 0xffd27a, 0x8fd3ff, 0xa8ff9e, 0xffffff],
+} as const;

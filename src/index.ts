@@ -25,6 +25,8 @@ import { RooftopPartySystem } from './systems/rooftop-party-system.js';
 import { ViewTourSystem } from './systems/view-tour-system.js';
 import { RoomTransformSystem } from './systems/room-transform-system.js';
 import { DrawWindowSystem } from './systems/draw-window-system.js';
+import { PalmMenuSystem } from './systems/palm-menu-system.js';
+import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
 import { SessionSystem } from './systems/session-system.js';
@@ -64,6 +66,8 @@ World.create(
     .registerSystem(ViewTourSystem)
     .registerSystem(RoomTransformSystem)
     .registerSystem(DrawWindowSystem)
+    .registerSystem(PalmMenuSystem)
+    .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)
     .registerSystem(DreamSpillSystem)

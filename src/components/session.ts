@@ -26,6 +26,13 @@ export const Session = createComponent('Session', {
   quality: { type: Types.Int8, default: 0 },
   /** Smoothed measured frame rate. */
   fps: { type: Types.Float32, default: 0 },
+  /** The palm menu: the song the user chose ('' = the story's), weather, manual time of night. */
+  djSong: { type: Types.String, default: '' },
+  weather: { type: Types.String, default: 'clear' },
+  dawnOverride: { type: Types.Float32, default: -1 },
+  /** Bumped to fire a burst (confetti, fireworks); FX systems react to changes. */
+  confettiShots: { type: Types.Int16, default: 0 },
+  fireworkShots: { type: Types.Int16, default: 0 },
   /** Seconds left of the fade-in after the headset comes back or the pause ends. */
   fadeIn: { type: Types.Float32, default: 0 },
 });

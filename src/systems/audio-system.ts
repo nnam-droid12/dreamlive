@@ -4,6 +4,7 @@ import { songOf } from '../dreams/chapter_rooftop.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
+import { DreamDirector } from '../components/dream.js';
 import { RoomSlots } from '../components/stage.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 
@@ -86,6 +87,12 @@ export class AudioSystem extends createSystem({
         act = r;
         rooftop = true;
       }
+    }
+    // The user DJs from the palm menu: their song plays from the decks for the rest of the Rooftop night.
+    const dj = d.hasComponent(Session) ? (d.getValue(Session, 'djSong') ?? '') : '';
+    if (dj && act !== 'surf' && act !== 'dj' && act !== 'ski' && (rooftop || (phase === RitualPhase.Asleep && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party'))) {
+      act = dj as ActName;
+      rooftop = true;
     }
     if (act === 'disco' || act === 'afro' || act === 'house') this.lastSong = act;
     if (act !== this.lastAct && d.hasComponent(RoomSlots) && d.getValue(RoomSlots, 'anchorReady')) {

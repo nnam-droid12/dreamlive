@@ -2,6 +2,23 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-05 — Palm menu: you DJ, fireworks, confetti, weather
+
+- **Palm menu.** Turn your left palm up (or press X on the left controller) and a small "Party controls" panel floats above it:
+  - **You DJ:** choose Disco, Afro or House. The Yeti plays your song from the decks for the rest of the night, and the party lights change to match.
+  - **Confetti** pops just in front of you and flutters down.
+  - **Fireworks:** a volley of four shells bursts over the city beyond the party roof, each with a thump and a crackle.
+  - **Weather:** clear, rain (streaks outside the glass, a rain hiss, a little haze), fog, or snow drifting over New York.
+  - **Time:** deep night or sunrise over the penthouse sky.
+- All effects live in the window frame, so they follow a window drawn somewhere else. Particle pools are fixed (no allocation per frame).
+- Emulator checks: the panel opens with X and sits above the left controller. A ray press on Fireworks fires a volley (state changed through the real button). Snow, fireworks and confetti were seen in the runtime. Clean console.
+
+## 2026-11-05 — The room transforms; draw Bigfoot a window
+
+- **The room becomes a penthouse.** The dream starts in an ordinary bedroom with a plaster window wall. Once Bigfoot lands at the party, the wall dissolves (a noise dissolve with a glowing edge) into floor-to-ceiling glass over New York. The ceiling then opens into a starry night sky, which warms into sunrise as he goes back to bed.
+- **Draw Bigfoot a window.** The Rooftop night opens with "Draw Bigfoot a window: pinch and drag on the wall". A glowing outline follows the drag. On release the wall dissolves open inside it, and his window, the city and the party all move to where you drew. In the showcase room it snaps to the nearer glass bay. With no input, it draws itself after 9 seconds.
+- Emulator checks: plain bedroom, then the drawn hole opening on the city, then the full penthouse with an open ceiling and stars. A controller drag draws and opens the window, and the story moves on.
+
 ## 2026-10-27 — Rooftop Party v2 (owner's refinement)
 
 - The party is on the roof of a **taller skyscraper opposite** Bigfoot's window. He slides his glass open and leaps **up** to it, dances with the crowd, and leaps **back down** home.

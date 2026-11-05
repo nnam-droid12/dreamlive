@@ -102,7 +102,8 @@ export class RooftopPartySystem extends createSystem({
 
     // The party is always on across the street; Bigfoot's visit (or a replay) lifts it.
     const replay = d.getValue(Session, 'replay') ?? '';
-    const song = scene.startsWith('party-') && scene !== 'party-wait' ? songOf(scene) : ['disco', 'afro', 'house'].includes(replay) ? replay : this.song || 'afro';
+    const dj = d.getValue(Session, 'djSong') ?? '';
+    const song = dj && roofNight ? dj : scene.startsWith('party-') && scene !== 'party-wait' ? songOf(scene) : ['disco', 'afro', 'house'].includes(replay) ? replay : this.song || 'afro';
     const live = ['arrive', 'party-wait', 'leap-back', 'gifts'].includes(scene) || scene.startsWith('party-') || ['disco', 'afro', 'house'].includes(replay);
     this.energy += ((live ? 1 : cfg.idleEnergy) - this.energy) * Math.min(1, realDelta * 1.5);
     if (song !== this.song) {

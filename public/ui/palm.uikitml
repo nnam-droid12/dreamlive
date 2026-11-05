@@ -1,0 +1,67 @@
+<!--
+  Palm menu: appears above the left palm when it is turned up. The user is the
+  DJ's assistant (songs, confetti, fireworks) and controls the weather and the
+  time of night. Panel, Button and ButtonLabel come from the bundled Horizon kit.
+-->
+<style>
+  .panel-root {
+    flex-direction: column;
+    width: 280px;
+    padding-bottom: 14px;
+  }
+
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #272727;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .label {
+    font-size: 12px;
+    color: #3a3a3a;
+    margin-left: 16px;
+    margin-top: 8px;
+  }
+
+  .row {
+    flex-direction: row;
+    gap: 6px;
+    margin-left: 14px;
+    margin-right: 14px;
+    margin-top: 4px;
+  }
+
+  .b {
+    flex-grow: 1;
+    width: 60px;
+  }
+</style>
+<Panel class="panel-root">
+  <div class="title">Party controls</div>
+  <div class="label">You DJ</div>
+  <div class="row">
+    <Button id="song-disco" class="b"><ButtonLabel>Disco</ButtonLabel></Button>
+    <Button id="song-afro" class="b"><ButtonLabel>Afro</ButtonLabel></Button>
+    <Button id="song-house" class="b"><ButtonLabel>House</ButtonLabel></Button>
+  </div>
+  <div class="row">
+    <Button id="fx-confetti" class="b"><ButtonLabel>Confetti</ButtonLabel></Button>
+    <Button id="fx-fireworks" class="b"><ButtonLabel>Fireworks</ButtonLabel></Button>
+  </div>
+  <div class="label">Weather</div>
+  <div class="row">
+    <Button id="wx-clear" class="b"><ButtonLabel>Clear</ButtonLabel></Button>
+    <Button id="wx-rain" class="b"><ButtonLabel>Rain</ButtonLabel></Button>
+  </div>
+  <div class="row">
+    <Button id="wx-fog" class="b"><ButtonLabel>Fog</ButtonLabel></Button>
+    <Button id="wx-snow" class="b"><ButtonLabel>Snow</ButtonLabel></Button>
+  </div>
+  <div class="label">Time</div>
+  <div class="row">
+    <Button id="tm-night" class="b"><ButtonLabel>Night</ButtonLabel></Button>
+    <Button id="tm-dawn" class="b"><ButtonLabel>Dawn</ButtonLabel></Button>
+  </div>
+</Panel>

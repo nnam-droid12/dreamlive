@@ -2,6 +2,7 @@ import { createSystem, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState 
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
+import { Session } from '../components/session.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
@@ -72,7 +73,8 @@ export class RoomTransformSystem extends createSystem({
     this.wall += ((open ? 1 : 0) - this.wall) * Math.min(1, delta * cfg.wallRate);
     const ceilingTarget = open && this.wall > cfg.ceilingAfter ? 1 : 0;
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
-    const dawnTarget = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
+    const manual = d.hasComponent(Session) ? (d.getValue(Session, 'dawnOverride') ?? -1) : -1;
+    const dawnTarget = manual >= 0 ? manual : after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
     this.dawn += (dawnTarget - this.dawn) * Math.min(1, delta * cfg.dawnRate);
 
     d.setValue(RoomSlots, 'wallOpen', this.wall);

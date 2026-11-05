@@ -11,8 +11,8 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 };
 
 export type SoundName =
-  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush';
-export type LoopName = 'waves' | 'wind' | 'snore';
+  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop';
+export type LoopName = 'waves' | 'wind' | 'snore' | 'rain';
 export type ActName = '' | 'surf' | 'dj' | 'ski' | 'disco' | 'afro' | 'house';
 
 export interface LoopHandle {
@@ -167,6 +167,15 @@ class AudioEngine {
       case 'rainStart':
         this.noiseBurst(t, 1.5, 3200, 0.08, out);
         break;
+      case 'firework':
+        // A low thump, then a crackle.
+        this.noiseBurst(t, 0.5, 220, 0.5, out);
+        this.noiseBurst(t + 0.12, 1.4, 4200, 0.14, out);
+        break;
+      case 'pop':
+        this.noiseBurst(t, 0.25, 2600, 0.25, out);
+        [91, 96, 100].forEach((n, i) => this.tone(midi(n), t + 0.05 + i * 0.04, 0.7, 0.08, out));
+        break;
     }
     const caption = SOUND_CAPTIONS[name];
     if (caption) this.pendingCaption = caption;
@@ -206,6 +215,11 @@ class AudioEngine {
       shape.gain.value = 0.55;
       lfo.connect(depth).connect(shape.gain);
       lfo.start();
+    } else if (name === 'rain') {
+      // Steady hiss of rain on glass and roofs.
+      filter.type = 'highpass';
+      filter.frequency.value = 2400;
+      shape.gain.value = 0.35;
     } else {
       // Wind: airy band-passed noise whose pitch drifts like gusts.
       filter.type = 'bandpass';

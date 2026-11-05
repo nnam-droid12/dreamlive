@@ -18,6 +18,11 @@ export default defineAssets({
   surfboard,
   skis,
   'dj-booth': djBooth,
+  'palm-panel': {
+    url: publicAssetUrl('ui/palm.uikitml'),
+    type: AssetType.UIKitML,
+    name: 'Palm Panel',
+  },
   'pause-panel': {
     url: publicAssetUrl('ui/pause.uikitml'),
     type: AssetType.UIKitML,

@@ -52,6 +52,25 @@
       "components": {
         "RayInteractable": {}
       }
+    },
+    {
+      "id": "palm-panel",
+      "name": "Palm Panel",
+      "content": {
+        "type": "asset",
+        "asset": "palm-panel"
+      },
+      "transform": {
+        "position": [
+          0,
+          -10,
+          0
+        ],
+        "scale": 0.09
+      },
+      "components": {
+        "RayInteractable": {}
+      }
     }
   ]
 }

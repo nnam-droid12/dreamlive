@@ -180,6 +180,39 @@ export const Tuning = {
     lightDistance: 10,
   },
 
+  palm: {
+    /** Left palm held up this long (right hand not cupping) opens the menu; turned over this long closes it. */
+    openHoldSec: 0.35,
+    closeHoldSec: 0.7,
+    /** The menu floats this far above the palm (hands) or the left controller. */
+    above: 0.14,
+  },
+
+  fx: {
+    /** Fireworks: shells per press, seconds between them, sparks per shell, burst speed, spark life. */
+    volley: 4,
+    volleyGapSec: 0.45,
+    shellSparks: 180,
+    shellSpeed: 7,
+    shellLife: 2.2,
+    shellSize: 0.5,
+    /** Where shells burst, in the window frame (m): beyond the party roof, above the city. */
+    sky: { x0: 14, x1: 32, y0: 14, y1: 24, z0: -12, z1: 12 },
+    /** Confetti near the viewer: pieces, speed, life, piece size. */
+    confetti: 140,
+    confettiSpeed: 1.3,
+    confettiLife: 3.2,
+    confettiSize: 0.018,
+    /** Weather fills this window-frame box; fade rate; fall speeds; fog density. */
+    weatherBox: { x0: 0.5, x1: 34, y0: -6, y1: 22, z0: -16, z1: 18 },
+    weatherRate: 0.8,
+    rainDrops: 1400,
+    snowFlakes: 1600,
+    rainSpeed: 11,
+    snowSpeed: 0.9,
+    fogDensity: 0.045,
+  },
+
   drawWindow: {
     /** With no drawing, the window starts drawing itself after this long, taking this long. */
     autoAfterSec: 9,
