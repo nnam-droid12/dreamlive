@@ -1,4 +1,4 @@
-import { createSystem, Entity, FogExp2, Group, Quaternion, Vector3, VisibilityState } from '@iwsdk/core';
+import { createSystem, Entity, FogExp2, Group, Mesh, Quaternion, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
 import { LoopHandle, Sound } from '../audio/engine.js';
 import { RoomSlots } from '../components/stage.js';
 import { Session } from '../components/session.js';
@@ -7,6 +7,9 @@ import { Tuning } from '../config/tuning.js';
 import { dreamDelta } from '../dreams/beat-context.js';
 import { frameToWorld, WindowFrame } from '../showcase/rooftop-layout.js';
 import { Bursts } from '../visuals/bursts.js';
+import { buildRainGlass } from '../visuals/rain-glass.js';
+import { Showcase } from '../config/showcase.js';
+import { Rooftop } from '../showcase/rooftop-layout.js';
 import { Weather, WeatherKind } from '../visuals/weather.js';
 
 const cfg = Tuning.fx;
@@ -26,6 +29,8 @@ export class SkyFxSystem extends createSystem({
   private weather!: Weather;
   private weatherRoot!: Group;
   private fog!: FogExp2;
+  private rainGlass!: Mesh;
+  private rainGlassMat!: ShaderMaterial;
   private fogAmount = 0;
   private rainLoop?: LoopHandle;
   private frame: WindowFrame = { origin: new Vector3(), out: new Vector3(), along: new Vector3() };
@@ -54,6 +59,15 @@ export class SkyFxSystem extends createSystem({
     this.weatherRoot.add(this.weather.group);
     this.world.createTransformEntity(this.weatherRoot);
     this.fog = new FogExp2(Palette.fog, 0);
+    // Rain running down the glass: the showcase room's whole glass wall, or the dream window on a headset.
+    const H = Rooftop.home;
+    const w = Showcase.enabled ? H.glassZ1 - H.glassZ0 : Rooftop.bay.width;
+    const h = Showcase.enabled ? 3 : Rooftop.bay.height;
+    this.rainGlass = buildRainGlass(w, h, Palette.rain);
+    this.rainGlassMat = this.rainGlass.material as ShaderMaterial;
+    this.rainGlass.rotation.y = -Math.PI / 2;
+    this.rainGlass.position.set(0.02, h / 2, Showcase.enabled ? (H.glassZ0 + H.glassZ1) / 2 : 0);
+    this.weatherRoot.add(this.rainGlass);
   }
 
   update(realDelta: number): void {
@@ -89,6 +103,9 @@ export class SkyFxSystem extends createSystem({
     const kind = (d.getValue(Session, 'weather') ?? 'clear') as WeatherKind;
     this.weather.update(kind, delta, this.time, cfg.weatherRate, cfg.rainSpeed, cfg.snowSpeed);
     this.rain(this.weather.rainLevel);
+    this.rainGlass.visible = this.weather.rainLevel > 0.01;
+    this.rainGlassMat.uniforms.uAmount.value = this.weather.rainLevel;
+    this.rainGlassMat.uniforms.uTime.value = this.time;
     this.fogAmount += ((kind === 'fog' ? 1 : kind === 'rain' ? 0.35 : 0) - this.fogAmount) * Math.min(1, delta * cfg.weatherRate);
     this.fog.density = cfg.fogDensity * this.fogAmount;
     const want = this.fogAmount > 0.01 ? this.fog : null;

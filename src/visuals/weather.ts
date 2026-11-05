@@ -73,7 +73,7 @@ export class Weather {
     this.snowAmount += ((kind === 'snow' ? 1 : 0) - this.snowAmount) * k;
     this.rain.visible = this.rainAmount > 0.01;
     this.snow.visible = this.snowAmount > 0.01;
-    this.rainMat.opacity = 0.45 * this.rainAmount;
+    this.rainMat.opacity = 0.75 * this.rainAmount;
     this.snowMat.opacity = 0.9 * this.snowAmount;
     const b = this.box;
     const h = b.y1 - b.y0;

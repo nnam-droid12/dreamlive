@@ -4,6 +4,7 @@ import { songOf } from '../dreams/chapter_rooftop.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
+import { Tuning } from '../config/tuning.js';
 import { DreamDirector } from '../components/dream.js';
 import { RoomSlots } from '../components/stage.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
@@ -33,6 +34,7 @@ export class AudioSystem extends createSystem({
   private lastAct = '';
   /** The song playing on the rooftop before the first choice, and between beats. */
   private lastSong: ActName = 'afro';
+  private bed = false;
 
   update(): void {
     const d0 = this.queries.director.entities.values().next().value;
@@ -113,6 +115,12 @@ export class AudioSystem extends createSystem({
     if (d.hasComponent(RoomSlots)) {
       const outside = !!d.getValue(RoomSlots, 'viewOutside');
       Sound.setActOpenness(rooftop && !outside ? (d.getValue(RoomSlots, 'windowOpen') ?? 0) : 1);
+    }
+    // Bedtime: the music box nearly silent, so the rain and the snoring carry the room.
+    const bed = d.hasComponent(Session) && !!d.getValue(Session, 'bedtime');
+    if (bed !== this.bed) {
+      this.bed = bed;
+      Sound.setMusic(bed ? Tuning.bedtime.music : phase === RitualPhase.Awake ? 0.45 : 0.6);
     }
     Sound.tick();
 

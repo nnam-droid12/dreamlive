@@ -19,6 +19,7 @@ import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
+import { Session } from '../components/session.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -105,7 +106,9 @@ export class BigfootSystem extends createSystem({
       else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
     } else if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) {
-      this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
+      // Bedtime: he is back in bed, asleep and snoring (the switch happens under a fade).
+      if (phase === RitualPhase.Awake && d.getValue(Session, 'bedtime')) this.lieDown();
+      else this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
     }
 
     const sleeping = this.state() === BigfootState.Sleeping;

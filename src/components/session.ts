@@ -30,6 +30,8 @@ export const Session = createComponent('Session', {
   djSong: { type: Types.String, default: '' },
   weather: { type: Types.String, default: 'clear' },
   dawnOverride: { type: Types.Float32, default: -1 },
+  /** Bedtime mode after the story: night, rain on the glass, Bigfoot asleep and snoring. */
+  bedtime: { type: Types.Boolean, default: false },
   /** Bumped to fire a burst (confetti, fireworks); FX systems react to changes. */
   confettiShots: { type: Types.Int16, default: 0 },
   fireworkShots: { type: Types.Int16, default: 0 },

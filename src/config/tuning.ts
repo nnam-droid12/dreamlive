@@ -224,6 +224,15 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  bedtime: {
+    /** After the Rooftop story, bedtime starts by itself this long into being awake. */
+    autoAfterSec: 25,
+    /** Music box level at bedtime; the fade-from-black that hides Bigfoot getting back into bed. */
+    music: 0.1,
+    fadeSec: 1.6,
+    /** Rain-on-glass highlight colour strength comes from Palette.rain. */
+  },
+
   palm: {
     /** Left palm held up this long (right hand not cupping) opens the menu; turned over this long closes it. */
     openHoldSec: 0.35,

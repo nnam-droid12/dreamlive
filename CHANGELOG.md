@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-05 — Bedtime mode
+
+- **Bedtime:** a calm place to stay after the story. Choose it from the palm menu, or it starts by itself 25 seconds after the Rooftop night ends.
+  - A soft fade from black covers the change.
+  - The sky goes to deep night, rain falls outside, and **raindrops run down the glass** (a cheap highlight shader with wobbling drops and droplet trails).
+  - The music box drops almost to silence, so the rain hiss and Bigfoot's snoring carry the room. He is back in bed, fast asleep.
+- Bedtime ends with "Restart dream" or a new night. Pressing the button again wakes the room ("Good morning").
+- Rain on the glass also appears whenever rain is chosen from the palm menu.
+- Emulator checks: Bigfoot asleep in bed; up at the glass, rain streaks outside and drops on the pane. Clean console after reload.
+
 ## 2026-11-05 — A living city
 
 - **Traffic:** headlight-and-taillight cars stream along the cross streets and the avenue far below (one instanced draw).

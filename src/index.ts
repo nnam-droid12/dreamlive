@@ -28,6 +28,7 @@ import { DrawWindowSystem } from './systems/draw-window-system.js';
 import { PalmMenuSystem } from './systems/palm-menu-system.js';
 import { RoomPartyLightSystem } from './systems/room-party-light-system.js';
 import { LivingCitySystem } from './systems/living-city-system.js';
+import { BedtimeSystem } from './systems/bedtime-system.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -71,6 +72,7 @@ World.create(
     .registerSystem(PalmMenuSystem)
     .registerSystem(RoomPartyLightSystem)
     .registerSystem(LivingCitySystem)
+    .registerSystem(BedtimeSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)

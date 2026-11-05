@@ -63,5 +63,6 @@
   <div class="row">
     <Button id="tm-night" class="b"><ButtonLabel>Night</ButtonLabel></Button>
     <Button id="tm-dawn" class="b"><ButtonLabel>Dawn</ButtonLabel></Button>
+    <Button id="tm-bedtime" class="b"><ButtonLabel>Bedtime</ButtonLabel></Button>
   </div>
 </Panel>
