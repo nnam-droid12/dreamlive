@@ -1,8 +1,10 @@
-import { createSystem, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
+import { createSystem, DirectionalLight, Group, HemisphereLight, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Session } from '../components/session.js';
+import { Palette } from '../config/palette.js';
+import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
@@ -12,6 +14,8 @@ import { buildNightSky } from '../visuals/night-sky.js';
 const cfg = Tuning.transform;
 /** Rooftop Party beats after Bigfoot lands on the party roof: the room is a penthouse by then. */
 const OPEN_SCENES = new Set(['arrive', 'party-wait', 'leap-back', 'gifts', 'to-bed']);
+/** Beats after the party: a lit-up night for the leap home, the gifts and the fireworks. */
+const NIGHT_SCENES = new Set(['leap-back', 'gifts', 'to-bed']);
 
 /**
  * The dream transforms the room. It begins as an ordinary bedroom; the window
@@ -37,6 +41,10 @@ export class RoomTransformSystem extends createSystem({
   private ceiling = 0;
   private dawn = 0;
   private hole = 0;
+  private dusk = 1;
+  private sun!: DirectionalLight;
+  private fill!: HemisphereLight;
+  private sunDir = new Vector3(0.8, 0.1, -0.6).normalize();
   private a = new Vector3();
   private b = new Vector3();
 
@@ -45,6 +53,13 @@ export class RoomTransformSystem extends createSystem({
     this.skyMat = this.sky.material as ShaderMaterial;
     this.sky.visible = false;
     this.world.createTransformEntity(this.sky);
+    // Golden-hour light, always in the scene (intensity 0 when unused: adding lights later recompiles materials).
+    const lights = new Group();
+    lights.name = 'GoldenHourLights';
+    this.sun = new DirectionalLight(Palette.sunLight, 0);
+    this.fill = new HemisphereLight(Palette.duskSkyFill, Palette.duskGroundFill, 0);
+    lights.add(this.sun, this.sun.target, this.fill);
+    this.world.createTransformEntity(lights);
   }
 
   update(realDelta: number): void {
@@ -73,8 +88,14 @@ export class RoomTransformSystem extends createSystem({
     this.wall += ((open ? 1 : 0) - this.wall) * Math.min(1, delta * cfg.wallRate);
     const ceilingTarget = open && this.wall > cfg.ceilingAfter ? 1 : 0;
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
-    const manual = d.hasComponent(Session) ? (d.getValue(Session, 'dawnOverride') ?? -1) : -1;
-    const dawnTarget = manual >= 0 ? manual : after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
+    // Time of day: the story's, unless the palm menu chose one.
+    const sky = d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '';
+    const storyDawn = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
+    const dawnTarget = sky === 'dawn' ? 1 : sky ? 0 : storyDawn;
+    const storyDusk = !roof ? 1 : after || NIGHT_SCENES.has(scene) ? 0 : scene.startsWith('party-') && scene !== 'party-wait' ? cfg.duskLateParty : 1;
+    const duskTarget = sky === 'sunset' ? 1 : sky ? 0 : storyDusk;
+    this.dusk += (duskTarget - this.dusk) * Math.min(1, delta * cfg.duskRate);
+    d.setValue(RoomSlots, 'dusk', this.dusk);
     this.dawn += (dawnTarget - this.dawn) * Math.min(1, delta * cfg.dawnRate);
 
     d.setValue(RoomSlots, 'wallOpen', this.wall);
@@ -87,12 +108,32 @@ export class RoomTransformSystem extends createSystem({
     if (this.ceilingU) this.ceilingU.progress.value = this.ceiling;
 
     const outside = !!d.getValue(RoomSlots, 'viewOutside');
-    this.sky.visible = outside || this.ceiling > 0.01 || this.wall > 0.01 || this.hole > 0.01;
+    // The showcase room always has glass to look through; on a headset the sky only shows through the dream.
+    this.sky.visible = Showcase.enabled || outside || this.ceiling > 0.01 || this.wall > 0.01 || this.hole > 0.01;
+    this.light(d);
     if (this.sky.visible) {
       this.player.head.getWorldPosition(this.sky.position);
       this.skyMat.uniforms.uTime.value = this.time;
       this.skyMat.uniforms.uDawn.value = this.dawn;
+      this.skyMat.uniforms.uDusk.value = this.dusk;
+      this.skyMat.uniforms.uSunDir.value.copy(this.sunDir);
     }
+  }
+
+  /** The low sun (golden hour, or sunrise) lights the room and the city from beyond the window. */
+  private light(d: import('@iwsdk/core').Entity): void {
+    const o = d.getVectorView(RoomSlots, 'windowOrigin');
+    const out = d.getVectorView(RoomSlots, 'windowOut');
+    const al = d.getVectorView(RoomSlots, 'windowAlong');
+    const az = (cfg.sunAzimuthDeg * Math.PI) / 180;
+    const el = (cfg.sunElevationDeg * Math.PI) / 180;
+    // Left of straight out (the viewer faces out of the window; left is -along).
+    this.sunDir.set(out[0] * Math.cos(az) - al[0] * Math.sin(az), 0, out[2] * Math.cos(az) - al[2] * Math.sin(az)).normalize();
+    this.sunDir.multiplyScalar(Math.cos(el)).setY(Math.sin(el));
+    this.sun.target.position.set(o[0], o[1], o[2]);
+    this.sun.position.set(o[0] + this.sunDir.x * 40, o[1] + this.sunDir.y * 40 + 4, o[2] + this.sunDir.z * 40);
+    this.sun.intensity = cfg.sunIntensity * this.dusk + cfg.dawnLight * cfg.sunIntensity * this.dawn;
+    this.fill.intensity = cfg.fillIntensity * Math.max(this.dusk, this.dawn * cfg.dawnLight);
   }
 
   /** The showcase room's veil and ceiling, and the window bay's rectangle on the veil. */

@@ -61,7 +61,10 @@
   </div>
   <div class="label">Time</div>
   <div class="row">
+    <Button id="tm-sunset" class="b"><ButtonLabel>Sunset</ButtonLabel></Button>
     <Button id="tm-night" class="b"><ButtonLabel>Night</ButtonLabel></Button>
+  </div>
+  <div class="row">
     <Button id="tm-dawn" class="b"><ButtonLabel>Dawn</ButtonLabel></Button>
     <Button id="tm-bedtime" class="b"><ButtonLabel>Bedtime</ButtonLabel></Button>
   </div>

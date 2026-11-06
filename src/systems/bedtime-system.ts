@@ -43,11 +43,11 @@ export class BedtimeSystem extends createSystem({
     if (bed) {
       d.setValue(Session, 'djSong', '');
       d.setValue(Session, 'weather', 'rain');
-      d.setValue(Session, 'dawnOverride', 0);
+      d.setValue(Session, 'skyOverride', 'night');
       d.setValue(Caption, 'text', 'Bedtime. Bigfoot is fast asleep. Listen to the rain on New York.');
     } else {
       d.setValue(Session, 'weather', 'clear');
-      d.setValue(Session, 'dawnOverride', -1);
+      d.setValue(Session, 'skyOverride', '');
       d.setValue(Caption, 'text', 'Good morning.');
     }
     d.setValue(Caption, 'ttl', 5);

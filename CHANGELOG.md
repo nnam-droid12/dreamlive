@@ -2,6 +2,21 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Golden sunset
+
+- **The dream is now bright and golden, like DreamSpace.** It opens at golden hour:
+  - The sky has a gold horizon, a pink band and deep blue above, with a low sun and glow and soft clouds lit gold (all in one shader).
+  - A warm low sun from beyond the window, plus a warm sky/ground fill, light the room, Bigfoot and the city.
+  - The showcase room's ambient light rises with it, and the sleep vignette mostly steps back.
+- **Timeline:**
+  1. Golden hour from the start through the party.
+  2. Deeper dusk as the party ends.
+  3. A lit-up night for the leap home, the gifts and the fireworks finale.
+  4. Sunrise at the end.
+- Palm menu **Time**: Sunset, Night, Dawn, Bedtime.
+- Both lights stay in the scene at all times (zero intensity when unused), so changing the time of day never recompiles materials.
+- Emulator checks: the bright warm room at the start; the party roof under an orange sunset sky; night for the gifts. Clean console.
+
 ## 2026-11-06 — Hands-first, end to end
 
 - **Hands look like the headset's own.** Tracked hands get a frosted-glass body (faint in the middle, brighter at the rim, fading at the wrist) inside IWSDK's soft glowing outline. This is the Meta system-hand look, and it reads over the dream and over passthrough. The showcase room used to swap them for skin-coloured hands; that swap is gone, so the browser shows the same hands as a headset.

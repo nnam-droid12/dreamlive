@@ -113,13 +113,17 @@ export class PalmMenuSystem extends createSystem({
         say(weather[w]);
       });
     }
+    this.on('tm-sunset', () => {
+      d.setValue(Session, 'skyOverride', 'sunset');
+      say('Golden hour.');
+    });
     this.on('tm-night', () => {
-      d.setValue(Session, 'dawnOverride', 0);
+      d.setValue(Session, 'skyOverride', 'night');
       say('Deep night.');
     });
     this.on('tm-bedtime', () => d.setValue(Session, 'bedtime', !d.getValue(Session, 'bedtime')));
     this.on('tm-dawn', () => {
-      d.setValue(Session, 'dawnOverride', 1);
+      d.setValue(Session, 'skyOverride', 'dawn');
       say('Sunrise.');
     });
   }

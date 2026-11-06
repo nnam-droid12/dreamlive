@@ -8,7 +8,7 @@ import {
   SphereGeometry,
 } from '@iwsdk/core';
 import { Ritual, RitualPhase } from '../components/ritual.js';
-import { StageAnchor, StageSurface } from '../components/stage.js';
+import { RoomSlots, StageAnchor, StageSurface } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { makeStarMaterial, makeVignetteMaterial } from '../visuals/glow-materials.js';
@@ -48,10 +48,13 @@ export class NightSkySystem extends createSystem({
     if (asleep && !this.stars) this.buildStars(d.getValue(StageSurface, 'width') ?? 0.6);
     const target = asleep ? 1 : 0;
     this.night += Math.sign(target - this.night) * Math.min(Math.abs(target - this.night), delta / r.vignetteFadeSec);
-    this.vignette.uniforms.opacity.value = r.vignetteOpacity * this.night;
+    // At golden hour the room stays bright: the vignette and the little stars mostly step back.
+    const day = d.hasComponent(RoomSlots) ? Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0) : 0;
+    const dim = this.night * (1 - r.vignetteDayCut * day);
+    this.vignette.uniforms.opacity.value = r.vignetteOpacity * dim;
     this.vignetteMesh.visible = this.night > 0.001;
     if (this.stars) {
-      this.stars.mat.uniforms.opacity.value = this.night;
+      this.stars.mat.uniforms.opacity.value = dim;
       this.stars.mat.uniforms.time.value = this.time;
     }
   }

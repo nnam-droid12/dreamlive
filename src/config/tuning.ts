@@ -91,6 +91,8 @@ export const Tuning = {
     zzzIntervalSec: 1.4,
     vignetteFadeSec: 3,
     vignetteOpacity: 0.45,
+    /** How much lighter the sleep vignette gets at golden hour or sunrise (0.85 = 85% lighter). */
+    vignetteDayCut: 0.85,
     starCount: 90,
     /** Where the palm guide floats when no table is detected. */
     guideForward: 0.45,
@@ -291,6 +293,19 @@ export const Tuning = {
     ceilingAfter: 0.5,
     /** How far the sky warms while he walks back to bed (sunrise completes on waking). */
     dawnInBed: 0.45,
+    /** Golden hour: how fast it changes, how golden the party stays as it ends. */
+    duskRate: 0.25,
+    duskLateParty: 0.55,
+    /** The low sun: degrees left of straight out of the window, and above the horizon. */
+    sunAzimuthDeg: 38,
+    sunElevationDeg: 6,
+    /** Sun and warm fill light at full golden hour (sunrise uses dawnLight). */
+    sunIntensity: 3.2,
+    fillIntensity: 1.3,
+    dawnLight: 0.7,
+    /** Showcase room image-based light: night vs golden hour. */
+    iblNight: 0.32,
+    iblGolden: 1.1,
   },
 
   tour: {

@@ -1,10 +1,10 @@
 import { createSystem, DirectionalLight, Entity, IBLTexture, LevelRoot } from '@iwsdk/core';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
+import { Tuning } from '../config/tuning.js';
 import { buildNycBedroom, NycLayout } from '../showcase/nyc-bedroom.js';
 
 /** The HDR fill is a daylight room; at night the bedroom's own lamps carry it. */
-const NIGHT_IBL = 0.32;
 
 /**
  * Showcase mode (desktop emulator, screenshots, demo video): places the dream
@@ -18,6 +18,7 @@ export class ShowcaseSystem extends createSystem({
   roots: { required: [LevelRoot] },
 }) {
   private laidOut = false;
+  private ibl = -1;
 
   init(): void {
     if (!Showcase.enabled) return;
@@ -30,6 +31,7 @@ export class ShowcaseSystem extends createSystem({
     if (!Showcase.enabled) return;
     const d = this.queries.director.entities.values().next().value;
     if (d && !this.laidOut) this.applyLayout(d);
+    if (d) this.goldenIbl(d);
   }
 
   private async buildRoom(): Promise<void> {
@@ -56,8 +58,22 @@ export class ShowcaseSystem extends createSystem({
 
   private nightLighting(root: Entity): void {
     if (!root.hasComponent(IBLTexture)) return;
-    root.setValue(IBLTexture, 'intensity', NIGHT_IBL);
+    root.setValue(IBLTexture, 'intensity', Tuning.transform.iblNight);
     root.setValue(IBLTexture, '_needsUpdate', true);
+  }
+
+  /** The room's ambient light follows the sky: bright and warm at golden hour and sunrise, dim at night. */
+  private goldenIbl(d: Entity): void {
+    const t = Tuning.transform;
+    const k = Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0);
+    const ibl = t.iblNight + (t.iblGolden - t.iblNight) * k;
+    if (Math.abs(ibl - this.ibl) < 0.03) return;
+    this.ibl = ibl;
+    for (const root of this.queries.roots.entities) {
+      if (!root.hasComponent(IBLTexture)) continue;
+      root.setValue(IBLTexture, 'intensity', ibl);
+      root.setValue(IBLTexture, '_needsUpdate', true);
+    }
   }
 
   /** The authored room replaces detection: side table = tuck-in surface, TV = wall anchor. */
