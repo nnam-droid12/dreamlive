@@ -97,6 +97,29 @@ DreamSpace won by turning the user's whole real room into a dream place (walls a
 8. **Landmark towers:** generic art-deco spire and glass supertall, no logos.
 9. **Trailer:** Director mode with a caption on each feature beat, square format, under 3:00, logo and URL at the end.
 
+## 2e. Cinema, light, voice and music pass — 2026-11-05 (owner feedback after the stand-out build)
+
+The owner's feedback: the music is not as good as DreamSpace's; Bigfoot should speak; the space should be bright and well lit like DreamSpace; the hands should look like DreamSpace's. The experience must be **fully usable with hands from start to finish**, with no controller. It should read as Entertainment-track **spatial cinema / interactive video / music visualization / immersive storytelling**.
+
+Owner's choices:
+
+- **Voice:** generated offline with a free, openly licensed neural text-to-speech voice. A deep, warm Bigfoot, with subtitles. Credited in CREDITS.md.
+- **Light:** **golden sunset**. The dream opens on a warm sunset over New York with bright room light. The party starts in golden hour, turns to a lit-up night for the fireworks finale, and ends at sunrise.
+- **Music:** real recorded tracks that are free to use (royalty-free / Creative Commons libraries), credited in CREDITS.md. These replace the synth beats.
+- **Cinema:** all three:
+  - a **dream cinema screen**: a big floating screen showing a live, director-style cut of the party;
+  - **interactive-film framing**: title card, chapter titles, Bigfoot's narration, choices that change the film, end credits;
+  - a **music visualizer**: room, sky and city react to the real music's frequencies.
+
+Build order:
+
+1. Hands-only from start to finish, plus translucent Meta-style hands.
+2. Golden-sunset lighting.
+3. Real music plus the visualizer.
+4. Voice plus the film framing.
+5. The cinema screen.
+6. The trailer.
+
 ## 3. Experience design (the full script)
 
 ### 3.1 Session structure (about 8–9 minutes total)

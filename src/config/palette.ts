@@ -22,6 +22,9 @@ export const Palette = {
   windowWarm: 0xffd9a0,
   windowCool: 0xcfe4ff,
   beacon: 0xff2a1e,
+  /** Tracked hands: frosted-glass body and glowing outline (Meta system-hand look). */
+  handGlass: 0xeaf2ff,
+  handOutline: 0xdfeaff,
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,
   starWhite: 0xfff8e8,

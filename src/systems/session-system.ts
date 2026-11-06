@@ -13,6 +13,7 @@ import {
   VisibilityState,
 } from '@iwsdk/core';
 import { Sound } from '../audio/engine.js';
+import { onPress } from '../ui/press.js';
 import { DreamDirector } from '../components/dream.js';
 import { Gestures, HandGestureState } from '../components/hands.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
@@ -240,29 +241,8 @@ export class SessionSystem extends createSystem({
     if (!show) p.object3D.position.set(0, -10, 0);
   }
 
-  /**
-   * A press then release on the same button. Not 'click': that is dropped when a
-   * pinch is held longer than the pointer library's click threshold.
-   */
+  /** A pinch on the button (hands or controllers); see ui/press.ts. */
   private on(ui: UIKitMLAsset | undefined, id: string, fn: () => void): boolean {
-    const el = ui?.getElementById(id);
-    if (!el) return false;
-    let armed = false;
-    const down = () => (armed = true);
-    const leave = () => (armed = false);
-    const up = () => {
-      if (!armed) return;
-      armed = false;
-      fn();
-    };
-    el.addEventListener('pointerdown', down);
-    el.addEventListener('pointerleave', leave);
-    el.addEventListener('pointerup', up);
-    this.cleanupFuncs.push(
-      () => el.removeEventListener('pointerdown', down),
-      () => el.removeEventListener('pointerleave', leave),
-      () => el.removeEventListener('pointerup', up),
-    );
-    return true;
+    return onPress(ui?.getElementById(id), fn, this.cleanupFuncs);
   }
 }
