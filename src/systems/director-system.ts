@@ -67,6 +67,8 @@ export class DirectorSystem extends createSystem({
   private featureText = '';
   private featureOpacity = 0;
   private cues = new Set<string>();
+  private saveTimeline?: () => void;
+  private recording = false;
 
   init(): void {
     this.cardCanvas = document.createElement('canvas');
@@ -79,7 +81,7 @@ export class DirectorSystem extends createSystem({
     this.card.renderOrder = 1000;
     this.card.visible = false;
     this.world.createTransformEntity(this.card);
-    this.feature = makeTitleCard(1280, 160, 0.62);
+    this.feature = makeTitleCard(1024, 150, 0.56);
     this.feature.mesh.renderOrder = 1001;
     this.world.createTransformEntity(this.feature.mesh);
     this.hideEmulatedInputs();
@@ -92,7 +94,11 @@ export class DirectorSystem extends createSystem({
     if (phase === RitualPhase.Idle) return;
     d.setValue(DevControls, 'autoCatch', true);
     this.clock += realDelta;
-    if (Director.record && !this.recorder && Sound.ctx) this.startRecording();
+    // Offline renders mix their sound afterwards, so they need not wait for the audio context.
+    if (Director.record && !this.recording && (Sound.ctx || Director.offline)) {
+      this.recording = true;
+      this.startRecording();
+    }
 
     this.chooseShot(d, phase ?? '');
     const k = this.placed ? 1 - Math.exp(-CAM_RATE * realDelta) : 1;
@@ -147,7 +153,11 @@ export class DirectorSystem extends createSystem({
     // Waking and awake: Bigfoot, then the orb on its way to the shelf.
     if (phase === RitualPhase.Awake && this.awakeAt < 0) this.awakeAt = this.clock;
     const orb = this.flyingOrb();
-    if (orb) this.aim(seat.clone().setY(1.4), orb);
+    if (d.getValue(Session, 'bedtime')) {
+      // Bedtime: the rain on the glass, the city at night, Bigfoot asleep in the corner of the shot.
+      const o = new Vector3().fromArray(d.getVectorView(RoomSlots, 'windowOrigin'));
+      this.aim(new Vector3(o.x - 3.4, 1.4, o.z + 2.2), new Vector3(o.x, 1.5, o.z - 0.3));
+    } else if (orb) this.aim(seat.clone().setY(1.4), orb);
     else if (head) this.aim(seat.clone().setY(1.4), head);
   }
 
@@ -175,7 +185,8 @@ export class DirectorSystem extends createSystem({
     } else if (scene === 'to-window') {
       this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.4, 1.5, 1.4), t < 6.8 ? him : at(2, 2.2, -0.5));
     } else if (scene === 'leap-out') {
-      this.aim(at(-2.2, 1.3, 1.8), him);
+      // From the party roof as he flies up toward it.
+      this.aim(at(9.5, 7.8, 3.8), him);
     } else if (scene === 'arrive') {
       // In the room as the window wall dissolves and the ceiling opens to the sky.
       this.aim(at(-3.2, 1.35, 1.9), at(0, 2.4, -0.6));
@@ -191,8 +202,8 @@ export class DirectorSystem extends createSystem({
       else this.aim(at(Rooftop.djSpot.x + 2.6, Rooftop.djSpot.y + 1.6, Rooftop.djSpot.z + 3.0), dj);
     } else if (scene === 'leap-back') {
       // From the party roof's edge: the street far below, his tower and window across.
-      const e = Rooftop.views.edge.at;
-      this.aim(at(e.x + 0.4, e.y + 1.5, e.z + 0.8), t < 2.5 ? him : at(1.5, -8, -0.5).lerp(him, 0.6));
+      // From inside his room as he flies home toward the window.
+      this.aim(at(-2.6, 1.5, 0.9), him);
     } else if (scene === 'gifts') {
       this.aim(at(-3.3, 1.5, 2.6), him.clone().lerp(at(Rooftop.insideSpot.x + 0.5, 1.3, 0), 0.5));
     } else if (scene === 'to-bed' && root) {
@@ -283,8 +294,27 @@ export class DirectorSystem extends createSystem({
     if (!roof && phase === RitualPhase.Asleep) text = '';
     if (text !== this.featureText) {
       this.featureText = text;
-      if (text) this.feature.draw([{ text, size: 64, style: 'italic', color: '#ffd38a' }], 'right');
+      if (text) {
+        this.feature.draw([{ text, size: 62, style: 'italic', color: '#ffd38a' }], 'right');
+        this.backFeature();
+      }
     }
+  }
+
+  /** A soft dark band behind the feature caption, so it reads over bright and busy shots. */
+  private backFeature(): void {
+    const c = this.feature.texture.image as HTMLCanvasElement;
+    const g = c.getContext('2d');
+    if (!g) return;
+    g.globalCompositeOperation = 'destination-over';
+    const grad = g.createLinearGradient(0, 0, c.width, 0);
+    grad.addColorStop(0, 'rgba(15, 8, 4, 0)');
+    grad.addColorStop(0.35, 'rgba(15, 8, 4, 0.55)');
+    grad.addColorStop(1, 'rgba(15, 8, 4, 0.7)');
+    g.fillStyle = grad;
+    g.fillRect(0, 20, c.width, c.height - 40);
+    g.globalCompositeOperation = 'source-over';
+    this.feature.texture.needsUpdate = true;
   }
 
   /** True the first time a named cue is reached. */
@@ -306,8 +336,8 @@ export class DirectorSystem extends createSystem({
     head.getWorldPosition(m.position);
     head.getWorldQuaternion(m.quaternion);
     m.translateZ(-0.9);
-    m.translateX(0.2);
-    m.translateY(-0.24);
+    m.translateX(0.25);
+    m.translateY(-0.3);
   }
 
   /** Title card at the start, end card once he's awake and the orb is shelved. */
@@ -379,36 +409,50 @@ export class DirectorSystem extends createSystem({
   }
 
   /**
-   * Offline render: one captured frame per fixed story step (requested after each
-   * on-screen render), no live audio; the sound is mixed afterwards from Timeline.
+   * Offline render: right after each on-screen render (one per fixed story step)
+   * the frame is read straight from the XR framebuffer, encoded as a JPEG and
+   * saved by the dev server as artifacts/frames/frame-NNNNN.jpg. No live audio:
+   * the sound is mixed afterwards from Timeline (scripts/trailer/mix.py).
    */
   private startOffline(): void {
-    const canvas = this.renderer.domElement as HTMLCanvasElement & { captureStream?: (fps: number) => MediaStream };
-    if (!canvas.captureStream || typeof MediaRecorder === 'undefined') return;
-    const stream = canvas.captureStream(0);
-    const track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
-    DirectorFrame.onFrame = () => track.requestFrame?.();
     const start = Timeline.t;
-    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
-    this.recorder = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 12_000_000 });
-    this.recorder.ondataavailable = (e) => {
-      if (e.data.size) this.chunks.push(e.data);
+    let n = 0;
+    let pixels: Uint8Array | undefined;
+    let canvas: OffscreenCanvas | undefined;
+    DirectorFrame.onFrame = () => {
+      const gl = this.renderer.getContext();
+      const layer = this.renderer.xr.getSession()?.renderState.baseLayer;
+      const w = layer?.framebufferWidth ?? gl.drawingBufferWidth;
+      const h = layer?.framebufferHeight ?? gl.drawingBufferHeight;
+      if (!pixels || pixels.length !== w * h * 4) {
+        pixels = new Uint8Array(w * h * 4);
+        canvas = new OffscreenCanvas(w, h);
+      }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, layer?.framebuffer ?? null);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      // WebGL rows run bottom-up; flip into an image.
+      const img = new ImageData(w, h);
+      const row = w * 4;
+      for (let y = 0; y < h; y++) img.data.set(pixels.subarray((h - 1 - y) * row, (h - y) * row), y * row);
+      const c = canvas!;
+      c.getContext('2d')?.putImageData(img, 0, 0);
+      const name = `frame-${String(n++).padStart(5, '0')}.jpg`;
+      void c.convertToBlob({ type: 'image/jpeg', quality: 0.92 }).then((b) => fetch(`/__director-save?name=${name}`, { method: 'POST', body: b }));
     };
-    this.recorder.onstop = () => {
+    this.saveTimeline = () => {
       const base = Director.fileName.replace(/\.webm$/, '');
-      void fetch(`/__director-save?name=${base}-frames.webm`, { method: 'POST', body: new Blob(this.chunks, { type: 'video/webm' }) });
       void fetch(`/__director-save?name=${base}-timeline.json`, {
         method: 'POST',
-        body: JSON.stringify({ fps: Director.fps, start, end: Timeline.t, events: Timeline.events }),
+        body: JSON.stringify({ fps: Director.fps, start, end: Timeline.t, frames: n, events: Timeline.events }),
       });
     };
-    this.recorder.start(2000);
   }
 
   private finish(): void {
     this.done = true;
     DirectorFrame.onFrame = undefined;
     Timeline.on = false;
+    this.saveTimeline?.();
     if (this.recorder?.state === 'recording') this.recorder.stop();
   }
 

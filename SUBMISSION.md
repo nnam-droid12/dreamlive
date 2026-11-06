@@ -117,6 +117,6 @@ William Nnamani: Developer & Designer.
 Rendered in the emulator with Director mode's offline render (no headset available). It is smooth on any laptop and the sound is in sync:
 
 1. `npm install`, then create `.env.development.local` containing `VITE_DIRECTOR=director&offline&w=1280&h=720`, then `npm run dev`.
-2. Click **Enter XR** and wait (about an hour on a 2-core laptop). The camera follows the scripted shots, with a caption naming each feature. The video frames and an audio timeline are saved to `artifacts/`.
-3. `python scripts/trailer/mix.py artifacts/dreamlive-demo-frames.webm artifacts/dreamlive-demo-timeline.json artifacts/dreamlive-trailer.mp4`
+2. Click **Enter XR** and wait (about an hour on a 2-core laptop). The camera follows the scripted shots, with a caption naming each feature. The frames (`artifacts/frames/`) and an audio timeline are saved.
+3. `python scripts/trailer/mix.py artifacts/frames artifacts/dreamlive-demo-timeline.json artifacts/dreamlive-trailer.mp4`
 4. Delete `.env.development.local`. Upload the MP4 to YouTube as **Public** (under 3:00).

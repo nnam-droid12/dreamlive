@@ -2,6 +2,19 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — The trailer (offline render)
+
+- **Director mode can render offline** (`VITE_DIRECTOR=director&offline&w=1280&h=720` in `.env.development.local`, or URL flags):
+  - Every frame advances the story by exactly 1/30 s, however slowly the laptop draws it.
+  - Each finished frame is read from the XR framebuffer and saved by a dev-only endpoint as `artifacts/frames/frame-NNNNN.jpg`.
+  - Every sound event is logged to a timeline.
+  - `scripts/trailer/mix.py` assembles the frames at 30 fps and mixes the soundtrack from that timeline: songs, Bigfoot's voice with the music ducked under it, ambience, fireworks, chimes and bedtime rain. Result: smooth and in sync even on a 2-core laptop at about 1 fps.
+- **The trailer's script**, on top of the real dream:
+  - A lower-right caption names each feature as it happens: draw a window, he tells his dream, one giant leap, your room becomes a penthouse, your gaze picks the song, spatial cinema, the skyline visualizer, fireworks from your palm, real music in spatial audio, catching gifts, golden hour to sunrise, the memory, the credits, bedtime.
+  - New shots: the leap seen from the party roof; the leap home seen from his room; a wide skyline; the fireworks sky; rain at the glass.
+  - The title and end cards are in the film style. The trailer always films the Rooftop Party.
+- First render: 2:11, 1036×623 upscaled to 720p, H.264/AAC (`artifacts/dreamlive-trailer.mp4`; contact sheet at `docs/screens/trailer-contact-sheet.jpg`). Soundtrack about −18 dB average.
+
 ## 2026-11-06 — Spatial cinema: the dream cinema screen
 
 - **A floating "LIVE · Rooftop cam" screen** shows a director's cut of Bigfoot's night while you watch the real thing:

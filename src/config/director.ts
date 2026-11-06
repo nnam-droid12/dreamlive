@@ -32,4 +32,4 @@ export const Director = {
  * Shared with other systems while Director mode runs: the offline render loop's
  * after-frame hook, and whether the cinema screen may show in the current shot.
  */
-export const DirectorFrame = { onFrame: undefined as undefined | (() => void), cinema: true };
+export const DirectorFrame = { onFrame: undefined as undefined | (() => void), cinema: true, offscreen: false };

@@ -1,9 +1,9 @@
 """
 Builds the trailer from an offline Director render (see src/config/director.ts):
 
-  python scripts/trailer/mix.py artifacts/dreamlive-demo-frames.webm artifacts/dreamlive-demo-timeline.json out.mp4
+  python scripts/trailer/mix.py artifacts/frames artifacts/dreamlive-demo-timeline.json out.mp4
 
-1. Re-times the captured frames to a steady 30 fps (one frame per story step).
+1. Assembles the captured frames at a steady 30 fps (one frame per story step).
 2. Mixes the soundtrack from the logged timeline: the dream ambience at its
    logged levels, each party song from its start (quieter while the window is
    closed), Bigfoot's voice clips with the music ducked under them, simple
@@ -115,8 +115,10 @@ def main(frames_path, timeline_path, out_path):
     events = tl['events']
 
     video = out_path.replace('.mp4', '-video.mp4')
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', frames_path, '-vf', f'setpts=N/({fps}*TB)', '-r', str(fps),
-                    '-c:v', 'libx264', '-crf', '18', '-preset', 'slow', '-pix_fmt', 'yuv420p', video], check=True)
+    # Numbered JPEG frames (artifacts/frames), one per story step; 720p, even sizes for H.264.
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-framerate', str(fps), '-i', os.path.join(frames_path, 'frame-%05d.jpg'),
+                    '-vf', 'scale=-2:720:flags=lanczos', '-c:v', 'libx264', '-crf', '18', '-preset', 'slow',
+                    '-pix_fmt', 'yuv420p', video], check=True)
     dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', video],
                                capture_output=True, text=True).stdout.strip())
     total = int(dur * SR)

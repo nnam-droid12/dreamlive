@@ -180,9 +180,12 @@ export class CinemaSystem extends createSystem({
     for (const o of this.hidden) o.visible = false;
     r.xr.enabled = false;
     r.shadowMap.autoUpdate = false;
+    // Mark this pass so the trailer's frame capture skips it.
+    DirectorFrame.offscreen = true;
     r.setRenderTarget(this.rt);
     r.render(this.scene, this.cam);
     r.setRenderTarget(null);
+    DirectorFrame.offscreen = false;
     r.xr.enabled = xr;
     r.shadowMap.autoUpdate = shadows;
     for (const o of this.hidden) o.visible = !!o.userData.cinemaWasVisible;

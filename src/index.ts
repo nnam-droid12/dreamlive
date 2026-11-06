@@ -122,6 +122,6 @@ function offlineRender(world: Awaited<ReturnType<typeof World.create>>): void {
   const render = r.render.bind(r);
   r.render = (scene, camera) => {
     render(scene, camera);
-    if (r.getRenderTarget() === null) DirectorFrame.onFrame?.();
+    if (!DirectorFrame.offscreen) DirectorFrame.onFrame?.();
   };
 }

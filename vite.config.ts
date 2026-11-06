@@ -35,7 +35,8 @@ function directorSave(): Plugin {
           else chunks.push(c);
         });
         req.on('end', () => {
-          const dir = resolve(process.cwd(), 'artifacts');
+          // Numbered frames of an offline render go in their own folder.
+          const dir = resolve(process.cwd(), 'artifacts', name.startsWith('frame-') ? 'frames' : '');
           mkdirSync(dir, { recursive: true });
           writeFileSync(resolve(dir, name), Buffer.concat(chunks));
           res.end('saved ' + name);
