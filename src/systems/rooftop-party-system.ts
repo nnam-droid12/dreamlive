@@ -172,15 +172,7 @@ export class RooftopPartySystem extends createSystem({
     frameToWorld(f, Rooftop.djSpot, this.djAt);
     frameToWorld(f, { x: Rooftop.insideSpot.x + 0.35, y: Rooftop.catchHeight, z: Rooftop.insideSpot.z }, this.catchAt);
     frameToWorld(f, Rooftop.pile, this.pileAt);
-    // Last nights' gifts are still on the floor.
-    const saved = Math.min(cfg.pileMax, MemoryStore.giftPile());
-    for (let i = 0; i < saved; i++) {
-      const g = this.newGift(i);
-      g.state = 'placed';
-      this.pileSlot(i, g.obj.position);
-      g.obj.rotation.y = (i * 1.9) % (Math.PI * 2);
-      g.obj.visible = true;
-    }
+    // The floor starts clear every night: the heap only grows as Bigfoot catches tonight's gifts.
   }
 
   /** Real party guests (animated people) take the crowd's spots, facing the DJ; the stand-ins step aside. */
@@ -357,7 +349,7 @@ export class RooftopPartySystem extends createSystem({
 
   private newGift(i: number): Gift {
     const obj = buildGift(GIFT_COLORS[i % GIFT_COLORS.length]);
-    obj.scale.setScalar(1.3);
+    obj.scale.setScalar(cfg.giftScale);
     obj.visible = false;
     this.world.createTransformEntity(obj);
     const g: Gift = { obj, state: 'placed', age: 0, from: new Vector3(), slot: i };
@@ -372,10 +364,12 @@ export class RooftopPartySystem extends createSystem({
     const cell = layer === 0 ? i : layer === 1 ? i - 9 : 0;
     const jitter = ((i * 0.618) % 1) - 0.5;
     const half = (n - 1) / 2;
+    // Spacing follows the gift size (a 24 cm box at scale 1).
+    const k = cfg.giftScale / 1.3;
     out.copy(this.pileAt)
-      .addScaledVector(this.frame.out, ((cell % n) - half) * 0.34 + jitter * 0.08)
-      .addScaledVector(this.frame.along, (Math.floor(cell / n) - half) * 0.34 - jitter * 0.06);
-    out.y = this.pileAt.y + 0.13 + layer * 0.26;
+      .addScaledVector(this.frame.out, (((cell % n) - half) * 0.34 + jitter * 0.08) * k)
+      .addScaledVector(this.frame.along, ((Math.floor(cell / n) - half) * 0.34 - jitter * 0.06) * k);
+    out.y = this.pileAt.y + (0.13 + layer * 0.26) * k;
     return out;
   }
 

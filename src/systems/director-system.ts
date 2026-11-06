@@ -20,6 +20,7 @@ import { RoomSlots } from '../components/stage.js';
 import { Timeline } from '../audio/timeline.js';
 import { Director, DirectorFrame } from '../config/director.js';
 import { makeTitleCard, TitleCard } from '../visuals/title-card.js';
+import { DirectorHands, HandShot } from './director-hands.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -28,6 +29,35 @@ const UP = new Vector3(0, 1, 0);
 const ONE = new Vector3(1, 1, 1);
 const CAM_RATE = 1.4;
 const CARD_W = 1.5;
+
+// Hand shots for the trailer (head space: x right, y up, -z forward; identity = palm down, fingers forward).
+const Q_ID = new Quaternion();
+const Q_PALM_UP = new Quaternion(0, 0, 1, 0);
+const Q_UP_FINGERS = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2);
+const Q_DANCE_L = new Quaternion().setFromAxisAngle(UP, -Math.PI / 2).multiply(Q_UP_FINGERS);
+const Q_DANCE_R = new Quaternion().setFromAxisAngle(UP, Math.PI / 2).multiply(Q_UP_FINGERS);
+const REST_L: HandShot = { at: new Vector3(-0.22, -0.62, -0.2), rot: Q_ID, pose: 'default', pinch: 0 };
+const REST_R: HandShot = { at: new Vector3(0.22, -0.62, -0.2), rot: Q_ID, pose: 'default', pinch: 0 };
+const DRAW_R: HandShot = { at: new Vector3(0.1, -0.08, -0.38), rot: Q_ID, pose: 'point', pinch: 0 };
+const DANCE_L: HandShot = { at: new Vector3(), rot: Q_DANCE_L, pose: 'open', pinch: 0 };
+const DANCE_R: HandShot = { at: new Vector3(), rot: Q_DANCE_R, pose: 'open', pinch: 0 };
+const PALM_UP_L: HandShot = { at: new Vector3(-0.09, -0.17, -0.38), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+const POINT_R: HandShot = { at: new Vector3(0.12, -0.13, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
+const CUP_L: HandShot = { at: new Vector3(-0.07, -0.2, -0.4), rot: Q_PALM_UP, pose: 'cup', pinch: 0 };
+const CUP_R: HandShot = { at: new Vector3(0.07, -0.2, -0.4), rot: Q_PALM_UP, pose: 'cup', pinch: 0 };
+/** Scratch objects for the hand script (no allocation per frame). */
+const H_TMP = {
+  origin: new Vector3(),
+  out: new Vector3(),
+  along: new Vector3(),
+  a: new Vector3(),
+  b: new Vector3(),
+  aim: new Vector3(),
+  off: new Vector3(),
+  l: new Vector3(),
+  r: new Vector3(),
+  q: new Quaternion(),
+};
 
 /**
  * Director mode (dev only, `?director`): drives the camera through a scripted
@@ -68,6 +98,7 @@ export class DirectorSystem extends createSystem({
   private featureOpacity = 0;
   private cues = new Set<string>();
   private saveTimeline?: () => void;
+  private hands?: DirectorHands;
   private recording = false;
 
   init(): void {
@@ -84,7 +115,7 @@ export class DirectorSystem extends createSystem({
     this.feature = makeTitleCard(1024, 150, 0.56);
     this.feature.mesh.renderOrder = 1001;
     this.world.createTransformEntity(this.feature.mesh);
-    this.hideEmulatedInputs();
+    this.hands = new DirectorHands();
   }
 
   update(realDelta: number): void {
@@ -108,6 +139,7 @@ export class DirectorSystem extends createSystem({
     this.placeCamera();
     this.updateCard(phase ?? '');
     this.script(d, phase ?? '');
+    this.handScript(d, phase ?? '', realDelta);
     this.updateFeature(realDelta);
   }
 
@@ -197,8 +229,10 @@ export class DirectorSystem extends createSystem({
     } else if (scene.startsWith('party-')) {
       if (t < 8) this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
       // The skyline as a music visualizer, then the fireworks above it.
-      else if (t < 16) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
-      else if (t < 20) this.aim(at(deck.x, deck.y + 1.6, deck.z), at(24, 17, 0));
+      else if (t < 12) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
+      // The palm menu in hand, the party and skyline beyond; then the fireworks it launches.
+      else if (t < 17) this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 9, -1));
+      else if (t < 21) this.aim(at(deck.x, deck.y + 1.6, deck.z), at(24, 17, 0));
       else this.aim(at(Rooftop.djSpot.x + 2.6, Rooftop.djSpot.y + 1.6, Rooftop.djSpot.z + 3.0), dj);
     } else if (scene === 'leap-back') {
       // From the party roof's edge: the street far below, his tower and window across.
@@ -277,12 +311,13 @@ export class DirectorSystem extends createSystem({
       if (t < 8) {
         text = 'A live rooftop cam: spatial cinema';
         DirectorFrame.cinema = true;
-      } else if (t < 16) text = 'The skyline dances to the music';
+      } else if (t < 12) text = 'The skyline dances to the music';
+      else if (t < 17) text = "Turn your palm up: you're the DJ";
       else text = 'Fireworks, from your palm';
-      if (t > 16.5 && this.cue('fireworks')) d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
+      if (t > 17.5 && this.cue('fireworks')) d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
     } else if (scene === 'leap-back') text = 'Real music, in spatial audio';
     else if (scene === 'gifts') {
-      text = 'Catch his gifts. He keeps the rest.';
+      text = 'Catch his gifts with your hands';
       // A shorter gifts beat for the trailer.
       if (t > 12 && this.cue('gifts-skip')) d.setValue(DreamDirector, 'beatTime', 20.5);
     } else if (scene === 'to-bed') text = 'Golden hour, starry night, sunrise';
@@ -315,6 +350,51 @@ export class DirectorSystem extends createSystem({
     g.fillRect(0, 20, c.width, c.height - 40);
     g.globalCompositeOperation = 'source-over';
     this.feature.texture.needsUpdate = true;
+  }
+
+  /**
+   * The viewer's hands in shot, doing what a person would: pointing and
+   * pinch-dragging to draw the window, dancing at the party, turning the left
+   * palm up for the palm menu and pinching Fireworks, cupping to catch gifts.
+   */
+  private handScript(d: Entity, phase: string, dt: number): void {
+    if (!this.hands) return;
+    const asleep = phase === RitualPhase.Asleep && readBeat(d, this.beat);
+    const scene = asleep ? this.beat.scene : '';
+    const t = asleep ? this.beat.time : 0;
+    const f = {
+      origin: H_TMP.origin.fromArray(d.getVectorView(RoomSlots, 'windowOrigin')),
+      out: H_TMP.out.fromArray(d.getVectorView(RoomSlots, 'windowOut')),
+      along: H_TMP.along.fromArray(d.getVectorView(RoomSlots, 'windowAlong')),
+    };
+    let left = REST_L;
+    let right = REST_R;
+    if (scene === 'draw-window' && t > 1.5 && t < 7.5) {
+      // Point at the wall, pinch, drag corner to corner, release.
+      const a = frameToWorld(f, { x: 0, y: 0.3, z: -0.75 }, H_TMP.a);
+      const b = frameToWorld(f, { x: 0, y: 2.6, z: 0.75 }, H_TMP.b);
+      const k = Math.min(1, Math.max(0, (t - 3) / 3));
+      right = { ...DRAW_R, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 6.2 ? 1 : 0 };
+    } else if (scene.startsWith('party-') && t < 8) {
+      // Dancing: hands up, palms facing each other, swaying on the beat.
+      const s = Math.sin(this.clock * 4.2);
+      left = { ...DANCE_L, at: H_TMP.l.set(-0.2 + 0.04 * s, -0.02 + 0.07 * Math.abs(s), -0.42) };
+      right = { ...DANCE_R, at: H_TMP.r.set(0.2 + 0.04 * s, -0.02 + 0.07 * Math.abs(Math.cos(this.clock * 4.2)), -0.42) };
+    } else if (scene.startsWith('party-') && t >= 12 && t < 17) {
+      // The palm menu: left palm up; the right hand points at Fireworks and pinches.
+      left = PALM_UP_L;
+      const panel = this.scene.getObjectByName('Palm Panel');
+      if (panel && panel.position.y > -5 && t > 13) {
+        panel.getWorldPosition(H_TMP.aim);
+        panel.getWorldQuaternion(H_TMP.q);
+        H_TMP.aim.add(H_TMP.off.set(0.058, 0.02, 0).applyQuaternion(H_TMP.q));
+        right = { ...POINT_R, aim: H_TMP.aim, pinch: t > 14.3 && t < 15.1 ? 1 : 0 };
+      }
+    } else if (scene === 'gifts') {
+      left = CUP_L;
+      right = CUP_R;
+    }
+    this.hands.apply(this.player, left, right, Math.min(1, dt * 6));
   }
 
   /** True the first time a named cue is reached. */
@@ -454,16 +534,5 @@ export class DirectorSystem extends createSystem({
     Timeline.on = false;
     this.saveTimeline?.();
     if (this.recorder?.state === 'recording') this.recorder.stop();
-  }
-
-  /** The emulator's floating hand/controller models would sit in every shot. */
-  private hideEmulatedInputs(): void {
-    const device = (window as unknown as { IWER_DEVICE?: Record<string, Record<string, { connected?: boolean }> | undefined> }).IWER_DEVICE;
-    for (const group of [device?.hands, device?.controllers]) {
-      for (const side of ['left', 'right']) {
-        const input = group?.[side];
-        if (input && 'connected' in input) input.connected = false;
-      }
-    }
   }
 }

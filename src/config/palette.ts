@@ -50,8 +50,9 @@ export const Palette = {
   /** The dream cinema screen's bezel. */
   cinemaBezel: 0x0d0c10,
   /** Tracked hands: frosted-glass body and glowing outline (Meta system-hand look). */
-  handGlass: 0xeaf2ff,
-  handOutline: 0xdfeaff,
+  handGlass: 0xf2f6ff,
+  handRim: 0x6f7f9c,
+  handOutline: 0xa9bcdc,
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,
   starWhite: 0xfff8e8,

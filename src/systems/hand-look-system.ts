@@ -14,7 +14,7 @@ export class HandLookSystem extends createSystem({}) {
 
   init(): void {
     this.fill = new ShaderMaterial({
-      uniforms: { uColor: { value: new Color(Palette.handGlass) } },
+      uniforms: { uColor: { value: new Color(Palette.handGlass) }, uRim: { value: new Color(Palette.handRim) } },
       vertexShader: /* glsl */ `
         #include <common>
         #include <skinning_pars_vertex>
@@ -37,13 +37,16 @@ export class HandLookSystem extends createSystem({}) {
         }`,
       fragmentShader: /* glsl */ `
         uniform vec3 uColor;
+        uniform vec3 uRim;
         varying float vWrist;
         varying vec3 vNormal;
         varying vec3 vView;
         void main() {
           float rim = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-          float a = (0.10 + 0.55 * pow(rim, 2.5)) * smoothstep(0.03, 0.08, vWrist);
-          gl_FragColor = vec4(uColor, a);
+          // Frosted glass that reads on bright walls and dark skies alike: a light body shading to a cool slate rim.
+          float a = (0.28 + 0.55 * pow(rim, 2.0)) * smoothstep(0.03, 0.08, vWrist);
+          vec3 c = mix(uColor, uRim, smoothstep(0.2, 0.9, rim));
+          gl_FragColor = vec4(c, a);
         }`,
       transparent: true,
       depthWrite: false,

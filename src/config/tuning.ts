@@ -376,14 +376,16 @@ export const Tuning = {
     giftEvery: 3.4,
     giftFlightSec: 1.9,
     pileMax: 14,
+    /** Size of the gifts the Yeti throws to Bigfoot (1 = a 24 cm box). */
+    giftScale: 0.7,
     /** Now and then a goodie flies across into the room to be caught: cadence, flight time, arc. */
     viewerThrowEvery: 3.6,
     viewerFlightSec: 2.8,
     viewerArc: 2.2,
     /** Gifts that fly to the viewer: size (vs. Bigfoot's), how far ahead and how far below the eyes they land. */
-    viewerGiftScale: 0.45,
-    viewerGiftReach: 0.55,
-    viewerGiftDrop: 0.42,
+    viewerGiftScale: 0.3,
+    viewerGiftReach: 0.7,
+    viewerGiftDrop: 0.5,
   },
 
   memoryShelf: {

@@ -120,6 +120,34 @@ Build order:
 5. The cinema screen.
 6. The trailer.
 
+## 2f. New scenes and realism pass — 2026-11-06 (owner: "implement all A–E, take your time, make each stand out and look very real")
+
+After studying why DreamSpace won (it transforms your own room, offers several worlds, has everyday use through spatial cinema, hands-first control, polish, comfort), the owner approved five new scenes:
+
+- **A. Movie Night with Bigfoot:** the room dims into a private cinema. You open a video from your own device on a big screen, and Bigfoot sits beside you with popcorn, reacting.
+- **B. Above the Clouds:** a second dream world. Your room floats above a sunrise sea of clouds; Bigfoot flies a hot-air balloon past; you wave clouds away and catch falling stars.
+- **C. Snap a photo with Bigfoot:** make a finger frame with both hands to take a photo; it lands on your memory shelf.
+- **D. Winter Night:** snow over a frozen New York; Bigfoot ice-skates on a rink below; you shake the sky for more snow.
+- **E. Storm at Sea:** water rises over your floor; whales pass the windows; Bigfoot surfs; a hand-wave makes waves.
+
+Also from this round:
+- Truly realistic modern skyscrapers: real geometry of glass curtain walls, concrete slabs, mullions, setbacks and crowns, not just textured boxes.
+- Only small gifts (from the Yeti too).
+- No gifts on the room's floor before the party.
+- The hands visible in the trailer.
+
+Order:
+1. Finish the hands in the trailer.
+2. Gifts.
+3. Skyscrapers.
+4. C (photo).
+5. A (movie night).
+6. B (clouds).
+7. D (winter).
+8. E (sea).
+
+Commit after each.
+
 ## 3. Experience design (the full script)
 
 ### 3.1 Session structure (about 8–9 minutes total)
