@@ -1,3 +1,5 @@
+import { doveBodyGeometry, doveMaterial, doveWingGeometry } from '../scene-assets/dove.scene-asset.js';
+import { Palette } from '../config/palette.js';
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -66,6 +68,9 @@ export interface CityLifeOptions {
  * searchlight, and (at sunrise) a flock of birds crossing the sky. Everything
  * is instanced or a handful of meshes, built in the window frame.
  */
+/** Doves are drawn a little larger than life so the flock reads from the room. */
+const DOVE_SCALE = 2.6;
+
 export class CityLife {
   readonly root = new Group();
   private cars: InstancedMesh;
@@ -77,7 +82,9 @@ export class CityLife {
   private beamMat: MeshBasicMaterial;
   private wingsL: InstancedMesh;
   private wingsR: InstancedMesh;
-  private birdMat: MeshBasicMaterial;
+  private birdMat: MeshStandardMaterial;
+  private wingMat: MeshStandardMaterial;
+  private bodies: InstancedMesh;
   private m = new Matrix4();
   private q = new Quaternion();
   private p = new Vector3();
@@ -135,23 +142,25 @@ export class CityLife {
     this.heli.name = 'Helicopter';
     this.root.add(this.heli);
 
-    // Birds: two instanced wings that flap about the body line.
-    const wing = new BufferGeometry();
-    wing.setAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0.18, 0, 0, -0.18, 0.75, 0, -0.1]), 3));
-    wing.computeVertexNormals();
-    this.birdMat = new MeshBasicMaterial({ color: 0x1d1a22, side: DoubleSide, transparent: true, opacity: 0 });
-    this.wingsL = new InstancedMesh(wing, this.birdMat, o.birds);
-    const wingR = wing.clone();
+    // White doves: instanced bodies and left/right wings that flap about the shoulders.
+    this.birdMat = doveMaterial();
+    this.birdMat.transparent = true;
+    this.bodies = new InstancedMesh(doveBodyGeometry(), this.birdMat, o.birds);
+    const wingMat = new MeshStandardMaterial({ color: Palette.doveWhite, roughness: 0.85, side: DoubleSide, transparent: true, emissive: new Color(Palette.doveWhite), emissiveIntensity: 0.12 });
+    this.wingMat = wingMat;
+    this.wingsL = new InstancedMesh(doveWingGeometry(), wingMat, o.birds);
+    const wingR = doveWingGeometry();
     wingR.scale(-1, 1, 1);
-    this.wingsR = new InstancedMesh(wingR, this.birdMat, o.birds);
-    this.wingsL.frustumCulled = this.wingsR.frustumCulled = false;
-    this.root.add(this.wingsL, this.wingsR);
+    this.wingsR = new InstancedMesh(wingR, wingMat, o.birds);
+    this.bodies.frustumCulled = this.wingsL.frustumCulled = this.wingsR.frustumCulled = false;
+    this.bodies.name = 'Doves';
+    this.root.add(this.bodies, this.wingsL, this.wingsR);
   }
 
-  update(time: number, delta: number, energy: number, dawn: number): void {
+  update(time: number, delta: number, energy: number, dawn: number, dusk = 0): void {
     this.traffic(delta);
     this.copter(time, energy, dawn);
-    this.flock(time, dawn);
+    this.flock(time, Math.max(dawn, dusk));
   }
 
   private traffic(delta: number): void {
@@ -186,11 +195,12 @@ export class CityLife {
     this.beamMat.opacity = (0.06 + 0.08 * energy) * (1 - dawn);
   }
 
-  private flock(time: number, dawn: number): void {
-    const show = Math.max(0, Math.min(1, (dawn - 0.25) / 0.25));
-    this.wingsL.visible = this.wingsR.visible = show > 0.01;
-    if (!this.wingsL.visible) return;
-    this.birdMat.opacity = show;
+  /** White doves cross the sky at golden hour and at sunrise (not at night). */
+  private flock(time: number, light: number): void {
+    const show = Math.max(0, Math.min(1, (light - 0.25) / 0.25));
+    this.bodies.visible = this.wingsL.visible = this.wingsR.visible = show > 0.01;
+    if (!this.bodies.visible) return;
+    this.birdMat.opacity = this.wingMat.opacity = show;
     const f = this.o.flock;
     const k = (time / f.sec) % 1;
     this.p.lerpVectors(f.from, f.to, k);
@@ -201,18 +211,27 @@ export class CityLife {
       const side = i % 2 ? 1 : -1;
       const d = this.dummy;
       d.position.set(this.p.x, this.p.y + Math.sin(time * 1.3 + i) * 0.3, this.p.z);
-      d.rotation.set(0, heading, 0);
-      d.translateX(side * row * 0.9);
-      d.translateZ(-row * 1.1);
-      const flap = Math.sin(time * 9 + i * 0.7) * 0.6;
-      d.scale.setScalar(1.6);
+      d.rotation.set(0, heading, Math.sin(time * 0.6 + i) * 0.12);
+      d.translateX(side * row * 1.1);
+      d.translateZ(-row * 1.3);
+      d.scale.setScalar(DOVE_SCALE);
+      d.updateMatrix();
+      this.bodies.setMatrixAt(i, d.matrix);
+      // Flap, with a glide now and then: wings up-down about the shoulders.
+      const glide = Math.sin(time * 0.7 + i * 1.7) > 0.55;
+      const flap = glide ? 0.08 : Math.sin(time * 11 + i * 0.7) * 0.75;
+      d.translateY(0.03 * DOVE_SCALE);
+      d.translateX(0.03 * DOVE_SCALE);
       d.rotateZ(flap);
       d.updateMatrix();
       this.wingsL.setMatrixAt(i, d.matrix);
-      d.rotateZ(-2 * flap);
+      d.rotateZ(-flap);
+      d.translateX(-0.06 * DOVE_SCALE);
+      d.rotateZ(-flap);
       d.updateMatrix();
       this.wingsR.setMatrixAt(i, d.matrix);
     }
+    this.bodies.instanceMatrix.needsUpdate = true;
     this.wingsL.instanceMatrix.needsUpdate = true;
     this.wingsR.instanceMatrix.needsUpdate = true;
   }

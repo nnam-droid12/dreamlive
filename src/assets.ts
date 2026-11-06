@@ -1,5 +1,6 @@
 import { AssetType, defineAssets } from '@iwsdk/core';
 import djBooth from './scene-assets/dj-booth.scene-asset.js';
+import dove from './scene-assets/dove.scene-asset.js';
 import landmarkDeco from './scene-assets/landmark-deco.scene-asset.js';
 import landmarkGlass from './scene-assets/landmark-glass.scene-asset.js';
 import skis from './scene-assets/skis.scene-asset.js';
@@ -20,6 +21,7 @@ export default defineAssets({
   surfboard,
   skis,
   'dj-booth': djBooth,
+  dove,
   'landmark-deco': landmarkDeco,
   'landmark-glass': landmarkGlass,
   'palm-panel': {
