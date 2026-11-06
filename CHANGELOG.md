@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Hands-first, end to end
+
+- **Hands look like the headset's own.** Tracked hands get a frosted-glass body (faint in the middle, brighter at the rim, fading at the wrist) inside IWSDK's soft glowing outline. This is the Meta system-hand look, and it reads over the dream and over passthrough. The desktop emulator draws its own stand-in hands on top, so this look shows on a headset only.
+- **Panel buttons fire on the pinch.** With hand tracking the pointing ray drifts while the fingers close, so a release often lands off the button. Buttons now fire on pinch-down, with a short guard against double presses. This applies to the palm menu and the pause panel.
+- Hands-only run-through in the emulator (hand tracking, no controller):
+  - The left palm turned up opens the palm menu; a right-hand ray pinch on Fireworks fires them.
+  - A right-hand pinch-drag on the wall draws Bigfoot's window; it dissolves open and the story moves on.
+  - A palm held out pauses; a pinch on Resume resumes.
+  - Waking Bigfoot and choosing a song work by gaze alone, and gifts are caught by touch.
+
 ## 2026-11-05 — Landmark towers on the skyline
 
 - Two new procedural landmark models, generic and not copies of real buildings:
