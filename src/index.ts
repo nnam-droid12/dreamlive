@@ -30,6 +30,8 @@ import { RoomPartyLightSystem } from './systems/room-party-light-system.js';
 import { LivingCitySystem } from './systems/living-city-system.js';
 import { BedtimeSystem } from './systems/bedtime-system.js';
 import { HandLookSystem } from './systems/hand-look-system.js';
+import { NarrationSystem } from './systems/narration-system.js';
+import { FilmSystem } from './systems/film-system.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -75,6 +77,8 @@ World.create(
     .registerSystem(LivingCitySystem)
     .registerSystem(BedtimeSystem)
     .registerSystem(HandLookSystem)
+    .registerSystem(NarrationSystem)
+    .registerSystem(FilmSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)

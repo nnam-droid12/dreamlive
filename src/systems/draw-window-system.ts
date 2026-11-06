@@ -47,7 +47,6 @@ export class DrawWindowSystem extends createSystem({
   private out = new Vector3();
   private along = new Vector3();
   private tmp = new Vector3();
-  private asked = false;
 
   init(): void {
     this.outline = new Group();
@@ -71,11 +70,6 @@ export class DrawWindowSystem extends createSystem({
     const delta = dreamDelta(d, realDelta);
     const drawing = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat) && this.beat.scene === 'draw-window';
     if (drawing && !this.done) {
-      if (!this.asked) {
-        this.asked = true;
-        d.setValue(Caption, 'text', 'Draw Bigfoot a window: pinch and drag on the wall.');
-        d.setValue(Caption, 'ttl', 8);
-      }
       // No drawing yet? After a while the window draws itself, slowly, so it reads as magic.
       if (!this.dragging && this.beat.time > cfg.autoAfterSec) {
         this.auto = Math.min(1, this.auto + delta / cfg.autoDrawSec);

@@ -2,6 +2,21 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Interactive-film framing and Bigfoot's narration
+
+- **The Rooftop Party is told as a film:**
+  - **Title card:** "a Dreamlive story — *Bigfoot's Rooftop Party*" as the dream opens.
+  - **Chapter cards** in a movie-caption style: One "The Leap", Two "The Party", Three "Home Across the Street", Four "Gifts from the Sky", Five "Goodnight".
+  - **End credits** roll after Bigfoot wakes: the cast, the music credits (CC BY 4.0, as required), Built with, Made by.
+  - Cards are serif gold type with a soft shadow. They are placed in the world where you look and anchored to your rig, so a viewpoint change carries them along; they never stick to your head.
+  - Automatic bedtime now waits until the credits finish.
+- **Bigfoot narrates his dream:**
+  - Eleven short lines, one at the start of each beat: asking you to draw his window, the leap, "Cousin Yeti, hit the music!", "You pick the song", "Catch some for yourself!", "Thank you for dreaming with me", and "listen to the rain" at bedtime.
+  - Each line plays from his head (spatial audio). The music, including the party song, ducks under it.
+  - Each line shows as a subtitle ("Bigfoot: …"). The subtitles double as the hands-first instructions, replacing the old draw-window caption.
+  - Voice clips load from `public/audio/voice/<id>.mp3`. **Until the voice files are generated, the subtitles carry the lines.**
+- Emulator checks (systems paused for the captures, because the laptop runs at about 3 fps): the title card over the room; "The Leap" chapter card; the credits roll; Bigfoot's subtitle text on the beat.
+
 ## 2026-11-06 — Real music and a music visualizer
 
 - **Real recorded songs replace the synth beats** at the rooftop party. They are free to use with credit (CC BY 4.0), from Free Music Archive:

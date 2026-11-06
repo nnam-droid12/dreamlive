@@ -85,6 +85,9 @@ class AudioEngine {
   private step = 0;
   private hum?: { stop(): void; gain: GainNode };
   private tracks = new Map<string, Track>();
+  /** Decoded voice lines (short clips), by file name; null = missing. */
+  private voices = new Map<string, AudioBuffer | null>();
+  private voiceLoading = new Set<string>();
   private trackAct: ActName = '';
   private dreamTrack = false;
   private analyser?: AnalyserNode;
@@ -362,9 +365,17 @@ class AudioEngine {
   /** Lower the music briefly so a key sound reads clearly. */
   duck(amount: number, seconds: number): void {
     const c = this.ctx;
-    if (!c || !this.musicOn) return;
-    const g = this.music.gain;
+    if (!c) return;
     const t = c.currentTime;
+    // The party song too (a voice line must carry over the decks).
+    if (this.act && this.actBus) {
+      const a = this.actBus.gain;
+      a.cancelScheduledValues(t);
+      a.setTargetAtTime(0.9 * (1 - amount * 0.7), t, 0.08);
+      a.setTargetAtTime(0.9, t + seconds, 0.8);
+    }
+    if (!this.musicOn) return;
+    const g = this.music.gain;
     g.cancelScheduledValues(t);
     g.setTargetAtTime(this.musicLevel * 0.9 * (1 - amount), t, 0.08);
     g.setTargetAtTime(this.musicLevel * 0.9, t + seconds, 0.8);
@@ -424,6 +435,40 @@ class AudioEngine {
     setTimeout(() => {
       if (!t.on) t.el.pause();
     }, 2000);
+  }
+
+  /**
+   * A voice line (public/audio/voice/<name>.mp3) spoken from a point in the room,
+   * with the music ducked under it. Returns false if the clip is missing or still
+   * loading (it is fetched on first ask, so call `preloadVoice` ahead of time).
+   */
+  speak(name: string, at: Vec, gain = 1): boolean {
+    const c = this.ctx;
+    const buf = this.voices.get(name);
+    if (!c || !buf) {
+      this.preloadVoice(name);
+      return false;
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const level = c.createGain();
+    level.gain.value = gain * 1.4;
+    src.connect(level).connect(this.panner(at)).connect(this.sfx);
+    src.start();
+    this.duck(0.55, buf.duration + 0.3);
+    return true;
+  }
+
+  preloadVoice(name: string): void {
+    const c = this.ctx;
+    if (!c || this.voices.has(name) || this.voiceLoading.has(name)) return;
+    this.voiceLoading.add(name);
+    fetch(`${import.meta.env.BASE_URL}audio/voice/${name}.mp3`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => c.decodeAudioData(b))
+      .then((buf) => this.voices.set(name, buf))
+      .catch(() => this.voices.set(name, null))
+      .finally(() => this.voiceLoading.delete(name));
   }
 
   /** Reads the mix's spectrum into `bands` and spots kicks (bass jumping above its running average). */

@@ -226,9 +226,21 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  film: {
+    /** Title and chapter cards: distance in front of the viewer, how long they show, fade in/out. */
+    distance: 2.4,
+    titleSec: 6,
+    chapterSec: 5,
+    fadeSec: 0.8,
+    /** End credits: start this long after waking, roll for this long, showing this share of the roll at once. */
+    creditsAt: 3,
+    creditsSec: 30,
+    creditsWindow: 0.32,
+  },
+
   bedtime: {
-    /** After the Rooftop story, bedtime starts by itself this long into being awake. */
-    autoAfterSec: 25,
+    /** After the Rooftop story, bedtime starts by itself this long into being awake (after the credits). */
+    autoAfterSec: 36,
     /** Music box level at bedtime; the fade-from-black that hides Bigfoot getting back into bed. */
     music: 0.1,
     fadeSec: 1.6,
