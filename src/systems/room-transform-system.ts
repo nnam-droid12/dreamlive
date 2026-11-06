@@ -1,4 +1,4 @@
-import { createSystem, DirectionalLight, Group, HemisphereLight, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
+import { AssetManager, createSystem, DirectionalLight, SRGBColorSpace, Group, HemisphereLight, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
@@ -9,7 +9,7 @@ import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
 import type { DissolveUniforms } from '../visuals/dissolve.js';
-import { buildNightSky } from '../visuals/night-sky.js';
+import { buildNightSky, setSkyPhotos } from '../visuals/night-sky.js';
 
 const cfg = Tuning.transform;
 /** Rooftop Party beats after Bigfoot lands on the party roof: the room is a penthouse by then. */
@@ -53,6 +53,7 @@ export class RoomTransformSystem extends createSystem({
     this.skyMat = this.sky.material as ShaderMaterial;
     this.sky.visible = false;
     this.world.createTransformEntity(this.sky);
+    void this.loadSkyPhotos();
     // Golden-hour light, always in the scene (intensity 0 when unused: adding lights later recompiles materials).
     const lights = new Group();
     lights.name = 'GoldenHourLights';
@@ -117,6 +118,18 @@ export class RoomTransformSystem extends createSystem({
       this.skyMat.uniforms.uDawn.value = this.dawn;
       this.skyMat.uniforms.uDusk.value = this.dusk;
       this.skyMat.uniforms.uSunDir.value.copy(this.sunDir);
+    }
+  }
+
+  /** Real sky photos (CC0, Poly Haven): golden hour, night, sunrise. The gradient shows until they arrive. */
+  private async loadSkyPhotos(): Promise<void> {
+    try {
+      const base = `${import.meta.env.BASE_URL}env/sky/`;
+      const [golden, night, sunrise] = await Promise.all(['golden', 'night', 'dawn'].map((n) => AssetManager.loadTexture(`${base}${n}.webp`)));
+      for (const t of [golden, night, sunrise]) t.colorSpace = SRGBColorSpace;
+      setSkyPhotos(this.sky, golden, night, sunrise);
+    } catch {
+      // The gradient sky remains.
     }
   }
 

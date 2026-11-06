@@ -213,8 +213,13 @@ export class CatchSystem extends createSystem({
     // Ends floating within easy reach: ahead of the chest, a little below the eyes.
     const calm = !!d.getValue(Session, 'reducedMotion');
     this.slow = calm ? 1.6 : 1;
-    f.to.copy(this.head).addScaledVector(this.fwd, calm ? 0.6 : 0.42).addScaledVector(this.side, (Math.random() - 0.5) * 0.5);
-    f.to.y -= 0.28;
+    const gift = kind === 'gift';
+    // Gifts for the viewer are small and land at hand height, off to one side, so they never fill the view.
+    f.obj.scale.setScalar(gift ? Tuning.rooftop.viewerGiftScale : 1);
+    const reach = gift ? Tuning.rooftop.viewerGiftReach : calm ? 0.6 : 0.42;
+    const sideways = gift ? (Math.random() < 0.5 ? -1 : 1) * (0.18 + Math.random() * 0.12) : (Math.random() - 0.5) * 0.5;
+    f.to.copy(this.head).addScaledVector(this.fwd, calm ? Math.max(reach, 0.6) : reach).addScaledVector(this.side, sideways);
+    f.to.y -= gift ? Tuning.rooftop.viewerGiftDrop : 0.28;
     f.spin.set(Math.random() * 2 - 1, Math.random() * 3 - 1.5, 0);
     f.state = 'flying';
     f.age = 0;

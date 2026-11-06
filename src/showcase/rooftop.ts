@@ -8,6 +8,7 @@
 import {
   AdditiveBlending,
   BoxGeometry,
+  BufferGeometry,
   Color,
   ConeGeometry,
   CylinderGeometry,
@@ -37,11 +38,15 @@ import { buildDecoTower } from '../scene-assets/landmark-deco.scene-asset.js';
 import { buildGlassSupertall } from '../scene-assets/landmark-glass.scene-asset.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 import { EqualizerUniforms, makeEqualizer } from '../visuals/equalizer.js';
+import { FACADE_TILE, FacadeKey } from './facades.js';
 import { Rooftop } from './rooftop-layout.js';
+import { cellBox } from '../scene-assets/lib/skyline.js';
 
 const B = Rooftop.building;
 const H = Rooftop.home;
 const CROWD = 40;
+/** Real facades for the towers around (picked per tower position): stone, brick, glass, lit offices. */
+const TOWER_FACADES: readonly FacadeKey[] = ['f13', 'f9', 'f19a', 'f20a', 'f1', 'f5', 'f13', 'f18a', 'f9', 'f19a'];
 const STREET_CROWD = 60;
 const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
 
@@ -60,10 +65,36 @@ export interface RooftopWorld {
   update(t: number, beat: number, energy: number): void;
 }
 
-function towerBox(w: number, d: number, y0: number, y1: number, mat: MeshStandardMaterial): Mesh {
-  const m = new Mesh(new BoxGeometry(w, y1 - y0, d), mat);
-  m.position.y = (y0 + y1) / 2;
+/**
+ * A tower shaft with UVs in facade tiles (real windows at a believable size),
+ * tagged with the real facade it gets once the textures load (facades.ts).
+ */
+function towerBox(w: number, d: number, y0: number, y1: number, mat: MeshStandardMaterial, facade?: FacadeKey): Mesh {
+  const m = new Mesh(cellBox(w, y1 - y0, d, FACADE_TILE, FACADE_TILE), mat);
+  m.position.y = y0;
+  if (facade) m.userData.facade = facade;
   return m;
+}
+
+/** UVs of a flat geometry laid out in metres (shape coordinates) → facade tiles. */
+function tileUVs(g: BufferGeometry, sx = 1, sy = 1): BufferGeometry {
+  const uv = g.getAttribute('uv');
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * sx) / FACADE_TILE, (uv.getY(i) * sy) / FACADE_TILE);
+  uv.needsUpdate = true;
+  return g;
+}
+
+/** A parapet band and a couple of rooftop plant boxes, so towers don't end as bare boxes. */
+function roofTop(t: Mesh, w: number, d: number, top: number, mat: MeshStandardMaterial, seed: number): void {
+  const cap = new Mesh(new BoxGeometry(w + 0.3, 1.2, d + 0.3), mat);
+  cap.position.set(t.position.x, top + 0.6, t.position.z);
+  t.parent?.add(cap);
+  for (let i = 0; i < 2; i++) {
+    const s = ((seed * 7 + i * 13) % 10) / 10;
+    const unit = new Mesh(new BoxGeometry(w * (0.2 + 0.15 * s), 2 + 2 * s, d * (0.25 + 0.1 * s)), mat);
+    unit.position.set(t.position.x + (i ? 0.2 : -0.22) * w, top + 1.2 + 1 + s, t.position.z + (s - 0.5) * d * 0.4);
+    t.parent?.add(unit);
+  }
 }
 
 /** An outward-facing wall plane (invisible from inside, so it never hides the room). */
@@ -88,7 +119,7 @@ export function buildRooftop(): RooftopWorld {
   // The party skyscraper opposite, taller than Bigfoot's.
   const w = B.farX - B.nearX;
   const d = B.maxZ - B.minZ;
-  const body = towerBox(w, d, B.baseY, B.roofY, facadeMat);
+  const body = towerBox(w, d, B.baseY, B.roofY, facadeMat, 'f17');
   body.position.x = (B.nearX + B.farX) / 2;
   body.position.z = (B.minZ + B.maxZ) / 2;
   const roof = new Mesh(new BoxGeometry(w, 0.3, d), concrete);
@@ -135,7 +166,8 @@ export function buildRooftop(): RooftopWorld {
   glass.lineTo(H.glassZ1, 0);
   glass.lineTo(H.glassZ0, 0);
   front.holes.push(glass);
-  const homeFront = new Mesh(new ShapeGeometry(front), facadeMat);
+  const homeFront = new Mesh(tileUVs(new ShapeGeometry(front)), facadeMat);
+  homeFront.userData.facade = 'f18a';
   // Shape x → frame -z after turning to face +x; mirror so the hole lands on the glass.
   homeFront.rotation.y = Math.PI / 2;
   homeFront.scale.x = -1;
@@ -147,6 +179,8 @@ export function buildRooftop(): RooftopWorld {
   behind.add(homeRoof);
   for (const s of [-1, 1]) {
     const side = wallPlane(14, H.roofY - H.baseY, facadeMat);
+    tileUVs(side.geometry, 14, H.roofY - H.baseY);
+    side.userData.facade = 'f18a';
     side.rotation.y = s > 0 ? 0 : Math.PI;
     side.position.set(-7, (H.roofY + H.baseY) / 2, s * 20);
     behind.add(side);
@@ -164,10 +198,11 @@ export function buildRooftop(): RooftopWorld {
     [9, -26, 10, 10, 2, 0], [10, 28, 10, 9, 9, 0], [58, 3, 14, 12, 34, 0],
     [-30, -36, 12, 10, 26, 1], [-28, 34, 12, 12, 14, 1], [-40, 0, 14, 16, 34, 1],
   ] as const) {
-    const t = towerBox(tw, td, H.baseY, top, facadeMat);
+    const t = towerBox(tw, td, H.baseY, top, facadeMat, TOWER_FACADES[(Math.abs(x) + Math.abs(z)) % TOWER_FACADES.length]);
     t.position.x = x;
     t.position.z = z;
     (back ? behind : root).add(t);
+    roofTop(t, tw, td, top, concrete, Math.abs(x + z));
   }
 
   // Landmarks on the skyline beyond the party: an art-deco spire to the left, a glass supertall to the right.

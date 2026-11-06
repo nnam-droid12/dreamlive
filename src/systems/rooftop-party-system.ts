@@ -1,4 +1,5 @@
 import {
+  AssetManager,
   BackSide,
   BoxGeometry,
   CanvasTexture,
@@ -34,6 +35,8 @@ import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { SONG_PALETTE, songOf } from '../dreams/chapter_rooftop.js';
+import { FacadeKey, FacadeSet, loadFacades } from '../showcase/facades.js';
+import { makeEqualizer } from '../visuals/equalizer.js';
 import { MemoryStore } from '../memory/store.js';
 import { buildRooftop, RooftopWorld } from '../showcase/rooftop.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -64,6 +67,7 @@ export class RooftopPartySystem extends createSystem({
   private dj?: BigfootRig;
   private loadingDj = false;
   private windowVersion = 0;
+  private facades?: FacadeSet;
   private pane?: Object3D;
   private paneHome = new Vector3();
   private standIn?: Object3D;
@@ -112,6 +116,7 @@ export class RooftopPartySystem extends createSystem({
     }
     this.party!.update(this.time, 1 - Sound.beatPhase(this.time, 120), this.energy);
     this.visualize(live || !!dj, realDelta);
+    this.facades?.setNight(1 - Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0));
     this.animateDj(scene, t, delta);
 
     // During the party the DJ tosses goodies off the roof to the street crowd.
@@ -151,6 +156,7 @@ export class RooftopPartySystem extends createSystem({
     party.setPalette(SONG_PALETTE.afro);
     this.world.createTransformEntity(party.root);
     this.party = party;
+    void this.dressFacades(party);
     if (!Showcase.enabled) {
       const win = buildDreamWindow();
       party.root.add(win);
@@ -170,6 +176,23 @@ export class RooftopPartySystem extends createSystem({
       this.pileSlot(i, g.obj.position);
       g.obj.rotation.y = (i * 1.9) % (Math.PI * 2);
       g.obj.visible = true;
+    }
+  }
+
+  /** Swap every tower's placeholder for its real facade (photo PBR + lit windows), keeping the visualizer. */
+  private async dressFacades(party: RooftopWorld): Promise<void> {
+    try {
+      const sky = await AssetManager.loadTexture(`${import.meta.env.BASE_URL}env/sky/golden.webp`);
+      const set = await loadFacades(sky);
+      for (const mat of set.materials.values()) makeEqualizer(mat, undefined, party.equalizer);
+      party.root.traverse((o) => {
+        const key = o.userData.facade as FacadeKey | undefined;
+        const mat = key && set.materials.get(key);
+        if (mat) (o as Mesh).material = mat;
+      });
+      this.facades = set;
+    } catch {
+      // The procedural facade stays.
     }
   }
 

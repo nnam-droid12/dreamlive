@@ -360,6 +360,10 @@ export const Tuning = {
     viewerThrowEvery: 3.6,
     viewerFlightSec: 2.8,
     viewerArc: 2.2,
+    /** Gifts that fly to the viewer: size (vs. Bigfoot's), how far ahead and how far below the eyes they land. */
+    viewerGiftScale: 0.45,
+    viewerGiftReach: 0.55,
+    viewerGiftDrop: 0.42,
   },
 
   memoryShelf: {

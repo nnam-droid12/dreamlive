@@ -16,8 +16,9 @@ export interface EqualizerUniforms {
  * light up from the street to the current level, with a bright line at the peak,
  * and everything flashes a little on each kick. With `amount` 0 nothing changes.
  */
-export function makeEqualizer(mat: MeshStandardMaterial, peak = 0xffd9a0): EqualizerUniforms {
-  const u: EqualizerUniforms = {
+export function makeEqualizer(mat: MeshStandardMaterial, peak = 0xffd9a0, shared?: EqualizerUniforms): EqualizerUniforms {
+  // Several materials can share one set of uniforms (one visualizer across the skyline).
+  const u: EqualizerUniforms = shared ?? {
     bands: { value: new Vector4() },
     amount: { value: 0 },
     base: { value: -45 },

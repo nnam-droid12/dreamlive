@@ -22,18 +22,12 @@ export const Palette = {
   windowWarm: 0xffd9a0,
   windowCool: 0xcfe4ff,
   beacon: 0xff2a1e,
-  /** Sky dome: night, golden sunset (dusk) and sunrise (dawn) gradients, the sun, clouds. */
+  /** Sky dome: the night photo's tint (multiplied: darker, bluer), and the gradient shown until the photos load. */
+  skyNightGain: 0x4a5a8c,
   skyNightTop: 0x03051a,
   skyNightLow: 0x1c2554,
-  skyDuskTop: 0x2b3f8e,
-  skyDuskMid: 0xe9808c,
-  skyDuskLow: 0xffb758,
-  skyDawnTop: 0x3b5ea8,
-  skyDawnLow: 0xffa766,
-  sunDisc: 0xfff3cf,
-  sunGlow: 0xffa45c,
-  cloudLit: 0xffc9a8,
-  cloudNight: 0x262c48,
+  skyDuskTop: 0x4a6fae,
+  skyDuskLow: 0xf2c48a,
   /** Golden-hour light: the low sun, and the warm sky/ground fill. */
   sunLight: 0xffb873,
   duskSkyFill: 0xffe0c2,

@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Real skies, real buildings, smaller gifts (owner feedback)
+
+- **Real photographed skies** (CC0 Poly Haven panoramas) replace the painted sky shader: golden hour with real clouds, a moonlit starry night, and sunrise. They blend by time of day and are turned so the photo's sun matches the scene's sunlight. A light star twinkle is added at night.
+- **Realistic skyscrapers:**
+  - Every tower now wears a real photo-based facade (CC0 ambientCG) with normal maps for window depth, at believable window sizes (UVs in metres).
+  - The party tower is an office block whose real lit-window maps show interiors at night. Bigfoot's tower is brick apartments. Around them are stone, brick and glass towers; the glass curtain walls reflect the real sky.
+  - Windows glow brighter as night falls. Roofs have parapets and plant boxes.
+  - The skyline music visualizer works across all the new materials.
+- **Smaller gifts for the viewer.** Gifts the Yeti throws to you are less than half the size and land at hand height, off to one side, so they never cover the view. They can still be caught by touch.
+
 ## 2026-11-06 — The trailer (offline render)
 
 - **Director mode can render offline** (`VITE_DIRECTOR=director&offline&w=1280&h=720` in `.env.development.local`, or URL flags):
