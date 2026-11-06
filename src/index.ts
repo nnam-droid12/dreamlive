@@ -34,6 +34,7 @@ import { HandLookSystem } from './systems/hand-look-system.js';
 import { NarrationSystem } from './systems/narration-system.js';
 import { FilmSystem } from './systems/film-system.js';
 import { CinemaSystem } from './systems/cinema-system.js';
+import { MusicVisualizerSystem } from './systems/music-visualizer-system.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -82,6 +83,7 @@ World.create(
     .registerSystem(NarrationSystem)
     .registerSystem(FilmSystem)
     .registerSystem(CinemaSystem)
+    .registerSystem(MusicVisualizerSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)

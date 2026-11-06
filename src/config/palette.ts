@@ -32,6 +32,17 @@ export const Palette = {
   sunLight: 0xffb873,
   duskSkyFill: 0xffe0c2,
   duskGroundFill: 0x5a4436,
+  /** Music visualizer motes, per scene (two colours each). */
+  motesBedroomA: 0xffd59a,
+  motesBedroomB: 0xfff1d6,
+  motesLeapA: 0xfff6e0,
+  motesLeapB: 0xa8d8ff,
+  motesGiftsA: 0xff6fae,
+  motesGiftsB: 0x8fe3ff,
+  motesEndingA: 0xffb8c8,
+  motesEndingB: 0xffe2a8,
+  motesBedtimeA: 0x9fd6ff,
+  motesBedtimeB: 0xd8f0ff,
   /** White doves: feathers, the grey tail fan, the beak. */
   doveWhite: 0xf7f7f2,
   doveGrey: 0xd9dcdf,

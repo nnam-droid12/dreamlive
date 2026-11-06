@@ -139,9 +139,24 @@ def main(frames_path, timeline_path, out_path):
     talking = smooth((np.abs(voice[:, 0]) > 0.01).astype(np.float32), 0.4) > 0
     duck = smooth(np.where(talking, 0.45, 1.0).astype(np.float32), 0.25)
 
-    # Dream ambience at its logged levels.
+    # Each scene's score, crossfading at every change, at the logged music-bus level.
     music_ev = [(e['t'], e['value']) for e in events if e['type'] == 'music']
-    amb = looped(load(os.path.join(AUDIO, 'music', 'dream.mp3')), total)
+    amb = np.zeros((total, 2), np.float32)
+    scores = [e for e in events if e['type'] == 'score']
+    if not scores:
+        scores = [{'t': 0, 'name': 'dream'}]
+    for k, e in enumerate(scores):
+        if not e['name']:
+            continue
+        t0 = max(e['t'], start) - start
+        t1 = (scores[k + 1]['t'] - start) if k + 1 < len(scores) else dur
+        if t1 <= t0:
+            continue
+        seg = looped(load(os.path.join(AUDIO, 'music', e['name'] + '.mp3')), int((t1 - t0 + 1.5) * SR))
+        fin, fout = min(len(seg), int(1.2 * SR)), min(len(seg), int(1.5 * SR))
+        seg[:fin] *= np.linspace(0, 1, fin, dtype=np.float32)[:, None]
+        seg[-fout:] *= np.linspace(1, 0, fout, dtype=np.float32)[:, None]
+        add(amb, seg, t0, 1.0)
     amb *= (env_from(music_ev, start, total, 0.0) * 0.55)[:, None]
 
     # Party songs: each from its start until the next act change; quieter behind closed glass.

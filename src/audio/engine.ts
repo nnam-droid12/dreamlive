@@ -29,7 +29,7 @@ const MELODY = [72, 76, 79, 84, 83, 79, 76, 74, 72, 74, 76, 79, 77, 74, 71, 67];
 const ACT_BPM: Record<Exclude<ActName, ''>, number> = { surf: 100, dj: 120, ski: 140, disco: 118, afro: 104, house: 124 };
 /** Acts played from recorded tracks (public/audio/music, credited in CREDITS.md); others are synthesized. */
 const TRACK_ACTS = new Set<ActName>(['disco', 'afro', 'house']);
-/** The dream's ambient score on the music bus (replaces the synthesized music box). */
+/** The opening ambient score on the music bus (each scene can set its own with setScore). */
 const DREAM_TRACK = 'dream';
 
 /** Live analysis of what is playing (the music visualizer reads this every frame). */
@@ -94,6 +94,7 @@ class AudioEngine {
   private trackAct: ActName = '';
   private lastOpen = -1;
   private dreamTrack = false;
+  private score = '';
   private analyser?: AnalyserNode;
   private freq?: Uint8Array<ArrayBuffer>;
   private bassAvg = 0;
@@ -314,7 +315,8 @@ class AudioEngine {
       this.musicOn = true;
       this.nextNote = c.currentTime + 0.2;
       // The recorded dream score; the synthesized music box only if media playback is unavailable.
-      this.dreamTrack = this.startTrack(DREAM_TRACK, this.music, 0.8, 2, false);
+      this.dreamTrack = typeof Audio !== 'undefined';
+      this.setScore(this.score || DREAM_TRACK);
       if (!this.dreamTrack) this.pad ??= this.drone([220, 277.2, 329.6], 0.04, 'triangle', this.music);
     }
   }
@@ -408,6 +410,18 @@ class AudioEngine {
       this.noteIndex++;
       this.nextNote += this.noteIndex % 8 === 0 ? beat * 2 : beat;
     }
+  }
+
+  /**
+   * The scene's score on the music bus (public/audio/music/<name>.mp3, '' = none),
+   * crossfading from the last one. Each new score starts from its top.
+   */
+  setScore(name: string): void {
+    if (name === this.score && (this.tracks.get(name)?.on ?? !name)) return;
+    if (name !== this.score) Timeline.log('score', name);
+    if (this.score && this.score !== name) this.stopTrack(this.score);
+    this.score = name;
+    if (name && this.ctx && this.musicOn) this.startTrack(name, this.music, 0.8, 1.6, true);
   }
 
   /** One streamed track (an <audio> element routed into the graph; low memory on a headset). */

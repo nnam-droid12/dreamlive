@@ -2,6 +2,7 @@
  * Every tunable number in Dreamlive lives here: timings, thresholds, sizes.
  * Units: seconds, meters, degrees unless a name says otherwise.
  */
+import { Palette } from './palette.js';
 
 export const Tuning = {
   session: {
@@ -224,6 +225,22 @@ export const Tuning = {
     spotSpeed: 0.4,
     /** How fast the room lights come up and fade out. */
     fadeRate: 1.2,
+  },
+
+  visualizer: {
+    /** Music motes: how many, the box around the viewer they fill (m), how far the viewer moves before it re-centres, overall opacity. */
+    count: 260,
+    box: { x: 6, y: 3, z: 6 },
+    recenter: 3,
+    opacity: 0.9,
+    /** Per-scene looks (colours from Palette): drift (m), wander speed, rise (m/s), size, bass/kick response, twinkle. */
+    styles: {
+      bedroom: { colorA: Palette.motesBedroomA, colorB: Palette.motesBedroomB, drift: 0.35, speed: 0.12, rise: 0.03, size: 22, bassSize: 1.2, kickJump: 0, twinkle: 0.8 },
+      leap: { colorA: Palette.motesLeapA, colorB: Palette.motesLeapB, drift: 0.1, speed: 0.3, rise: 1.4, size: 18, bassSize: 0.8, kickJump: 0, twinkle: 0.3 },
+      gifts: { colorA: Palette.motesGiftsA, colorB: Palette.motesGiftsB, drift: 0.25, speed: 0.35, rise: 0.05, size: 21, bassSize: 1.6, kickJump: 0.35, twinkle: 0.6 },
+      ending: { colorA: Palette.motesEndingA, colorB: Palette.motesEndingB, drift: 0.5, speed: 0.08, rise: 0.02, size: 21, bassSize: 1, kickJump: 0, twinkle: 0.9 },
+      bedtime: { colorA: Palette.motesBedtimeA, colorB: Palette.motesBedtimeB, drift: 0.45, speed: 0.06, rise: -0.01, size: 17, bassSize: 0.8, kickJump: 0, twinkle: 1 },
+    },
   },
 
   cinema: {

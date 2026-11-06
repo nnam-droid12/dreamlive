@@ -2,6 +2,26 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Every scene has its own music and visualizer; white doves
+
+- **A score for every scene**, crossfading as the story moves (all CC BY 4.0 from Free Music Archive, credited in CREDITS.md and in the end credits):
+  - the opening: "Bloom";
+  - the bedroom (drawing the window, the walk to it): "Every Day Is A Good Day";
+  - the leaps: "Open Skies With Bright Percussive Lift";
+  - the party: its three songs, now only at the party;
+  - gifts at night: "Happy Pop Instrumental";
+  - goodnight, waking and credits: "Beautiful Piano With Expressive Dynamics";
+  - bedtime: "Jazz Ballad Rainy Night".
+- **A music visualizer for every scene**, driven live by the analyser (bass, mids, highs, kick). It is one cloud of soft motes around you, animated entirely in the vertex shader:
+  - the bedroom: golden dream dust;
+  - the leaps: light streaming upward;
+  - the party: the skyline equalizer;
+  - the gifts: colourful sparkles that jump on the kick;
+  - the ending: a slow pink-gold swirl;
+  - bedtime: cool fireflies.
+- **White doves.** A new procedural dove model (lathed body, fanned tail, scalloped feathered wings, orange beak) is instanced in the flock. The doves flap and glide in a loose V at golden hour and sunrise.
+- The trailer mixer crossfades between the scene scores from the timeline.
+
 ## 2026-11-06 — Real skies, real buildings, smaller gifts (owner feedback)
 
 - **Real photographed skies** (CC0 Poly Haven panoramas) replace the painted sky shader: golden hour with real clouds, a moonlit starry night, and sunrise. They blend by time of day and are turned so the photo's sun matches the scene's sunlight. A light star twinkle is added at night.
