@@ -226,6 +226,20 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  cinema: {
+    /** The floating screen: width (m), and where it floats in rig space (front-left of the viewer). */
+    width: 1.7,
+    x: -1.35,
+    y: 1.75,
+    z: -2.3,
+    /** The live picture: texture size, refresh every N frames, field of view, seconds per shot. */
+    texWidth: 640,
+    texHeight: 360,
+    every: 3,
+    fov: 40,
+    shotSec: 4.5,
+  },
+
   film: {
     /** Title and chapter cards: distance in front of the viewer, how long they show, fade in/out. */
     distance: 2.4,

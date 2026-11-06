@@ -38,6 +38,8 @@ export const Palette = {
   sunLight: 0xffb873,
   duskSkyFill: 0xffe0c2,
   duskGroundFill: 0x5a4436,
+  /** The dream cinema screen's bezel. */
+  cinemaBezel: 0x0d0c10,
   /** Tracked hands: frosted-glass body and glowing outline (Meta system-hand look). */
   handGlass: 0xeaf2ff,
   handOutline: 0xdfeaff,

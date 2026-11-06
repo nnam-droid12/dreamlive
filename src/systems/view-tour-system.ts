@@ -38,6 +38,7 @@ export class ViewTourSystem extends createSystem({
   init(): void {
     this.fadeMat = new MeshBasicMaterial({ color: 0x000000, side: BackSide, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
     this.fade = new Mesh(new SphereGeometry(0.35, 16, 8), this.fadeMat);
+    this.fade.name = 'TourFade';
     this.fade.renderOrder = 2000;
     this.fade.visible = false;
     this.world.createTransformEntity(this.fade);

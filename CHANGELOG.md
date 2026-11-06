@@ -2,6 +2,16 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Spatial cinema: the dream cinema screen
+
+- **A floating "LIVE · Rooftop cam" screen** shows a director's cut of Bigfoot's night while you watch the real thing:
+  - At the party it cuts every 4.5 s between a close-up of Bigfoot dancing, the Yeti at the decks, a crane shot over the crowd, and a low hero angle.
+  - During the leaps it tracks him from the side.
+  - For the gifts it alternates a shot from beside his bed with one looking in through his window.
+- A second camera renders the scene into a 640×360 texture every third frame (XR rendering paused for that pass; shadows reused). Captions, cards, fades and the vignette are hidden from the shot. Lower adaptive quality refreshes it less often.
+- The screen floats front-left of the viewer, anchored to the player rig, so the view tour carries it along. On a headset it floats in your real room. It fades in for the leap, the party, the leap home and the gifts.
+- Emulator check: from the VIP deck, the screen shows Bigfoot dancing in the crowd, then the Yeti at the decks under the lasers. Clean console.
+
 ## 2026-11-06 — Interactive-film framing and Bigfoot's narration
 
 - **The Rooftop Party is told as a film:**
