@@ -1,4 +1,5 @@
 import { Matrix4, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
+import type { GhostHand } from './director-ghost-hands.js';
 
 /** The slice of the emulator (IWER) device the Director drives: headset pose and hands. */
 interface IwerVec {
@@ -62,6 +63,11 @@ export class DirectorHands {
   private world = new Vector3();
   private dir = new Vector3();
   private every = 0;
+  private wq = new Quaternion();
+  private wp = new Vector3();
+
+  /** Visible stand-ins for the camera (the emulated hands' own model does not show in captures). */
+  constructor(private ghosts?: { left: GhostHand; right: GhostHand }) {}
   private cur = { left: { p: new Vector3(), q: new Quaternion(), pinch: 0, ok: false }, right: { p: new Vector3(), q: new Quaternion(), pinch: 0, ok: false } };
 
   /** The emulator appears after start-up: find it (and switch to hands) on first use. */
@@ -86,8 +92,8 @@ export class DirectorHands {
     this.headQ.set(d.quaternion.x, d.quaternion.y, d.quaternion.z, d.quaternion.w);
     rig.getWorldQuaternion(this.rigQ);
     this.rigInv.copy(this.rigQ).invert();
-    this.place(d.hands.left, this.cur.left, left, rig, k);
-    this.place(d.hands.right, this.cur.right, right, rig, k);
+    this.place(d.hands.left, this.cur.left, left, rig, k, this.ghosts?.left);
+    this.place(d.hands.right, this.cur.right, right, rig, k, this.ghosts?.right);
     this.showHandModels(rig);
   }
 
@@ -104,7 +110,7 @@ export class DirectorHands {
     });
   }
 
-  private place(hand: IwerHand | undefined, cur: { p: Vector3; q: Quaternion; pinch: number; ok: boolean }, s: HandShot, rig: Object3D, k: number): void {
+  private place(hand: IwerHand | undefined, cur: { p: Vector3; q: Quaternion; pinch: number; ok: boolean }, s: HandShot, rig: Object3D, k: number, ghost?: GhostHand): void {
     if (!hand) return;
     this.p.copy(s.at).applyQuaternion(this.headQ).add(this.head);
     if (s.aim) {
@@ -129,5 +135,12 @@ export class DirectorHands {
     hand.quaternion.set(cur.q.x, cur.q.y, cur.q.z, cur.q.w);
     if (hand.poseId !== s.pose) hand.poseId = s.pose;
     hand.updatePinchValue(cur.pinch);
+    if (ghost) {
+      this.wp.copy(cur.p);
+      rig.localToWorld(this.wp);
+      this.wq.copy(this.rigQ).multiply(cur.q);
+      ghost.place(this.wp, this.wq);
+      ghost.pose(s.pose, cur.pinch, Math.min(1, e * 1.5));
+    }
   }
 }

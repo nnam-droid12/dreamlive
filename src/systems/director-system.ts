@@ -21,6 +21,7 @@ import { Timeline } from '../audio/timeline.js';
 import { Director, DirectorFrame } from '../config/director.js';
 import { makeTitleCard, TitleCard } from '../visuals/title-card.js';
 import { DirectorHands, HandShot } from './director-hands.js';
+import { GhostHand } from './director-ghost-hands.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -43,8 +44,10 @@ const DANCE_L: HandShot = { at: new Vector3(), rot: Q_DANCE_L, pose: 'open', pin
 const DANCE_R: HandShot = { at: new Vector3(), rot: Q_DANCE_R, pose: 'open', pinch: 0 };
 const PALM_UP_L: HandShot = { at: new Vector3(-0.09, -0.17, -0.38), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
 const POINT_R: HandShot = { at: new Vector3(0.12, -0.13, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
-const CUP_L: HandShot = { at: new Vector3(-0.07, -0.2, -0.4), rot: Q_PALM_UP, pose: 'cup', pinch: 0 };
-const CUP_R: HandShot = { at: new Vector3(0.07, -0.2, -0.4), rot: Q_PALM_UP, pose: 'cup', pinch: 0 };
+// Held out to catch: palms up, fingers tilted up toward the gift.
+const Q_CUP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.55).multiply(Q_PALM_UP);
+const CUP_L: HandShot = { at: new Vector3(-0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
+const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
 /** Scratch objects for the hand script (no allocation per frame). */
 const H_TMP = {
   origin: new Vector3(),
@@ -115,7 +118,12 @@ export class DirectorSystem extends createSystem({
     this.feature = makeTitleCard(1024, 150, 0.56);
     this.feature.mesh.renderOrder = 1001;
     this.world.createTransformEntity(this.feature.mesh);
-    this.hands = new DirectorHands();
+    const ghosts = { left: new GhostHand('left'), right: new GhostHand('right') };
+    ghosts.left.root.name = 'GhostHandLeft';
+    ghosts.right.root.name = 'GhostHandRight';
+    this.world.createTransformEntity(ghosts.left.root);
+    this.world.createTransformEntity(ghosts.right.root);
+    this.hands = new DirectorHands(ghosts);
   }
 
   update(realDelta: number): void {

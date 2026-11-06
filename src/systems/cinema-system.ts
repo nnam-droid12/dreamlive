@@ -28,7 +28,7 @@ const cfg = Tuning.cinema;
 /** Beats with something worth a close-up; the screen shows during these. */
 const LIVE = new Set(['leap-out', 'arrive', 'party-wait', 'leap-back', 'gifts']);
 /** Overlays that must not appear in the shot (head-locked, or the screen itself). */
-const HIDE = ['DreamCinema', 'Caption', 'FilmTitle', 'FilmChapter', 'FilmCredits', 'NightVignette', 'ResumeFade', 'TourFade', 'WindowOutline'];
+const HIDE = ['DreamCinema', 'Caption', 'FilmTitle', 'FilmChapter', 'FilmCredits', 'NightVignette', 'ResumeFade', 'TourFade', 'WindowOutline', 'GhostHandLeft', 'GhostHandRight'];
 
 /**
  * Spatial cinema: a floating screen shows a live, director-style cut of
@@ -53,7 +53,7 @@ export class CinemaSystem extends createSystem({
   private shot = 0;
   private lastScene = '';
   private hidden: Object3D[] = [];
-  private found = false;
+  private scanIn = 0;
   private win: WindowFrame = { origin: new Vector3(), out: new Vector3(), along: new Vector3() };
   private big = new Vector3();
   private bigFwd = new Vector3();
@@ -85,7 +85,11 @@ export class CinemaSystem extends createSystem({
     if (this.visibilityState.peek() !== VisibilityState.Visible) return;
     const d = this.queries.director.entities.values().next().value;
     if (!d || !d.getValue(RoomSlots, 'windowReady')) return;
-    if (!this.found) this.findHidden();
+    // Overlays appear over time (some only in Director mode): look for them now and then.
+    if (this.scanIn-- <= 0) {
+      this.scanIn = 120;
+      this.findHidden();
+    }
     const roof = d.getValue(DreamDirector, 'chapterId') === 'rooftop-party';
     const scene = roof && d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat) ? this.beat.scene : '';
     const on = (LIVE.has(scene) || scene.startsWith('party-')) && (!Director.enabled || DirectorFrame.cinema);
@@ -206,7 +210,6 @@ export class CinemaSystem extends createSystem({
       const o = this.scene.getObjectByName(n);
       if (o) this.hidden.push(o);
     }
-    this.found = this.hidden.length >= HIDE.length - 1;
   }
 
   /** "● LIVE · Rooftop cam" above the picture. */
