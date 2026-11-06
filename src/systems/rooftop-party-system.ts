@@ -30,13 +30,14 @@ import { DevControls, DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
-import { Palette } from '../config/palette.js';
+import { Palette, PaletteSets } from '../config/palette.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { SONG_PALETTE, songOf } from '../dreams/chapter_rooftop.js';
 import { FacadeKey, FacadeSet, loadFacades } from '../showcase/facades.js';
 import { makeEqualizer } from '../visuals/equalizer.js';
+import { PartyGuests } from '../characters/party-guests.js';
 import { MemoryStore } from '../memory/store.js';
 import { buildRooftop, RooftopWorld } from '../showcase/rooftop.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -68,6 +69,7 @@ export class RooftopPartySystem extends createSystem({
   private loadingDj = false;
   private windowVersion = 0;
   private facades?: FacadeSet;
+  private guests?: PartyGuests;
   private pane?: Object3D;
   private paneHome = new Vector3();
   private standIn?: Object3D;
@@ -118,6 +120,7 @@ export class RooftopPartySystem extends createSystem({
     this.visualize(live || !!dj, realDelta);
     this.facades?.setNight(1 - Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0));
     this.animateDj(scene, t, delta);
+    this.guests?.update(delta, this.energy, Sound.bands.kick);
 
     // During the party the DJ tosses goodies off the roof to the street crowd.
     if (scene.startsWith('party-') && scene !== 'party-wait') {
@@ -157,6 +160,7 @@ export class RooftopPartySystem extends createSystem({
     this.world.createTransformEntity(party.root);
     this.party = party;
     void this.dressFacades(party);
+    void this.inviteGuests(party);
     if (!Showcase.enabled) {
       const win = buildDreamWindow();
       party.root.add(win);
@@ -176,6 +180,27 @@ export class RooftopPartySystem extends createSystem({
       this.pileSlot(i, g.obj.position);
       g.obj.rotation.y = (i * 1.9) % (Math.PI * 2);
       g.obj.visible = true;
+    }
+  }
+
+  /** Real party guests (animated people) take the crowd's spots, facing the DJ; the stand-ins step aside. */
+  private async inviteGuests(party: RooftopWorld): Promise<void> {
+    try {
+      const guests = new PartyGuests();
+      await guests.load(cfg.guests, PaletteSets.guestOutfits, PaletteSets.guestSkin);
+      const spots = party.crowdSpots;
+      guests.guests.forEach((g, i) => {
+        // Spread the guests across the floor (every n-th spot), facing the decks.
+        const s = spots[Math.floor((i * spots.length) / guests.guests.length)];
+        g.root.position.copy(s.p);
+        g.root.rotation.y = Math.PI + Math.sin(i * 2.3) * 0.35;
+        g.root.scale.setScalar(s.s * cfg.guestScale);
+      });
+      party.root.add(guests.root);
+      for (const c of party.crowdStandIns) c.visible = false;
+      this.guests = guests;
+    } catch {
+      // The stand-in crowd keeps dancing.
     }
   }
 

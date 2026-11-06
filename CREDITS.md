@@ -22,6 +22,8 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Potted Plant 02, Throw Pillows 01 (`public/models/`) | [Poly Haven](https://polyhaven.com/models) | CC0 |
 | Skies (`public/env/sky/golden.webp`, `night.webp`, `dawn.webp`): Kloppenheim 06 (pure sky), Kloppenheim 02 (pure sky), Qwantani Dusk 2 (pure sky); tone-mapped, colour-graded and resized | [Poly Haven](https://polyhaven.com/hdris/skies) | CC0 |
 | Building facades (`public/textures/facades/`): Facade001, 005, 009, 013, 017, 018A, 019A, 020A (colour, normal, lit-window emission); resized to 1K WebP | [ambientCG](https://ambientcg.com/list?q=facade) | CC0 |
+| Party guests (`public/models/people/male.glb`, `female.glb`): Universal Base Characters (Superhero Male/Female) by Quaternius; simplified to about 4.5k triangles, 512 px WebP textures; outfits are painted on in code | [Quaternius](https://quaternius.com/packs/universalbasecharacters.html) | CC0 |
+| Party guests' moves (`public/models/people/moves.glb`): Dance_Loop, Jump_Loop, Spell_Simple_Idle_Loop, Idle_Talking_Loop from the Universal Animation Library by Quaternius; trimmed and resampled | [Quaternius](https://quaternius.com/packs/universalanimationlibrary.html) | CC0 |
 | Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio

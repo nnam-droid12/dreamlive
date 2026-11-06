@@ -17,6 +17,9 @@ export default defineAssets({
     name: 'Bigfoot',
     priority: 'lazy',
   },
+  // Party guests: Quaternius Universal Base Characters (CC0), simplified; moves from the Universal Animation Library (CC0).
+  'person-male': { url: publicAssetUrl('models/people/male.glb'), type: AssetType.GLTF, name: 'Party guest (male)', priority: 'lazy' },
+  'person-female': { url: publicAssetUrl('models/people/female.glb'), type: AssetType.GLTF, name: 'Party guest (female)', priority: 'lazy' },
   // Dream-act props (procedural; the TV worlds build their own copies).
   surfboard,
   skis,

@@ -360,6 +360,9 @@ export const Tuning = {
   rooftop: {
     /** Party energy across the street before Bigfoot arrives (music, lights, crowd). */
     idleEnergy: 0.35,
+    /** Real party guests (animated people) on the dance floor, and their size vs. a 1.8 m person. */
+    guests: 14,
+    guestScale: 1,
     /** How strongly the skyline becomes a music visualizer while the party is live (0..1). */
     visualizer: 0.85,
     /** He throws a goodie every this many seconds while DJing; it leaves his hand this late in the throw. */

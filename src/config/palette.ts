@@ -75,5 +75,8 @@ export const PaletteSets = {
   fireworks: [0xff4d6d, 0xffd166, 0x6ee7ff, 0xb388ff, 0x7cff9e, 0xffffff],
   confetti: [0xff6fae, 0xffd27a, 0x8fd3ff, 0xa8ff9e, 0xffffff],
   /** Party crowd outfits (one per dancer, cycling): warm, bright, golden-hour friendly. */
+  /** Party guests: outfit colours (shirts, trousers, dresses, sneakers) and skin tones (multiplied with the skin texture). */
+  guestOutfits: [0xf2f2ee, 0x2f4f8f, 0xd6455d, 0xf4c95d, 0x3fa58a, 0x7d5bc4, 0x1d1d22, 0xe9824a, 0x6fb7e8, 0xe8a0c8, 0x9a7b5a, 0x44484f],
+  guestSkin: [0xffffff, 0xf3d6c0, 0xc79a80, 0x8a6250],
   crowdOutfits: [0xe8b38a, 0x5f8fd6, 0xd65f7a, 0xf2d27a, 0x6fc9a8, 0xb98ae0, 0xf0f0ea, 0x3d3f52, 0xe07a4a],
 } as const;

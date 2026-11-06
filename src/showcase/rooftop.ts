@@ -61,6 +61,9 @@ export interface RooftopWorld {
   setPalette(colors: readonly number[]): void;
   /** The skyline as a music visualizer (towers as VU meters); its owner feeds the live bands. */
   equalizer: EqualizerUniforms;
+  /** The party crowd's spots (feet, scale), and the simple stand-in figures shown until real guests load. */
+  crowdSpots: readonly { p: Vector3; s: number; phase: number }[];
+  crowdStandIns: readonly InstancedMesh[];
   /** Per frame: time, beat phase 0..1 (1 = on the kick), party energy 0..1. */
   update(t: number, beat: number, energy: number): void;
 }
@@ -337,6 +340,8 @@ export function buildRooftop(): RooftopWorld {
     behind,
     platters,
     equalizer,
+    crowdSpots: spots,
+    crowdStandIns: crowd,
     setPalette(colors) {
       palette = colors;
       lasers.forEach((l, i) => (l.material as MeshBasicMaterial).color.setHex(colors[i % colors.length]));
@@ -344,14 +349,17 @@ export function buildRooftop(): RooftopWorld {
     update(t, beat, energy) {
       const hit = Math.pow(beat, 4);
       platters.forEach((p, i) => (p.rotation.y = t * (i ? -3.5 : 3.5)));
-      for (let i = 0; i < spots.length; i++) {
-        const s = spots[i];
-        pos.copy(s.p).setY(B.roofY + Math.abs(Math.sin((t * 2 + s.phase) * Math.PI)) * 0.12 * (0.3 + energy));
-        scl.setScalar(s.s);
-        m.compose(pos, faceDj, scl);
-        crowd[i % 2].setMatrixAt(i >> 1, m);
+      // The stand-in figures bob until the real party guests take over (then they are hidden).
+      if (crowd[0].visible) {
+        for (let i = 0; i < spots.length; i++) {
+          const s = spots[i];
+          pos.copy(s.p).setY(B.roofY + Math.abs(Math.sin((t * 2 + s.phase) * Math.PI)) * 0.12 * (0.3 + energy));
+          scl.setScalar(s.s);
+          m.compose(pos, faceDj, scl);
+          crowd[i % 2].setMatrixAt(i >> 1, m);
+        }
+        crowd.forEach((c) => (c.instanceMatrix.needsUpdate = true));
       }
-      crowd.forEach((c) => (c.instanceMatrix.needsUpdate = true));
       const step = Math.floor(t * 2);
       for (let i = 0; i < tilePos.length; i++) {
         tiles.setColorAt(i, tile.setHex(palette[(i + step) % palette.length]).multiplyScalar(0.25 + 0.75 * energy * ((i + step) % 3 === 0 ? 1 : 0.35)));

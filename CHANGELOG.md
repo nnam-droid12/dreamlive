@@ -2,6 +2,14 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Real people at the party
+
+- **The toy capsules are replaced by 14 real animated party guests.** They are Quaternius Universal Base Characters (CC0), male and female, simplified from 14k to about 4.5k triangles, and they dance with the Universal Animation Library's moves (CC0): mostly Dance_Loop, plus jumping, hands-up and chatting.
+  - Each guest has their own move, tempo and phase, faces the decks, and dances harder with the party's energy and the music's kick.
+- The base bodies come without clothes, so **outfits are painted on in the shader** from the rest pose: sneakers; trousers or a dress; a short-sleeved shirt with a little fabric shading. Each guest has their own colours and skin tone.
+- The stand-in figures stay until the guests load, then step aside. The street crowd far below stays simple.
+- Emulator check: guests in shirts and jeans dancing around Bigfoot on the lit floor; the live cam shows them too.
+
 ## 2026-11-06 — Every scene has its own music and visualizer; white doves
 
 - **A score for every scene**, crossfading as the story moves (all CC BY 4.0 from Free Music Archive, credited in CREDITS.md and in the end credits):
