@@ -2,6 +2,20 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Realistic modern skyscrapers; trailer hands; small gifts
+
+- **The city towers are now built like real modern skyscrapers** instead of textured boxes:
+  - a reflective glass curtain wall per tier, mirroring the real sky photo, with lit offices behind it at night;
+  - concrete floor-slab edges every 3.6 m storey, corner columns and parapets;
+  - aluminium (or bronze) mullion fins every 1.6 m on every face;
+  - a recessed double-height glass lobby with a canopy;
+  - two setbacks on tall towers, and a louvred mechanical crown with a mast and a red beacon.
+- Styles: blue glass, black glass with bronze fins, and limestone with punched windows (real facade photo).
+- The party tower is now a glass office tower with a flat roof. Each tower is about four draw calls (instanced concrete and fins). The skyline music visualizer plays on the new glass.
+- **The trailer shows hands.** The emulator's tracked-hand model doesn't appear in captures, so Director mode draws frosted-glass hands (articulated palm, thumb and fingers) at the same poses it gives the emulated hands. Those still really draw the window, pinch and catch. The hands point and draw, dance at the party, turn palm-up for the menu, and cup to catch gifts.
+- **Small gifts only.** The Yeti's gifts to Bigfoot are now about 17 cm (they were 31 cm), and the heap spacing matches.
+- **No gifts in the room before the party.** The floor starts clear each night; the heap grows only as Bigfoot catches tonight's gifts.
+
 ## 2026-11-06 — Real people at the party
 
 - **The toy capsules are replaced by 14 real animated party guests.** They are Quaternius Universal Base Characters (CC0), male and female, simplified from 14k to about 4.5k triangles, and they dance with the Universal Animation Library's moves (CC0): mostly Dance_Loop, plus jumping, hands-up and chatting.

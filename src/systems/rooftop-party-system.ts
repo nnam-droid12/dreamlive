@@ -36,6 +36,7 @@ import { Tuning } from '../config/tuning.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { SONG_PALETTE, songOf } from '../dreams/chapter_rooftop.js';
 import { FacadeKey, FacadeSet, loadFacades } from '../showcase/facades.js';
+import { dressTowerMaterials, towerNight } from '../showcase/tower-materials.js';
 import { makeEqualizer } from '../visuals/equalizer.js';
 import { PartyGuests } from '../characters/party-guests.js';
 import { MemoryStore } from '../memory/store.js';
@@ -118,7 +119,9 @@ export class RooftopPartySystem extends createSystem({
     }
     this.party!.update(this.time, 1 - Sound.beatPhase(this.time, 120), this.energy);
     this.visualize(live || !!dj, realDelta);
-    this.facades?.setNight(1 - Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0));
+    const night = 1 - Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0);
+    this.facades?.setNight(night);
+    towerNight(this.party!.towerMats, night);
     this.animateDj(scene, t, delta);
     this.guests?.update(delta, this.energy, Sound.bands.kick);
 
@@ -202,6 +205,9 @@ export class RooftopPartySystem extends createSystem({
       const sky = await AssetManager.loadTexture(`${import.meta.env.BASE_URL}env/sky/golden.webp`);
       const set = await loadFacades(sky);
       for (const mat of set.materials.values()) makeEqualizer(mat, undefined, party.equalizer);
+      // The modern towers: sky reflections, lit offices, concrete and metal; the visualizer plays on their glass too.
+      await dressTowerMaterials(party.towerMats, sky);
+      for (const mat of [party.towerMats.glass.blue, party.towerMats.glass.dark]) makeEqualizer(mat, undefined, party.equalizer);
       party.root.traverse((o) => {
         const key = o.userData.facade as FacadeKey | undefined;
         const mat = key && set.materials.get(key);

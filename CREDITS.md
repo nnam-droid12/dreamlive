@@ -24,6 +24,8 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Building facades (`public/textures/facades/`): Facade001, 005, 009, 013, 017, 018A, 019A, 020A (colour, normal, lit-window emission); resized to 1K WebP | [ambientCG](https://ambientcg.com/list?q=facade) | CC0 |
 | Party guests (`public/models/people/male.glb`, `female.glb`): Universal Base Characters (Superhero Male/Female) by Quaternius; simplified to about 4.5k triangles, 512 px WebP textures; outfits are painted on in code | [Quaternius](https://quaternius.com/packs/universalbasecharacters.html) | CC0 |
 | Party guests' moves (`public/models/people/moves.glb`): Dance_Loop, Jump_Loop, Spell_Simple_Idle_Loop, Idle_Talking_Loop from the Universal Animation Library by Quaternius; trimmed and resampled | [Quaternius](https://quaternius.com/packs/universalanimationlibrary.html) | CC0 |
+| Building materials (`public/textures/building/`): Concrete034 (colour, normal, roughness), Metal009 (colour, roughness); resized to 512 px WebP | [ambientCG](https://ambientcg.com) | CC0 |
+| Modern skyscrapers (glass curtain walls, concrete slabs, mullion fins, lobbies, setbacks, crowns) | Original, built in code (`src/scene-assets/lib/modern-tower.ts`) | Project-owned |
 | Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio

@@ -38,15 +38,16 @@ import { buildDecoTower } from '../scene-assets/landmark-deco.scene-asset.js';
 import { buildGlassSupertall } from '../scene-assets/landmark-glass.scene-asset.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 import { EqualizerUniforms, makeEqualizer } from '../visuals/equalizer.js';
-import { FACADE_TILE, FacadeKey } from './facades.js';
+import { FACADE_TILE } from './facades.js';
 import { Rooftop } from './rooftop-layout.js';
-import { cellBox } from '../scene-assets/lib/skyline.js';
+import { buildModernTower, TowerMaterials, TowerStyle } from '../scene-assets/lib/modern-tower.js';
+import { createTowerMaterials } from './tower-materials.js';
 
 const B = Rooftop.building;
 const H = Rooftop.home;
 const CROWD = 40;
 /** Real facades for the towers around (picked per tower position): stone, brick, glass, lit offices. */
-const TOWER_FACADES: readonly FacadeKey[] = ['f13', 'f9', 'f19a', 'f20a', 'f1', 'f5', 'f13', 'f18a', 'f9', 'f19a'];
+const TOWER_STYLES: readonly TowerStyle[] = ['blue', 'dark', 'stone', 'blue', 'dark', 'blue', 'stone'];
 const STREET_CROWD = 60;
 const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
 
@@ -61,22 +62,13 @@ export interface RooftopWorld {
   setPalette(colors: readonly number[]): void;
   /** The skyline as a music visualizer (towers as VU meters); its owner feeds the live bands. */
   equalizer: EqualizerUniforms;
+  /** The modern towers' shared materials (dressed with textures once loaded; lit at night). */
+  towerMats: TowerMaterials;
   /** The party crowd's spots (feet, scale), and the simple stand-in figures shown until real guests load. */
   crowdSpots: readonly { p: Vector3; s: number; phase: number }[];
   crowdStandIns: readonly InstancedMesh[];
   /** Per frame: time, beat phase 0..1 (1 = on the kick), party energy 0..1. */
   update(t: number, beat: number, energy: number): void;
-}
-
-/**
- * A tower shaft with UVs in facade tiles (real windows at a believable size),
- * tagged with the real facade it gets once the textures load (facades.ts).
- */
-function towerBox(w: number, d: number, y0: number, y1: number, mat: MeshStandardMaterial, facade?: FacadeKey): Mesh {
-  const m = new Mesh(cellBox(w, y1 - y0, d, FACADE_TILE, FACADE_TILE), mat);
-  m.position.y = y0;
-  if (facade) m.userData.facade = facade;
-  return m;
 }
 
 /** UVs of a flat geometry laid out in metres (shape coordinates) → facade tiles. */
@@ -85,19 +77,6 @@ function tileUVs(g: BufferGeometry, sx = 1, sy = 1): BufferGeometry {
   for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * sx) / FACADE_TILE, (uv.getY(i) * sy) / FACADE_TILE);
   uv.needsUpdate = true;
   return g;
-}
-
-/** A parapet band and a couple of rooftop plant boxes, so towers don't end as bare boxes. */
-function roofTop(t: Mesh, w: number, d: number, top: number, mat: MeshStandardMaterial, seed: number): void {
-  const cap = new Mesh(new BoxGeometry(w + 0.3, 1.2, d + 0.3), mat);
-  cap.position.set(t.position.x, top + 0.6, t.position.z);
-  t.parent?.add(cap);
-  for (let i = 0; i < 2; i++) {
-    const s = ((seed * 7 + i * 13) % 10) / 10;
-    const unit = new Mesh(new BoxGeometry(w * (0.2 + 0.15 * s), 2 + 2 * s, d * (0.25 + 0.1 * s)), mat);
-    unit.position.set(t.position.x + (i ? 0.2 : -0.22) * w, top + 1.2 + 1 + s, t.position.z + (s - 0.5) * d * 0.4);
-    t.parent?.add(unit);
-  }
 }
 
 /** An outward-facing wall plane (invisible from inside, so it never hides the room). */
@@ -115,6 +94,7 @@ export function buildRooftop(): RooftopWorld {
   facade.repeat.set(4, 10);
   const facadeMat = new MeshStandardMaterial({ map: facade, emissiveMap: facade, emissive: new Color(0xffffff), emissiveIntensity: 0.55, roughness: 0.7, side: FrontSide });
   const equalizer = makeEqualizer(facadeMat);
+  const towerMats = createTowerMaterials();
   const concrete = new MeshStandardMaterial({ color: 0x3a3740, roughness: 0.9 });
   const trim = new MeshStandardMaterial({ color: 0x2a2730, roughness: 0.6 });
   const m = new Matrix4();
@@ -122,9 +102,9 @@ export function buildRooftop(): RooftopWorld {
   // The party skyscraper opposite, taller than Bigfoot's.
   const w = B.farX - B.nearX;
   const d = B.maxZ - B.minZ;
-  const body = towerBox(w, d, B.baseY, B.roofY, facadeMat, 'f17');
-  body.position.x = (B.nearX + B.farX) / 2;
-  body.position.z = (B.minZ + B.maxZ) / 2;
+  // The party tower: a glass office tower with a flat roof (the party is up there, so no crown).
+  const body = buildModernTower({ w, d, h: B.roofY - B.baseY, style: 'blue', setbacks: false, seed: 1, crown: false }, towerMats);
+  body.position.set((B.nearX + B.farX) / 2, B.baseY, (B.minZ + B.maxZ) / 2);
   const roof = new Mesh(new BoxGeometry(w, 0.3, d), concrete);
   roof.position.set(body.position.x, B.roofY - 0.15, body.position.z);
   root.add(body, roof);
@@ -201,11 +181,12 @@ export function buildRooftop(): RooftopWorld {
     [9, -26, 10, 10, 2, 0], [10, 28, 10, 9, 9, 0], [58, 3, 14, 12, 34, 0],
     [-30, -36, 12, 10, 26, 1], [-28, 34, 12, 12, 14, 1], [-40, 0, 14, 16, 34, 1],
   ] as const) {
-    const t = towerBox(tw, td, H.baseY, top, facadeMat, TOWER_FACADES[(Math.abs(x) + Math.abs(z)) % TOWER_FACADES.length]);
-    t.position.x = x;
-    t.position.z = z;
+    // Modern towers built like real ones: glass curtain walls, concrete slabs, mullion fins, setbacks, crowns.
+    const seed = Math.abs(x + z);
+    const h = top - H.baseY;
+    const t = buildModernTower({ w: tw, d: td, h, style: TOWER_STYLES[seed % TOWER_STYLES.length], setbacks: h > 55, seed }, towerMats);
+    t.position.set(x, H.baseY, z);
     (back ? behind : root).add(t);
-    roofTop(t, tw, td, top, concrete, Math.abs(x + z));
   }
 
   // Landmarks on the skyline beyond the party: an art-deco spire to the left, a glass supertall to the right.
@@ -340,6 +321,7 @@ export function buildRooftop(): RooftopWorld {
     behind,
     platters,
     equalizer,
+    towerMats,
     crowdSpots: spots,
     crowdStandIns: crowd,
     setPalette(colors) {

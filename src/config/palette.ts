@@ -47,6 +47,14 @@ export const Palette = {
   doveWhite: 0xf7f7f2,
   doveGrey: 0xd9dcdf,
   doveBeak: 0xe8955a,
+  /** Modern towers: curtain-wall glass (blue, dark), lobby glass, aluminium and bronze fins, concrete, crown. */
+  towerGlassBlue: 0x1d3048,
+  towerGlassDark: 0x0b0e13,
+  towerLobby: 0x2a3440,
+  towerAluminium: 0xb9bec6,
+  towerBronze: 0x7a5a3a,
+  towerConcrete: 0xc9c5bd,
+  towerCrown: 0x3a3f47,
   /** The dream cinema screen's bezel. */
   cinemaBezel: 0x0d0c10,
   /** Tracked hands: frosted-glass body and glowing outline (Meta system-hand look). */
