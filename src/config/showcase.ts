@@ -29,5 +29,4 @@ export const Showcase = {
   /** Backdrop yaw so the cozy sofa side sits behind the table. */
   backdropYaw: Math.PI * 0.5,
   backdropRadius: 12,
-  skinColor: 0xd9a587,
 } as const;

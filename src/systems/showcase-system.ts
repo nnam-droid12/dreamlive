@@ -1,56 +1,35 @@
-import {
-  BufferGeometry,
-  createSystem,
-  DirectionalLight,
-  Entity,
-  IBLTexture,
-  LevelRoot,
-  Mesh,
-  MeshStandardMaterial,
-  Object3D,
-  ShaderMaterial,
-} from '@iwsdk/core';
+import { createSystem, DirectionalLight, Entity, IBLTexture, LevelRoot } from '@iwsdk/core';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
 import { buildNycBedroom, NycLayout } from '../showcase/nyc-bedroom.js';
 
-const HAND_SCAN_SEC = 1;
 /** The HDR fill is a daylight room; at night the bedroom's own lamps carry it. */
 const NIGHT_IBL = 0.32;
 
 /**
  * Showcase mode (desktop emulator, screenshots, demo video): places the dream
  * in a realistic New York high-rise bedroom at night — standing in for the
- * passthrough room a headset user sees — and draws solid, skin-shaded hands
- * instead of the passthrough outline. The room's furniture is fed to the
+ * passthrough room a headset user sees. Hands keep the headset's frosted
+ * outline look (HandLookSystem). The room's furniture is fed to the
  * dream as its layout (side table, TV wall). Does nothing on a real headset.
  */
 export class ShowcaseSystem extends createSystem({
   director: { required: [RoomSlots] },
   roots: { required: [LevelRoot] },
 }) {
-  private handTimer = 0;
-  private skin!: MeshStandardMaterial;
-  private seenGeometry = new Set<BufferGeometry>();
   private laidOut = false;
 
   init(): void {
     if (!Showcase.enabled) return;
-    this.skin = new MeshStandardMaterial({ color: Showcase.skinColor, roughness: 0.62, metalness: 0 });
     void this.buildRoom();
     this.cleanupFuncs.push(this.queries.roots.subscribe('qualify', (e) => this.nightLighting(e)));
     for (const e of this.queries.roots.entities) this.nightLighting(e);
   }
 
-  update(delta: number): void {
+  update(): void {
     if (!Showcase.enabled) return;
     const d = this.queries.director.entities.values().next().value;
     if (d && !this.laidOut) this.applyLayout(d);
-    this.handTimer -= delta;
-    if (this.handTimer <= 0) {
-      this.handTimer = HAND_SCAN_SEC;
-      this.solidHands();
-    }
   }
 
   private async buildRoom(): Promise<void> {
@@ -110,22 +89,5 @@ export class ShowcaseSystem extends createSystem({
     win.out.toArray(d.getVectorView(RoomSlots, 'windowOut'));
     win.along.toArray(d.getVectorView(RoomSlots, 'windowAlong'));
     d.setValue(RoomSlots, 'windowReady', true);
-  }
-
-  /** Swap the passthrough-style outline hands for solid skin-shaded hands. */
-  private solidHands(): void {
-    this.scene.traverse((o: Object3D) => {
-      const m = o as Mesh;
-      if (!(m as { isSkinnedMesh?: boolean }).isSkinnedMesh || m.material === this.skin) return;
-      if (!(m.material instanceof ShaderMaterial)) return;
-      // The outline style draws each hand twice (stencil + outline): keep one.
-      if (this.seenGeometry.has(m.geometry)) {
-        m.visible = false;
-        return;
-      }
-      this.seenGeometry.add(m.geometry);
-      m.material = this.skin;
-      m.castShadow = true;
-    });
   }
 }
