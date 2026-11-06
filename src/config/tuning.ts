@@ -227,6 +227,32 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  photo: {
+    /** The finger frame: each hand's thumb-index gap, how far ahead of the eyes, the rectangle's limits (m). */
+    openMin: 0.045,
+    minReach: 0.18,
+    minWidth: 0.12,
+    maxWidth: 0.75,
+    minHeight: 0.06,
+    /** Hold the frame this long to take the photo; Bigfoot starts posing after this long; then a cooldown. */
+    holdSec: 0.7,
+    poseAfter: 0.2,
+    poseSec: 2.5,
+    cooldownSec: 2.5,
+    /** The picture: width in px and aspect; the print's width (m); pop, show and fly-to-gallery timings; flash. */
+    px: 512,
+    aspect: 4 / 3,
+    printWidth: 0.2,
+    popSec: 0.35,
+    showSec: 2.6,
+    flySec: 1.6,
+    flashSec: 0.35,
+    /** The gallery above the TV: how many prints, spacing, height above the TV's centre. */
+    gallery: 4,
+    gallerySpacing: 0.26,
+    galleryUp: 0.95,
+  },
+
   visualizer: {
     /** Music motes: how many, the box around the viewer they fill (m), how far the viewer moves before it re-centres, overall opacity. */
     count: 260,

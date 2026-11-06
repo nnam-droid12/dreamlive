@@ -14,7 +14,7 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 };
 
 export type SoundName =
-  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop';
+  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop' | 'shutter';
 export type LoopName = 'waves' | 'wind' | 'snore' | 'rain';
 export type ActName = '' | 'surf' | 'dj' | 'ski' | 'disco' | 'afro' | 'house';
 
@@ -219,6 +219,12 @@ class AudioEngine {
         // A low thump, then a crackle.
         this.noiseBurst(t, 0.5, 220, 0.5, out);
         this.noiseBurst(t + 0.12, 1.4, 4200, 0.14, out);
+        break;
+      case 'shutter':
+        // A camera shutter: two quick clicks and a short whir.
+        this.noiseBurst(t, 0.05, 5000, 0.35, out);
+        this.noiseBurst(t + 0.07, 0.05, 3500, 0.3, out);
+        this.noiseBurst(t + 0.12, 0.25, 1800, 0.06, out);
         break;
       case 'pop':
         this.noiseBurst(t, 0.25, 2600, 0.25, out);

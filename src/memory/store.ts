@@ -106,4 +106,25 @@ export const MemoryStore = {
     read().settings[key] = on;
     write();
   },
+  /** Photos taken with Bigfoot (small JPEG data URLs, newest last), kept under their own key. */
+  photos(): string[] {
+    try {
+      const raw = localStorage.getItem(PHOTO_KEY);
+      const list = raw ? (JSON.parse(raw) as unknown) : [];
+      return Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string').slice(-PHOTO_MAX) : [];
+    } catch {
+      return [];
+    }
+  },
+  addPhoto(dataUrl: string): void {
+    try {
+      const list = [...this.photos(), dataUrl].slice(-PHOTO_MAX);
+      localStorage.setItem(PHOTO_KEY, JSON.stringify(list));
+    } catch {
+      // Storage full or unavailable: the photo still shows this session.
+    }
+  },
 };
+
+const PHOTO_KEY = 'dreamlive-photos';
+const PHOTO_MAX = 4;

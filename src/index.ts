@@ -35,6 +35,7 @@ import { NarrationSystem } from './systems/narration-system.js';
 import { FilmSystem } from './systems/film-system.js';
 import { CinemaSystem } from './systems/cinema-system.js';
 import { MusicVisualizerSystem } from './systems/music-visualizer-system.js';
+import { PhotoSystem } from './systems/photo-system.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -84,6 +85,7 @@ World.create(
     .registerSystem(FilmSystem)
     .registerSystem(CinemaSystem)
     .registerSystem(MusicVisualizerSystem)
+    .registerSystem(PhotoSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)

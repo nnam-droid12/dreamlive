@@ -15,4 +15,6 @@ export const BigfootState = {
 export const Bigfoot = createComponent('Bigfoot', {
   state: { type: Types.Enum, enum: BigfootState, default: BigfootState.Sleeping },
   stateTime: { type: Types.Float32, default: 0 },
+  /** Seconds left of a pose for the camera (a photo is being taken). */
+  pose: { type: Types.Float32, default: 0 },
 });

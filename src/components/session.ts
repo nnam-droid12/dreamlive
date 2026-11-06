@@ -36,6 +36,8 @@ export const Session = createComponent('Session', {
   /** Bumped to fire a burst (confetti, fireworks); FX systems react to changes. */
   confettiShots: { type: Types.Int16, default: 0 },
   fireworkShots: { type: Types.Int16, default: 0 },
+  /** Bumped to take a photo (palm menu or Director); the finger-frame gesture takes one by itself. */
+  photoShots: { type: Types.Int16, default: 0 },
   /** Live music analysis (AudioSystem, every frame): 0..1 bands and a kick pulse, for visuals. */
   musicBass: { type: Types.Float32, default: 0 },
   musicMid: { type: Types.Float32, default: 0 },
