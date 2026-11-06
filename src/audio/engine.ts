@@ -1,8 +1,11 @@
 /**
- * Procedural audio for Dreamlive (placeholder until final tracks are approved):
- * everything is synthesized with Web Audio — no files, no network. Spatial
- * sounds use HRTF PannerNodes; music ducks under key moments.
+ * Dreamlive's audio: recorded songs and Bigfoot's voice clips (public/audio,
+ * streamed or decoded on demand) plus sound effects synthesized with Web Audio.
+ * Spatial sounds use HRTF PannerNodes; music ducks under key moments; an
+ * analyser feeds the music visualizer.
  */
+import { Timeline } from './timeline.js';
+
 type Vec = { x: number; y: number; z: number };
 
 /** Captions for sounds that matter to the story (accessibility). */
@@ -89,6 +92,7 @@ class AudioEngine {
   private voices = new Map<string, AudioBuffer | null>();
   private voiceLoading = new Set<string>();
   private trackAct: ActName = '';
+  private lastOpen = -1;
   private dreamTrack = false;
   private analyser?: AnalyserNode;
   private freq?: Uint8Array<ArrayBuffer>;
@@ -174,6 +178,7 @@ class AudioEngine {
 
   /** One-shot sound, spatial when a position is given. */
   play(name: SoundName, at?: Vec, gain = 1): void {
+    Timeline.log('sfx', name, gain);
     if (!this.ctx) return;
     const out = this.output(at, gain);
     const t = this.ctx.currentTime;
@@ -302,6 +307,7 @@ class AudioEngine {
   setMusic(level: number): void {
     const c = this.ctx;
     if (!c) return;
+    if (level !== this.musicLevel) Timeline.log('music', DREAM_TRACK, level);
     this.musicLevel = level;
     this.music.gain.setTargetAtTime(level * 0.9, c.currentTime, 1.5);
     if (level > 0 && !this.musicOn) {
@@ -320,6 +326,7 @@ class AudioEngine {
   setAct(act: ActName, at: Vec): void {
     const c = this.ctx;
     if (!c || act === this.act) return;
+    Timeline.log('act', act);
     this.act = act;
     this.actLoop?.stop();
     this.actLoop = undefined;
@@ -349,6 +356,10 @@ class AudioEngine {
   setActOpenness(open: number): void {
     const c = this.ctx;
     if (!c || !this.actFilter) return;
+    if (Math.abs(open - this.lastOpen) > 0.08) {
+      this.lastOpen = open;
+      Timeline.log('open', this.act, open);
+    }
     this.actFilter.frequency.setTargetAtTime(500 + 19500 * open * open, c.currentTime, 0.25);
   }
 
@@ -443,6 +454,7 @@ class AudioEngine {
    * loading (it is fetched on first ask, so call `preloadVoice` ahead of time).
    */
   speak(name: string, at: Vec, gain = 1): boolean {
+    Timeline.log('voice', name, gain);
     const c = this.ctx;
     const buf = this.voices.get(name);
     if (!c || !buf) {

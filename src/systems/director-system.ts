@@ -17,7 +17,9 @@ import { MemoryOrb } from '../components/memory.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
-import { Director } from '../config/director.js';
+import { Timeline } from '../audio/timeline.js';
+import { Director, DirectorFrame } from '../config/director.js';
+import { makeTitleCard, TitleCard } from '../visuals/title-card.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -60,6 +62,11 @@ export class DirectorSystem extends createSystem({
   private recorder?: MediaRecorder;
   private chunks: Blob[] = [];
   private done = false;
+  /** Feature caption, lower right (DreamSpace-style), and what it says now. */
+  private feature!: TitleCard;
+  private featureText = '';
+  private featureOpacity = 0;
+  private cues = new Set<string>();
 
   init(): void {
     this.cardCanvas = document.createElement('canvas');
@@ -72,6 +79,9 @@ export class DirectorSystem extends createSystem({
     this.card.renderOrder = 1000;
     this.card.visible = false;
     this.world.createTransformEntity(this.card);
+    this.feature = makeTitleCard(1280, 160, 0.62);
+    this.feature.mesh.renderOrder = 1001;
+    this.world.createTransformEntity(this.feature.mesh);
     this.hideEmulatedInputs();
   }
 
@@ -91,6 +101,8 @@ export class DirectorSystem extends createSystem({
     this.placed = true;
     this.placeCamera();
     this.updateCard(phase ?? '');
+    this.script(d, phase ?? '');
+    this.updateFeature(realDelta);
   }
 
   /** Where the camera wants to be and what it looks at, from the dream's real state. */
@@ -164,12 +176,18 @@ export class DirectorSystem extends createSystem({
       this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.4, 1.5, 1.4), t < 6.8 ? him : at(2, 2.2, -0.5));
     } else if (scene === 'leap-out') {
       this.aim(at(-2.2, 1.3, 1.8), him);
-    } else if (scene === 'arrive' || scene === 'party-wait') {
+    } else if (scene === 'arrive') {
+      // In the room as the window wall dissolves and the ceiling opens to the sky.
+      this.aim(at(-3.2, 1.35, 1.9), at(0, 2.4, -0.6));
+    } else if (scene === 'party-wait') {
       const pick = (Director.picks['rooftop-party'] ?? [])[0] ?? '';
       const seed = this.seedPos(pick);
       this.aim(at(deck.x, deck.y + 1.3, deck.z), scene === 'party-wait' && this.beat.time > 1.8 && seed ? seed : him);
     } else if (scene.startsWith('party-')) {
-      if (t < 12) this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
+      if (t < 8) this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
+      // The skyline as a music visualizer, then the fireworks above it.
+      else if (t < 16) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
+      else if (t < 20) this.aim(at(deck.x, deck.y + 1.6, deck.z), at(24, 17, 0));
       else this.aim(at(Rooftop.djSpot.x + 2.6, Rooftop.djSpot.y + 1.6, Rooftop.djSpot.z + 3.0), dj);
     } else if (scene === 'leap-back') {
       // From the party roof's edge: the street far below, his tower and window across.
@@ -226,11 +244,77 @@ export class DirectorSystem extends createSystem({
     this.camMatrix.decompose(this.player.position, this.player.quaternion, this.tmp);
   }
 
+  /**
+   * The trailer's script on top of the real dream: a caption naming each feature
+   * as it happens, fireworks during the party, a shorter gifts beat, then bedtime.
+   * Also chooses the shots the cinema screen appears in.
+   */
+  private script(d: Entity, phase: string): void {
+    const roof = d.getValue(DreamDirector, 'chapterId') === 'rooftop-party';
+    const asleep = phase === RitualPhase.Asleep && readBeat(d, this.beat);
+    const scene = asleep ? this.beat.scene : '';
+    const t = asleep ? this.beat.time : (d.getValue(Ritual, 'phaseTime') ?? 0);
+    let text = '';
+    DirectorFrame.cinema = false;
+    if (phase === RitualPhase.Arrival) text = t > 4.5 ? 'A Bigfoot naps in your room' : '';
+    else if (scene === 'draw-window') text = 'Draw him a window, with your hand';
+    else if (scene === 'to-window') text = 'He tells you his dream, out loud';
+    else if (scene === 'leap-out') text = 'One giant leap';
+    else if (scene === 'arrive') text = 'Your room becomes a penthouse';
+    else if (scene === 'party-wait') text = 'Your gaze picks the song';
+    else if (scene.startsWith('party-')) {
+      if (t < 8) {
+        text = 'A live rooftop cam: spatial cinema';
+        DirectorFrame.cinema = true;
+      } else if (t < 16) text = 'The skyline dances to the music';
+      else text = 'Fireworks, from your palm';
+      if (t > 16.5 && this.cue('fireworks')) d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
+    } else if (scene === 'leap-back') text = 'Real music, in spatial audio';
+    else if (scene === 'gifts') {
+      text = 'Catch his gifts. He keeps the rest.';
+      // A shorter gifts beat for the trailer.
+      if (t > 12 && this.cue('gifts-skip')) d.setValue(DreamDirector, 'beatTime', 20.5);
+    } else if (scene === 'to-bed') text = 'Golden hour, starry night, sunrise';
+    else if (phase === RitualPhase.Waking) text = 'Every dream leaves a memory';
+    else if (phase === RitualPhase.Awake && roof) {
+      if (t > 8 && this.cue('bedtime')) d.setValue(Session, 'bedtime', true);
+      text = t > 8 ? 'Bedtime: rain on the glass' : 'The end credits roll';
+    }
+    if (!roof && phase === RitualPhase.Asleep) text = '';
+    if (text !== this.featureText) {
+      this.featureText = text;
+      if (text) this.feature.draw([{ text, size: 64, style: 'italic', color: '#ffd38a' }], 'right');
+    }
+  }
+
+  /** True the first time a named cue is reached. */
+  private cue(id: string): boolean {
+    if (this.cues.has(id)) return false;
+    this.cues.add(id);
+    return true;
+  }
+
+  /** The feature caption sits lower right of the shot and fades between captions. */
+  private updateFeature(dt: number): void {
+    const want = this.featureText && this.cardMat.opacity < 0.2 ? 1 : 0;
+    this.featureOpacity += (want - this.featureOpacity) * Math.min(1, dt * 3);
+    const m = this.feature.mesh;
+    m.visible = this.featureOpacity > 0.01;
+    if (!m.visible) return;
+    this.feature.material.opacity = this.featureOpacity;
+    const head = this.player.head;
+    head.getWorldPosition(m.position);
+    head.getWorldQuaternion(m.quaternion);
+    m.translateZ(-0.9);
+    m.translateX(0.2);
+    m.translateY(-0.24);
+  }
+
   /** Title card at the start, end card once he's awake and the orb is shelved. */
   private updateCard(phase: string): void {
     let want = '';
     if (this.clock < 4.5) want = 'title';
-    if (this.awakeAt >= 0 && this.clock - this.awakeAt > 9) want = 'end';
+    if (this.awakeAt >= 0 && this.clock - this.awakeAt > 17) want = 'end';
     if (want && want !== this.cardShown) this.drawCard(want);
     this.cardMat.opacity += ((want ? 1 : 0) - this.cardMat.opacity) * 0.08;
     this.card.visible = this.cardMat.opacity > 0.01;
@@ -240,7 +324,7 @@ export class DirectorSystem extends createSystem({
       head.getWorldQuaternion(this.card.quaternion);
       this.card.translateZ(-0.9);
     }
-    if (phase === RitualPhase.Awake && want === 'end' && this.clock - this.awakeAt > 9 + Director.endCardSec) this.finish();
+    if (phase === RitualPhase.Awake && want === 'end' && this.clock - this.awakeAt > 17 + Director.endCardSec) this.finish();
   }
 
   private drawCard(kind: string): void {
@@ -249,20 +333,22 @@ export class DirectorSystem extends createSystem({
     if (!g) return;
     const W = 1280;
     g.clearRect(0, 0, W, 720);
-    g.fillStyle = kind === 'end' ? 'rgba(8, 10, 30, 0.88)' : 'rgba(8, 10, 30, 0.55)';
+    g.fillStyle = kind === 'end' ? 'rgba(20, 12, 8, 0.88)' : 'rgba(20, 12, 8, 0.5)';
     g.beginPath();
     g.roundRect(80, 150, W - 160, 420, 40);
     g.fill();
     g.textAlign = 'center';
-    g.fillStyle = '#fdfcff';
-    g.font = '700 120px system-ui, "Segoe UI", Roboto, sans-serif';
-    g.fillText('DREAMLIVE', W / 2, 310);
-    g.font = '500 44px system-ui, "Segoe UI", Roboto, sans-serif';
-    g.fillStyle = '#ffd89a';
-    g.fillText(kind === 'end' ? 'Every night, a new dream.' : 'Bigfoot is asleep. Look at him...', W / 2, 390);
+    g.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    g.shadowBlur = 16;
+    g.fillStyle = '#ffd38a';
+    g.font = 'italic bold 128px Georgia, "Times New Roman", serif';
+    g.fillText('Dreamlive', W / 2, 310);
+    g.font = 'italic 46px Georgia, "Times New Roman", serif';
+    g.fillStyle = '#fff3dd';
+    g.fillText(kind === 'end' ? 'Every night, a new dream.' : 'Bigfoot is asleep in your room...', W / 2, 390);
     if (kind === 'end') {
-      g.fillStyle = '#c9d4ff';
-      g.font = '400 32px system-ui, "Segoe UI", Roboto, sans-serif';
+      g.fillStyle = '#ffe2c0';
+      g.font = 'italic 32px Georgia, "Times New Roman", serif';
       g.fillText('Built with Immersive Web SDK for Meta Quest and Meta VR Glasses', W / 2, 460);
       g.fillText('nnam-droid12.github.io/dreamlive', W / 2, 515);
     }
@@ -270,6 +356,10 @@ export class DirectorSystem extends createSystem({
   }
 
   private startRecording(): void {
+    if (Director.offline) {
+      this.startOffline();
+      return;
+    }
     const canvas = this.renderer.domElement as HTMLCanvasElement & { captureStream?: (fps: number) => MediaStream };
     if (!canvas.captureStream || typeof MediaRecorder === 'undefined') return;
     const stream = new MediaStream(canvas.captureStream(30).getVideoTracks());
@@ -288,8 +378,37 @@ export class DirectorSystem extends createSystem({
     this.recorder.start(1000);
   }
 
+  /**
+   * Offline render: one captured frame per fixed story step (requested after each
+   * on-screen render), no live audio; the sound is mixed afterwards from Timeline.
+   */
+  private startOffline(): void {
+    const canvas = this.renderer.domElement as HTMLCanvasElement & { captureStream?: (fps: number) => MediaStream };
+    if (!canvas.captureStream || typeof MediaRecorder === 'undefined') return;
+    const stream = canvas.captureStream(0);
+    const track = stream.getVideoTracks()[0] as MediaStreamTrack & { requestFrame?: () => void };
+    DirectorFrame.onFrame = () => track.requestFrame?.();
+    const start = Timeline.t;
+    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+    this.recorder = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 12_000_000 });
+    this.recorder.ondataavailable = (e) => {
+      if (e.data.size) this.chunks.push(e.data);
+    };
+    this.recorder.onstop = () => {
+      const base = Director.fileName.replace(/\.webm$/, '');
+      void fetch(`/__director-save?name=${base}-frames.webm`, { method: 'POST', body: new Blob(this.chunks, { type: 'video/webm' }) });
+      void fetch(`/__director-save?name=${base}-timeline.json`, {
+        method: 'POST',
+        body: JSON.stringify({ fps: Director.fps, start, end: Timeline.t, events: Timeline.events }),
+      });
+    };
+    this.recorder.start(2000);
+  }
+
   private finish(): void {
     this.done = true;
+    DirectorFrame.onFrame = undefined;
+    Timeline.on = false;
     if (this.recorder?.state === 'recording') this.recorder.stop();
   }
 

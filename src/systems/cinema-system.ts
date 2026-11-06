@@ -18,6 +18,7 @@ import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
+import { Director, DirectorFrame } from '../config/director.js';
 import { Palette } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
@@ -87,7 +88,7 @@ export class CinemaSystem extends createSystem({
     if (!this.found) this.findHidden();
     const roof = d.getValue(DreamDirector, 'chapterId') === 'rooftop-party';
     const scene = roof && d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat) ? this.beat.scene : '';
-    const on = LIVE.has(scene) || scene.startsWith('party-');
+    const on = (LIVE.has(scene) || scene.startsWith('party-')) && (!Director.enabled || DirectorFrame.cinema);
     this.amount += ((on ? 1 : 0) - this.amount) * Math.min(1, realDelta * 1.5);
     this.screen.visible = this.amount > 0.01;
     if (!this.screen.visible) return;

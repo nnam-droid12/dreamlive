@@ -1,6 +1,7 @@
 import { createSystem, Entity, VisibilityState } from '@iwsdk/core';
 import { DevControls, DreamDirector, DreamSeed, GazeTarget, SeedState } from '../components/dream.js';
 import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
+import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { actOf } from '../dreams/chapter_bigfoot.js';
 import { chooseChapter, findChapter } from '../dreams/registry.js';
@@ -33,7 +34,8 @@ export class DreamDirectorSystem extends createSystem({
 
     if (!d.getValue(DreamDirector, 'started')) {
       if ((d.getValue(Ritual, 'phaseTime') ?? 0) < dream.startDelaySec) return;
-      const chapter = chooseChapter(d.getValue(Session, 'night') ?? 1, !!d.getValue(Session, 'unlockAll'), d.getValue(Session, 'generation') ?? 0);
+      // The trailer (Director mode) always films the Rooftop Party.
+      const chapter = (Director.enabled && findChapter('rooftop-party')) || chooseChapter(d.getValue(Session, 'night') ?? 1, !!d.getValue(Session, 'unlockAll'), d.getValue(Session, 'generation') ?? 0);
       d.setValue(DreamDirector, 'chapterId', chapter.id);
       d.setValue(DreamDirector, 'started', true);
       this.goTo(d, chapter.start);

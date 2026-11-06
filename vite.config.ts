@@ -6,10 +6,47 @@
  */
 
 import { iwsdkDev } from '@iwsdk/vite-plugin-dev';
-import { defineConfig } from 'vite';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * Dev server only: Director mode posts its finished recording (and the audio
+ * timeline) here, saved into artifacts/ (git-ignored). Plain file names only,
+ * 2 GB cap; does not exist in production builds.
+ */
+function directorSave(): Plugin {
+  return {
+    name: 'dreamlive-director-save',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__director-save', (req, res) => {
+        const name = new URL(req.url ?? '', 'http://x').searchParams.get('name') ?? '';
+        if (req.method !== 'POST' || !/^[a-z0-9][a-z0-9.-]{0,60}$/.test(name)) {
+          res.statusCode = 400;
+          res.end('bad request');
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        req.on('data', (c: Buffer) => {
+          size += c.length;
+          if (size > 2_000_000_000) req.destroy();
+          else chunks.push(c);
+        });
+        req.on('end', () => {
+          const dir = resolve(process.cwd(), 'artifacts');
+          mkdirSync(dir, { recursive: true });
+          writeFileSync(resolve(dir, name), Buffer.concat(chunks));
+          res.end('saved ' + name);
+        });
+      });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [iwsdkDev()],
+  plugins: [iwsdkDev(), directorSave()],
   server: { host: '0.0.0.0', port: 8081, open: false },
   build: {
     outDir: 'dist',

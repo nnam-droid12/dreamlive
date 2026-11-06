@@ -5,7 +5,8 @@ import { Gestures } from './components/hands.js';
 import { Caption, Ritual } from './components/ritual.js';
 import { Session } from './components/session.js';
 import { RoomSlots, StageSurface } from './components/stage.js';
-import { Director } from './config/director.js';
+import { Director, DirectorFrame } from './config/director.js';
+import { Timeline } from './audio/timeline.js';
 import { PanelSystem } from './panel.js';
 import { AttentionSystem } from './systems/attention-system.js';
 import { AudioSystem } from './systems/audio-system.js';
@@ -95,4 +96,32 @@ World.create(
     .registerSystem(PanelSystem);
   // Dev-only demo recording (`?director`): scripted camera, cards, WebM capture.
   if (Director.enabled) world.registerSystem(DirectorSystem);
+  if (Director.offline) offlineRender(world);
 });
+
+/**
+ * Offline trailer render: a fixed story step per frame, and a hook after each
+ * on-screen render (the cinema screen's off-screen pass is skipped) so the
+ * Director can capture exactly one video frame per step.
+ */
+function offlineRender(world: Awaited<ReturnType<typeof World.create>>): void {
+  const step = 1 / Director.fps;
+  const r = world.renderer;
+  if (Director.width && Director.height) {
+    r.setPixelRatio(1);
+    r.setSize(Director.width, Director.height, false);
+  }
+  let t = 0;
+  Timeline.on = true;
+  const update = world.update.bind(world);
+  world.update = (_delta: number, _time: number) => {
+    t += step;
+    Timeline.t = t;
+    update(step, t);
+  };
+  const render = r.render.bind(r);
+  r.render = (scene, camera) => {
+    render(scene, camera);
+    if (r.getRenderTarget() === null) DirectorFrame.onFrame?.();
+  };
+}

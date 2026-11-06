@@ -1,8 +1,16 @@
 # Dreamlive
 
-*Bigfoot is asleep on your bed. Look at him, and he's off to the rooftop party next door.*
+*Draw Bigfoot a window, and your room becomes a penthouse over New York.*
 
-A lovable Bigfoot sleeps on your bed. Look at him and he gets up, slides his window open and leaps **up** onto the roof of the taller skyscraper opposite, where his Yeti cousin is DJing a party. You go too: the view fades to a VIP deck beside the decks. Your gaze picks the song (Disco, Afrobeats or House), and the music and lights change with it. Bigfoot dances with the crowd while the Yeti tosses parachute gifts down to the street. Then, from the roof's edge, you watch him leap back down home across the street. Back in his room, the Yeti throws gifts across: Bigfoot catches each one and stacks it on his floor (his pile grows night after night), and some fly to you to catch with your hands. He goes back to bed and leaves you a memory orb for your shelf. On alternate nights, his dream plays through your TV instead.
+A lovable Bigfoot naps in your room, and he tells you his dream out loud. His window is stuck and there's a party next door, so you draw him a new one with your hand. Your wall dissolves into glass over **golden-hour New York**. He leaps up to the rooftop of the skyscraper opposite, where his Yeti cousin is DJing. The story unfolds like a short film, in chapters:
+
+- **Your room transforms:** the window wall turns to glass and the ceiling opens to the sky.
+- **Spatial cinema:** a floating **LIVE rooftop cam** screen cuts between close-ups of him dancing, the DJ and the crowd.
+- **You pick the song:** real recorded tracks in spatial audio.
+- **A music visualizer:** the whole skyline turns into a VU meter.
+- **You join in:** turn your palm up to be the DJ, fire confetti and fireworks, or change the weather.
+
+Night falls for the fireworks. He leaps home and catches the gifts the Yeti throws, stacking them on his floor, and some fly to you. End credits roll, then **Bedtime**: rain on the glass while he snores. Each night leaves a memory orb on your shelf.
 
 Dreamlive is a seated, hands-first mixed-reality experience for Meta Quest 3 / 3S and Meta VR Glasses, built with the [Immersive Web SDK (IWSDK)](https://iwsdk.dev) on WebXR. It is an entry to the Meta VR Start Developer Competition 2026 (Entertainment track, New Experience division).
 

@@ -10,9 +10,9 @@ Dreamlive
 
 ## 2. Tagline
 
-> Bigfoot leaps from his window to a rooftop party next door, then catches the gifts his DJ cousin throws home. You catch some too.
+> Draw Bigfoot a window and your room becomes a penthouse: he leaps to a rooftop party, tells you his dream, and throws you gifts.
 
-(129 characters; limit 140.)
+(128 characters; limit 140.)
 
 ## 3. Track and division
 
@@ -22,57 +22,77 @@ Entertainment · New Experience
 
 *(Also paste these at the top of the description.)*
 
-- **Play:** https://nnam-droid12.github.io/dreamlive/ in **Meta Quest Browser** (Quest 3 / 3S; Meta VR Glasses supported). Sit facing a wall, ideally your TV wall, and press **Enter XR**.
-- **Start:** look at sleeping Bigfoot (or just wait 12 seconds). He leaps from his window up to the rooftop party opposite; the view follows in soft fades.
-- **Choose:** on the VIP deck, look at a glowing light (Disco · Afrobeats · House) until its ring fills. A pinch works too. Do nothing and the party chooses for you.
-- **Catch:** back in his room, touch the gifts the Yeti DJ throws to you. Catch the night's goal for a golden memory.
-- **Pause:** hold a palm out at face height, or press B / Y / Menu on a controller. The pause panel has *Unlock all dreams (judges)*, big captions and calm motion.
-- **Length:** about 3 minutes per dream. It is fully completable with no input at all.
-- **Return:** each real night is a new dream night. Your memory orbs stay on the shelf beside the TV; pinch one to dream it again.
+- **Play:** https://nnam-droid12.github.io/dreamlive/ in **Meta Quest Browser** (Quest 3 / 3S; Meta VR Glasses supported). Sit facing a wall and press **Enter XR**. **Hands only, no controller needed.**
+- **Start:** look at sleeping Bigfoot (or wait). He asks you, out loud, to draw him a window.
+- **Draw:** pinch and drag a rectangle on your wall. It dissolves open onto New York at golden hour. (Do nothing and it draws itself.)
+- **Watch:** he leaps to the rooftop party. Your wall becomes glass, your ceiling opens to the sky, and a floating live "rooftop cam" screen shows close-ups.
+- **Choose:** look at a glowing light to pick the song (Disco · Afrobeats · House). A pinch works too.
+- **Play along:** turn your **left palm up** for the palm menu: be the DJ, fire confetti or fireworks, change the weather or time, or choose Bedtime.
+- **Catch:** touch the gifts the Yeti throws to you.
+- **Pause:** hold a palm out at face height. The pause panel has *Unlock all dreams (judges)*, big captions and calm motion.
+- **Length:** about 3 minutes. It completes with no input at all; Bedtime follows the credits.
 
 ## 5. Description (≤ 500 words)
 
-**Inspiration.** We wanted mixed reality that feels like a bedtime story happening in your own room. What if a lovable Bigfoot fell asleep on your bed, and you could watch his dream?
+**Inspiration.** Mixed reality that feels like a bedtime story told in your own room. What if a lovable Bigfoot fell asleep there, and you could step into his dream?
 
-**What it does.** Bigfoot sleeps on your real bed or couch, found with Quest's scene understanding. Look at him and he slides his window open and leaps up onto the roof of the taller skyscraper opposite, where his Yeti cousin is DJing a party. On a headset, a dream window opens in your real wall. You follow in comfortable fades: a VIP deck beside the decks, where your gaze picks the song (Disco, Afrobeats or House) with a dwell ring showing the choice forming; then the roof's edge, the street far below, as he leaps home. Back in his room, the Yeti throws gifts across the street: Bigfoot catches each one and stacks it on his floor, where the pile grows night after night, and some fly to you to catch with your hands. Catch enough and the night's memory orb turns gold. It lands on a Memory Shelf that persists between visits. On alternate nights his dream plays through your TV instead.
+**What it does.** Dreamlive is an interactive, spatial short film that plays in your room.
+- Bigfoot sleeps on your bed or couch (found with scene understanding).
+- He narrates his own dream in his own voice, with subtitles: his window is stuck and there's a party next door. You draw him a window with your hand, and your real wall dissolves into floor-to-ceiling glass over golden-hour New York.
+- He leaps to the rooftop of the skyscraper opposite, where his Yeti cousin DJs.
+- The film unfolds in chapters:
+  - your ceiling opens to the sky;
+  - a floating "LIVE rooftop cam" screen cuts between close-ups of him dancing, the DJ and the crowd: spatial cinema;
+  - your gaze picks the song, real recorded tracks in spatial audio;
+  - the whole skyline turns into a music visualizer, each tower a VU meter.
+- Turn your palm up to join in: DJ, confetti, fireworks over the city, snow, rain or fog.
+- Night falls for the fireworks. He leaps home and catches the gifts the Yeti throws, stacking them in his room (the pile grows night after night). Some fly to you to catch.
+- End credits roll, then Bedtime: rain on the glass, Bigfoot snoring.
+- Each night leaves a memory orb on your shelf.
 
 **How we built it.**
-- Built with Meta's Immersive Web SDK (WebXR, Three.js, an entity-component system), as one system per behavior: attention (eye or head gaze), gestures read directly from hand joints, room understanding, the dream director, the TV portal, room spill, catching, the memory shelf, session and pause, audio, and adaptive quality.
-- Bigfoot was concept art from Meshy, turned into a 3D mesh with TRELLIS.2, rigged and animated with Mixamo, and slimmed from 151k to 30k triangles in Blender.
-- The dream worlds are rendered to a texture on the TV with head-coupled parallax.
-- All music and sound is synthesized live with Web Audio.
-- The New York bedroom used for capture is built from CC0 photo-scanned materials and a licensed skyline photo.
+- Meta's Immersive Web SDK (WebXR, Three.js, ECS): one system per behavior.
+- A live director camera renders into a texture for the cinema screen.
+- A Web Audio analyser drives the skyline equalizer.
+- Shader dissolves, sunset sky and clouds, rain on glass.
+- Bigfoot: Meshy concept art, TRELLIS.2 mesh, Mixamo rig, slimmed in Blender.
+- Voice: offline Kokoro text-to-speech.
+- Music: CC BY tracks from Free Music Archive (credited in-app).
 
 **Challenges.**
-- We had no headset, so everything was built and tested in Meta's Immersive Web Emulator, including a 14-point robustness matrix (different rooms, missing walls, no input, lost hands, pause cycles, a long soak test).
-- Making the experience work in rooms we never saw needed layered fallbacks: a real TV, then a wall, then a floating backdrop; a real bed, then a couch, then a cozy floor spot.
+- No headset: everything was built and verified in Meta's Immersive Web Emulator, including a hands-only run-through.
+- Hand rays drift as fingers close, so buttons fire on the pinch itself.
+- Our trailer is rendered offline at a fixed time step, with its soundtrack mixed from a logged timeline.
 
 **Accessibility.**
+- Hands-first, no controller needed.
 - Completes with zero input.
-- Pinch or controller alternatives to gaze.
-- Captions for story and sound.
-- High-contrast captions and a reduced-motion mode.
-- Essential content stays inside a 60° cone for Meta VR Glasses.
-- Adaptive quality protects frame rate.
+- Subtitles for every line and key sound.
+- High-contrast captions and reduced motion.
+- Seated, with view changes as soft fades.
+- Adaptive quality.
 
 **What's next.**
-- Testing on Quest 3S hardware.
-- More dream acts unlocking over real nights.
-- Spatial anchors so the TV and shelf return to the same place.
-- Launch as a PWA on the Meta Horizon Store.
+- Quest 3S hardware testing.
+- New dream stories on real nights.
+- Spatial anchors for the shelf.
+- PWA on the Horizon Store.
 
 ## 6. Hand interactions
 
-- **Look (eye or head gaze):** the core mechanic. Looking at a choice light brightens it at once and fills a ring over 1.5 s. Looking away drains it slowly, so a glance never commits. Eye gaze is used on Meta VR Glasses and head gaze on Quest 3/3S.
-- **Pinch:** an instant alternative to gaze dwell, for choosing a light or replaying a memory orb. It uses the standard hand ray, or gaze plus pinch on Glasses.
-- **Touch / catch:** reach out and touch what flies out of the TV (13 cm touch radius, or 20 cm with cupped hands). Items hover within easy seated reach, below eye level, for over a second. Controllers can catch too.
-- **Palm out:** hold an open palm out at face height for 1.2 s to pause. It needs a raised hand, so waiting to catch never pauses by accident, and a cooldown prevents double triggers. Controllers use B / Y / Menu.
+- **Pinch-drag on a wall:** draw Bigfoot's window. A glowing outline follows your hand; on release the wall dissolves open there.
+- **Look (eye or head gaze):** choose the song. The light brightens and a ring fills over 1.5 s. A glance never commits.
+- **Pinch:** instant alternative to a gaze choice; presses every panel button (fires on the pinch, robust to ray drift).
+- **Palm up (left hand):** opens the palm menu above your hand.
+- **Touch / catch:** reach out and touch the gifts flying to you.
+- **Palm out:** hold an open palm out at face height for 1.2 s to pause.
 - **Comfort:**
-  - Fully seated; nothing needs standing, turning around, or reaching beyond arm's length.
-  - All gestures are short and optional: every choice has a lean-back default, and a whole dream completes with no input.
-  - If hands drop out of tracking, a caption says so and the dream carries on.
+  - Fully seated; nothing beyond arm's reach.
+  - Every choice has a lean-back default.
+  - Hand tracking loss is announced and the story carries on.
+  - Hands are drawn as soft frosted-glass outlines.
 
-**The future of VR** *(owner: edit)*: We think the most magical mixed reality is not a new world but your own room, gently changed: a character who lives in your space, remembers you, and gives you a reason to come back tomorrow night.
+**The future of VR** *(owner: edit)*: The most magical mixed reality isn't a new world but your own room, transformed for a few minutes: a character who lives in your space, tells you a story, remembers you, and gives you a reason to come back tomorrow night.
 
 ## 7. Target launch date
 
@@ -84,20 +104,19 @@ William Nnamani: Developer & Designer.
 
 ## 9. Screenshots (in `docs/screens/judge/`)
 
-1. `14-bigfoot-on-bed-1.6m.png`: Bigfoot asleep on the bed (arrival).
-2. `15-bigfoot-walk-grounded.png`: sleep-walking to the TV.
-3. `08-dj-spill.png`: the rooftop party spilling into the room.
-4. `13-act-ski.png`: skiing down a skyscraper inside the TV.
-5. `09-mr-bigfoot-on-couch.png`: mixed reality; Bigfoot on a detected real couch.
-6. `11-shelf-tomorrow-teaser.png`: the Memory Shelf and tomorrow's teaser.
+1. `33-golden-hour-party.jpg`: the rooftop party under a golden-hour sky.
+2. `38-dream-cinema-bigfoot.jpg`: the LIVE rooftop cam (spatial cinema).
+3. `35-skyline-equalizer.jpg`: the skyline as a music visualizer.
+4. `27-room-becomes-penthouse.png`: the room transformed.
+5. `25-draw-window.png`: drawing Bigfoot's window.
+6. `32-frosted-hands.jpg`: hands-first, frosted-glass hands.
+7. `36-title-card.jpg`: the film's title card.
 
 ## 10. Demo video
 
-Recorded in the emulator with Director mode (no headset available):
+Rendered in the emulator with Director mode's offline render (no headset available). It is smooth on any laptop and the sound is in sync:
 
-1. `npm install`, then `npm run dev`.
-2. In Chrome, open `https://localhost:8081/?director` and accept the local certificate warning.
-3. Maximize the window (bigger window, sharper video) and click **Enter XR** on the start panel.
-4. Don't touch anything. The camera follows the scripted shot list for about 2 min 20 s, then `dreamlive-demo.webm` downloads.
-
-Upload it to YouTube as **Public**, under 3:00.
+1. `npm install`, then create `.env.development.local` containing `VITE_DIRECTOR=director&offline&w=1280&h=720`, then `npm run dev`.
+2. Click **Enter XR** and wait (about an hour on a 2-core laptop). The camera follows the scripted shots, with a caption naming each feature. The video frames and an audio timeline are saved to `artifacts/`.
+3. `python scripts/trailer/mix.py artifacts/dreamlive-demo-frames.webm artifacts/dreamlive-demo-timeline.json artifacts/dreamlive-trailer.mp4`
+4. Delete `.env.development.local`. Upload the MP4 to YouTube as **Public** (under 3:00).
