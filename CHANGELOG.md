@@ -2,6 +2,22 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-06 — Real music and a music visualizer
+
+- **Real recorded songs replace the synth beats** at the rooftop party. They are free to use with credit (CC BY 4.0), from Free Music Archive:
+  - "Discode" by Neil Fernandes (Disco);
+  - "Afrobeat" by Alex Morgan (Afrobeats);
+  - "Let's Bounce" by 1000 Handz (House).
+- The dream's ambience is now "Bloom" by Purrple Cat (chill), in place of the synthesized music box.
+- The songs stream through `<audio>` elements routed into Web Audio, which keeps memory low on a headset. They still come from the Yeti's decks in 3D, and still sound muffled through closed glass.
+- All four tracks are credited in CREDITS.md, loudness-normalised and re-encoded (5.3 MB in total).
+- **Music visualizer.** An analyser reads the mix every frame (bass, mids, highs, level and kick hits):
+  - While the party is live, or while you DJ, the skyline becomes an equalizer. Each tower follows the bass, the mids or the highs like a VU meter: its windows light from the street up to the level, with a bright peak line, and flash on each kick.
+  - The beat clock for the party lights now follows the song's real kicks.
+  - The analysis is published on Session (musicBass/Mid/High/Level/Kick) for any system.
+- The party crowd wears varied, lighter outfit colours instead of dark purple silhouettes.
+- Emulator checks: the songs play and the analyser reads them (bass about 0.6–0.8 on the house track); the tower peak lines move between frames under the sunset sky.
+
 ## 2026-11-06 — Golden sunset
 
 - **The dream is now bright and golden, like DreamSpace.** It opens at golden hour:

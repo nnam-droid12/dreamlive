@@ -111,6 +111,7 @@ export class RooftopPartySystem extends createSystem({
       this.party!.setPalette(SONG_PALETTE[song] ?? SONG_PALETTE.afro);
     }
     this.party!.update(this.time, 1 - Sound.beatPhase(this.time, 120), this.energy);
+    this.visualize(live || !!dj, realDelta);
     this.animateDj(scene, t, delta);
 
     // During the party the DJ tosses goodies off the roof to the street crowd.
@@ -170,6 +171,20 @@ export class RooftopPartySystem extends createSystem({
       g.obj.rotation.y = (i * 1.9) % (Math.PI * 2);
       g.obj.visible = true;
     }
+  }
+
+  /**
+   * Music visualization: while the party is live (or you DJ) the skyline's windows
+   * become an equalizer driven by the real music; the street base follows the window frame.
+   */
+  private visualize(on: boolean, realDelta: number): void {
+    const eq = this.party!.equalizer;
+    const b = Sound.bands;
+    const k = Math.min(1, realDelta * 12);
+    const v = eq.bands.value;
+    v.set(v.x + (b.bass - v.x) * k, v.y + (b.mid - v.y) * k, v.z + (b.high - v.z) * k, b.kick);
+    eq.amount.value += ((on ? cfg.visualizer : 0) - eq.amount.value) * Math.min(1, realDelta * 0.8);
+    eq.base.value = this.frame.origin.y + Rooftop.street.y;
   }
 
   /** The window was drawn elsewhere: move the city, the DJ's aims and the sliding glass with it. */

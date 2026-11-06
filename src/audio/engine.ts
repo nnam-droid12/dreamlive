@@ -24,6 +24,27 @@ export interface LoopHandle {
 const MELODY = [72, 76, 79, 84, 83, 79, 76, 74, 72, 74, 76, 79, 77, 74, 71, 67];
 /** Act tempos (BPM) and patterns, one entry per 16th step. */
 const ACT_BPM: Record<Exclude<ActName, ''>, number> = { surf: 100, dj: 120, ski: 140, disco: 118, afro: 104, house: 124 };
+/** Acts played from recorded tracks (public/audio/music, credited in CREDITS.md); others are synthesized. */
+const TRACK_ACTS = new Set<ActName>(['disco', 'afro', 'house']);
+/** The dream's ambient score on the music bus (replaces the synthesized music box). */
+const DREAM_TRACK = 'dream';
+
+/** Live analysis of what is playing (the music visualizer reads this every frame). */
+export interface AudioBands {
+  /** 0..1 smoothed energy: bass (~90-280 Hz), mids (~280 Hz-2 kHz), highs (~2-8 kHz), overall. */
+  bass: number;
+  mid: number;
+  high: number;
+  level: number;
+  /** 1 on a detected kick, decaying to 0 (~0.3 s). */
+  kick: number;
+}
+
+interface Track {
+  el: HTMLAudioElement;
+  gain: GainNode;
+  on: boolean;
+}
 // Rooftop Party songs (one entry per 16th step; 0 = rest).
 const DISCO_BASS = [41, 53, 41, 53, 41, 53, 41, 53, 38, 50, 38, 50, 43, 55, 43, 55];
 const DISCO_CHORDS = [[65, 69, 72], [62, 65, 69], [67, 71, 74], [64, 67, 72]];
@@ -63,6 +84,15 @@ class AudioEngine {
   private nextStep = 0;
   private step = 0;
   private hum?: { stop(): void; gain: GainNode };
+  private tracks = new Map<string, Track>();
+  private trackAct: ActName = '';
+  private dreamTrack = false;
+  private analyser?: AnalyserNode;
+  private freq?: Uint8Array<ArrayBuffer>;
+  private bassAvg = 0;
+  private kickAt = -10;
+  /** Live analysis of the mix, updated by tick(). */
+  readonly bands: AudioBands = { bass: 0, mid: 0, high: 0, level: 0, kick: 0 };
   /** Last caption-worthy sound, consumed by AudioSystem. */
   pendingCaption = '';
 
@@ -93,8 +123,16 @@ class AudioEngine {
       wet.gain.value = 0.35;
       this.reverb.connect(wet).connect(this.master);
       this.noise = this.noiseBuffer(2);
+      this.analyser = c.createAnalyser();
+      this.analyser.fftSize = 512;
+      this.analyser.smoothingTimeConstant = 0.55;
+      this.freq = new Uint8Array(this.analyser.frequencyBinCount);
+      comp.connect(this.analyser);
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume().catch(() => undefined);
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume().catch(() => undefined);
+      for (const t of this.tracks.values()) if (t.on) void t.el.play().catch(() => undefined);
+    }
     return true;
   }
 
@@ -108,6 +146,7 @@ class AudioEngine {
 
   suspend(): void {
     if (this.ctx?.state === 'running') void this.ctx.suspend().catch(() => undefined);
+    for (const t of this.tracks.values()) t.el.pause();
   }
 
   setListener(p: Vec, fwd: Vec, up: Vec): void {
@@ -265,7 +304,9 @@ class AudioEngine {
     if (level > 0 && !this.musicOn) {
       this.musicOn = true;
       this.nextNote = c.currentTime + 0.2;
-      this.pad ??= this.drone([220, 277.2, 329.6], 0.04, 'triangle', this.music);
+      // The recorded dream score; the synthesized music box only if media playback is unavailable.
+      this.dreamTrack = this.startTrack(DREAM_TRACK, this.music, 0.8, 2, false);
+      if (!this.dreamTrack) this.pad ??= this.drone([220, 277.2, 329.6], 0.04, 'triangle', this.music);
     }
   }
 
@@ -290,6 +331,9 @@ class AudioEngine {
     }
     this.place(this.actPanner!, at);
     this.actBus.gain.setTargetAtTime(act ? 0.9 : 0, c.currentTime, act ? 0.6 : 0.8);
+    // Recorded songs for the party; a new song starts from its top.
+    if (this.trackAct && this.trackAct !== act) this.stopTrack(this.trackAct);
+    this.trackAct = TRACK_ACTS.has(act) && this.startTrack(act, this.actBus, 1, 0.3, true) ? act : '';
     if (act === 'surf') this.actLoop = this.loop('waves', at, 0.7);
     if (act === 'ski') this.actLoop = this.loop('wind', at, 0.45);
     if (act) {
@@ -309,6 +353,8 @@ class AudioEngine {
   beatPhase(fallbackTime: number, bpm: number): number {
     const c = this.ctx;
     if (!c || !this.act || c.state !== 'running') return ((fallbackTime * bpm) / 60) % 1;
+    // A recorded song: follow its real kicks (0 on a kick, rising to 1 by the next).
+    if (this.trackAct) return Math.min(1, (c.currentTime - this.kickAt) / 0.45);
     const beats = ((c.currentTime - this.actStart) * ACT_BPM[this.act]) / 60;
     return ((beats % 1) + 1) % 1;
   }
@@ -328,8 +374,9 @@ class AudioEngine {
   tick(): void {
     const c = this.ctx;
     if (!c || c.state !== 'running') return;
+    this.analyse(c);
     this.tickAct(c);
-    if (!this.musicOn) return;
+    if (!this.musicOn || this.dreamTrack) return;
     const beat = 60 / 76;
     while (this.nextNote < c.currentTime + 0.3) {
       const n = MELODY[this.noteIndex % MELODY.length];
@@ -341,8 +388,68 @@ class AudioEngine {
     }
   }
 
+  /** One streamed track (an <audio> element routed into the graph; low memory on a headset). */
+  private startTrack(name: string, bus: AudioNode, level: number, fade: number, fromTop: boolean): boolean {
+    const c = this.ctx;
+    if (!c || typeof Audio === 'undefined') return false;
+    let t = this.tracks.get(name);
+    if (!t) {
+      try {
+        const el = new Audio();
+        el.src = `${import.meta.env.BASE_URL}audio/music/${name}.mp3`;
+        el.loop = true;
+        el.preload = 'auto';
+        const gain = c.createGain();
+        gain.gain.value = 0;
+        c.createMediaElementSource(el).connect(gain).connect(bus);
+        t = { el, gain, on: false };
+        this.tracks.set(name, t);
+      } catch {
+        return false;
+      }
+    }
+    if (fromTop && !t.on) t.el.currentTime = 0;
+    t.on = true;
+    void t.el.play().catch(() => undefined);
+    t.gain.gain.setTargetAtTime(level, c.currentTime, fade);
+    return true;
+  }
+
+  private stopTrack(name: string): void {
+    const c = this.ctx;
+    const t = this.tracks.get(name);
+    if (!c || !t) return;
+    t.on = false;
+    t.gain.gain.setTargetAtTime(0, c.currentTime, 0.35);
+    setTimeout(() => {
+      if (!t.on) t.el.pause();
+    }, 2000);
+  }
+
+  /** Reads the mix's spectrum into `bands` and spots kicks (bass jumping above its running average). */
+  private analyse(c: AudioContext): void {
+    const a = this.analyser;
+    const f = this.freq;
+    if (!a || !f) return;
+    a.getByteFrequencyData(f);
+    let bass = 0;
+    let mid = 0;
+    let high = 0;
+    for (let i = 1; i <= 2; i++) bass += f[i];
+    for (let i = 3; i <= 20; i++) mid += f[i];
+    for (let i = 21; i <= 90; i++) high += f[i];
+    const b = this.bands;
+    b.bass = bass / (2 * 255);
+    b.mid = mid / (18 * 255);
+    b.high = high / (70 * 255);
+    b.level = (b.bass + b.mid + b.high) / 3;
+    if (b.bass > this.bassAvg * 1.07 && b.bass > 0.3 && c.currentTime - this.kickAt > 0.28) this.kickAt = c.currentTime;
+    this.bassAvg += (b.bass - this.bassAvg) * 0.12;
+    b.kick = Math.exp(-(c.currentTime - this.kickAt) * 7);
+  }
+
   private tickAct(c: AudioContext): void {
-    if (!this.act || !this.actBus) return;
+    if (!this.act || !this.actBus || this.trackAct) return;
     const sixteenth = 60 / ACT_BPM[this.act] / 4;
     const out = this.actBus;
     while (this.nextStep < c.currentTime + 0.25) {

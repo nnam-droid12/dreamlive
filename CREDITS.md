@@ -26,7 +26,12 @@ Every third-party asset, sound and library used in the shipped build is listed h
 
 | Sound | Source | License |
 |---|---|---|
-| All music and sound effects: synthesized live in the browser with the Web Audio API (`src/audio/engine.ts`), no audio files | Original | Project-owned |
+| Rooftop party song "Disco" (`public/audio/music/disco.mp3`) | "Discode" by Neil Fernandes, via [Free Music Archive](https://freemusicarchive.org/music/neil-fernandes/single/discodemp3/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Rooftop party song "Afrobeats" (`public/audio/music/afro.mp3`) | "Afrobeat" by Alex Morgan, via [Free Music Archive](https://freemusicarchive.org/music/alex-morgan/pop-afro-party-instrumentals/afrobeat-1/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Rooftop party song "House" (`public/audio/music/house.mp3`, first 128 s) | "Let's Bounce" by 1000 Handz, via [Free Music Archive](https://freemusicarchive.org/music/1000-handz/cc-by-free-to-use-dancehouse-instrumentals/lets-bounce/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Dream ambience (`public/audio/music/dream.mp3`, first 150 s) | "Bloom" by Purrple Cat, via [Free Music Archive](https://freemusicarchive.org/music/purrple-cat/bloom/bloom/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| All songs above: loudness-normalised, re-encoded and trimmed with ffmpeg; no other changes | — | — |
+| Sound effects, and the TV dream's surf / DJ / ski music: synthesized live in the browser with the Web Audio API (`src/audio/engine.ts`) | Original | Project-owned |
 
 ## Scaffold content
 

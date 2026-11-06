@@ -36,6 +36,12 @@ export const Session = createComponent('Session', {
   /** Bumped to fire a burst (confetti, fireworks); FX systems react to changes. */
   confettiShots: { type: Types.Int16, default: 0 },
   fireworkShots: { type: Types.Int16, default: 0 },
+  /** Live music analysis (AudioSystem, every frame): 0..1 bands and a kick pulse, for visuals. */
+  musicBass: { type: Types.Float32, default: 0 },
+  musicMid: { type: Types.Float32, default: 0 },
+  musicHigh: { type: Types.Float32, default: 0 },
+  musicLevel: { type: Types.Float32, default: 0 },
+  musicKick: { type: Types.Float32, default: 0 },
   /** Seconds left of the fade-in after the headset comes back or the pause ends. */
   fadeIn: { type: Types.Float32, default: 0 },
 });

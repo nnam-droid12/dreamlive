@@ -63,4 +63,6 @@ export type PaletteKey = keyof typeof Palette;
 export const PaletteSets = {
   fireworks: [0xff4d6d, 0xffd166, 0x6ee7ff, 0xb388ff, 0x7cff9e, 0xffffff],
   confetti: [0xff6fae, 0xffd27a, 0x8fd3ff, 0xa8ff9e, 0xffffff],
+  /** Party crowd outfits (one per dancer, cycling): warm, bright, golden-hour friendly. */
+  crowdOutfits: [0xe8b38a, 0x5f8fd6, 0xd65f7a, 0xf2d27a, 0x6fc9a8, 0xb98ae0, 0xf0f0ea, 0x3d3f52, 0xe07a4a],
 } as const;

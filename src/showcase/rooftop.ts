@@ -29,12 +29,14 @@ import {
   SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
+import { PaletteSets } from '../config/palette.js';
 import { personGeometry } from '../dream-tv/dj.js';
 import { facadeTexture } from '../dream-tv/ski.js';
 import { buildDjBooth } from '../scene-assets/dj-booth.scene-asset.js';
 import { buildDecoTower } from '../scene-assets/landmark-deco.scene-asset.js';
 import { buildGlassSupertall } from '../scene-assets/landmark-glass.scene-asset.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
+import { EqualizerUniforms, makeEqualizer } from '../visuals/equalizer.js';
 import { Rooftop } from './rooftop-layout.js';
 
 const B = Rooftop.building;
@@ -52,6 +54,8 @@ export interface RooftopWorld {
   platters: Object3D[];
   /** Tints the lasers, dance floor and light (the chosen song's palette). */
   setPalette(colors: readonly number[]): void;
+  /** The skyline as a music visualizer (towers as VU meters); its owner feeds the live bands. */
+  equalizer: EqualizerUniforms;
   /** Per frame: time, beat phase 0..1 (1 = on the kick), party energy 0..1. */
   update(t: number, beat: number, energy: number): void;
 }
@@ -76,6 +80,7 @@ export function buildRooftop(): RooftopWorld {
   const facade = facadeTexture();
   facade.repeat.set(4, 10);
   const facadeMat = new MeshStandardMaterial({ map: facade, emissiveMap: facade, emissive: new Color(0xffffff), emissiveIntensity: 0.55, roughness: 0.7, side: FrontSide });
+  const equalizer = makeEqualizer(facadeMat);
   const concrete = new MeshStandardMaterial({ color: 0x3a3740, roughness: 0.9 });
   const trim = new MeshStandardMaterial({ color: 0x2a2730, roughness: 0.6 });
   const m = new Matrix4();
@@ -184,13 +189,19 @@ export function buildRooftop(): RooftopWorld {
     lamps.setMatrixAt(i, m);
   }
   root.add(lamps);
-  const crowdMat = new MeshStandardMaterial({ color: 0x151020, roughness: 0.9, emissive: new Color(0x3a1450), emissiveIntensity: 0.7 });
+  // Lit by the scene (golden hour, then party lights), each dancer in their own outfit colour.
+  const crowdMat = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, emissive: new Color(0x2a1830), emissiveIntensity: 0.35 });
+  const outfit = new Color();
+  const dress = (mesh: InstancedMesh, offset: number) => {
+    for (let i = 0; i < mesh.count; i++) mesh.setColorAt(i, outfit.setHex(PaletteSets.crowdOutfits[(i + offset) % PaletteSets.crowdOutfits.length]));
+  };
   const streetCrowd = new InstancedMesh(personGeometry(true), crowdMat, STREET_CROWD);
   for (let i = 0; i < STREET_CROWD; i++) {
     const x = Rooftop.street.x0 + ((i * 0.618) % 1) * (Rooftop.street.x1 - Rooftop.street.x0);
     m.makeTranslation(x, H.baseY, -10 + ((i * 0.377) % 1) * 20);
     streetCrowd.setMatrixAt(i, m);
   }
+  dress(streetCrowd, 0);
   root.add(streetCrowd);
 
   // The party: a low stage at the near edge with the booth facing the crowd (+z).
@@ -220,7 +231,10 @@ export function buildRooftop(): RooftopWorld {
   }
   root.add(tiles);
   const crowd = [new InstancedMesh(personGeometry(false), crowdMat, CROWD / 2), new InstancedMesh(personGeometry(true), crowdMat, CROWD / 2)];
-  crowd.forEach((c) => root.add(c));
+  crowd.forEach((c, k) => {
+    dress(c, k * 4);
+    root.add(c);
+  });
   const spots = Array.from({ length: CROWD }, (_, i) => ({
     p: new Vector3(C.x0 + ((i * 0.618) % 1) * (C.x1 - C.x0), B.roofY, C.z0 + ((i * 0.377) % 1) * (C.z1 - C.z0)),
     s: 0.85 + ((i * 0.53) % 1) * 0.2,
@@ -287,6 +301,7 @@ export function buildRooftop(): RooftopWorld {
     root,
     behind,
     platters,
+    equalizer,
     setPalette(colors) {
       palette = colors;
       lasers.forEach((l, i) => (l.material as MeshBasicMaterial).color.setHex(colors[i % colors.length]));

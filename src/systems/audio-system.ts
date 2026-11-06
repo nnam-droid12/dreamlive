@@ -123,6 +123,14 @@ export class AudioSystem extends createSystem({
       Sound.setMusic(bed ? Tuning.bedtime.music : phase === RitualPhase.Awake ? 0.45 : 0.6);
     }
     Sound.tick();
+    if (d.hasComponent(Session)) {
+      const b = Sound.bands;
+      d.setValue(Session, 'musicBass', b.bass);
+      d.setValue(Session, 'musicMid', b.mid);
+      d.setValue(Session, 'musicHigh', b.high);
+      d.setValue(Session, 'musicLevel', b.level);
+      d.setValue(Session, 'musicKick', b.kick);
+    }
 
     // Story captions (teaching, closing) outrank sound captions: never interrupt them.
     const current = d.getValue(Caption, 'text') ?? '';
