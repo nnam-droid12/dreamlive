@@ -17,6 +17,8 @@ export const END_CREDITS: readonly CardLine[] = [
   { text: '"Let\'s Bounce" by 1000 Handz', size: 34, color: BODY },
   { text: '"Bloom" by Purrple Cat', size: 34, color: BODY },
   { text: 'CC BY 4.0, via Free Music Archive', size: 26, style: 'italic', color: BODY },
+  { text: 'Voice of Bigfoot', size: 34, style: 'italic', color: HEAD, gap: 80 },
+  { text: 'Kokoro text-to-speech (Apache 2.0)', size: 32, color: BODY, gap: 10 },
   { text: 'Built with', size: 34, style: 'italic', color: HEAD, gap: 80 },
   { text: 'Immersive Web SDK  ·  three.js  ·  WebXR', size: 32, color: BODY, gap: 10 },
   { text: 'Made by', size: 34, style: 'italic', color: HEAD, gap: 80 },

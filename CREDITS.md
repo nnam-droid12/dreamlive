@@ -31,6 +31,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Rooftop party song "House" (`public/audio/music/house.mp3`, first 128 s) | "Let's Bounce" by 1000 Handz, via [Free Music Archive](https://freemusicarchive.org/music/1000-handz/cc-by-free-to-use-dancehouse-instrumentals/lets-bounce/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Dream ambience (`public/audio/music/dream.mp3`, first 150 s) | "Bloom" by Purrple Cat, via [Free Music Archive](https://freemusicarchive.org/music/purrple-cat/bloom/bloom/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | All songs above: loudness-normalised, re-encoded and trimmed with ffmpeg; no other changes | — | — |
+| Bigfoot's voice (`public/audio/voice/*.mp3`, 9 lines from `src/dreams/narration.ts`) | Generated offline with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) 82M (int8 ONNX build via [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx)), voice `am_michael`; pitched down about 10% and warmed with ffmpeg | Model and voices: Apache 2.0; generated clips project-owned |
 | Sound effects, and the TV dream's surf / DJ / ski music: synthesized live in the browser with the Web Audio API (`src/audio/engine.ts`) | Original | Project-owned |
 
 ## Scaffold content

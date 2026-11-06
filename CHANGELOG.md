@@ -14,7 +14,7 @@ All notable changes to Dreamlive, newest first.
   - Eleven short lines, one at the start of each beat: asking you to draw his window, the leap, "Cousin Yeti, hit the music!", "You pick the song", "Catch some for yourself!", "Thank you for dreaming with me", and "listen to the rain" at bedtime.
   - Each line plays from his head (spatial audio). The music, including the party song, ducks under it.
   - Each line shows as a subtitle ("Bigfoot: …"). The subtitles double as the hands-first instructions, replacing the old draw-window caption.
-  - Voice clips load from `public/audio/voice/<id>.mp3`. **Until the voice files are generated, the subtitles carry the lines.**
+  - **Bigfoot's voice:** nine clips generated offline with Kokoro text-to-speech (Apache 2.0, voice `am_michael`). Each was pitched down about 10%, given chest warmth and a touch of room, and loudness-normalised (275 KB in total, `public/audio/voice/`). The voice is credited in CREDITS.md and in the end credits.
 - Emulator checks (systems paused for the captures, because the laptop runs at about 3 fps): the title card over the room; "The Leap" chapter card; the credits roll; Bigfoot's subtitle text on the beat.
 
 ## 2026-11-06 — Real music and a music visualizer
