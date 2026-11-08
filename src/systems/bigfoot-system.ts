@@ -10,6 +10,7 @@ import {
   SRGBColorSpace,
   Vector3,
   VisibilityState,
+  Object3D,
 } from '@iwsdk/core';
 import { LoopHandle, Sound } from '../audio/engine.js';
 import { BIGFOOT_HEIGHT, BigfootRig, createBigfoot } from '../characters/bigfoot.js';
@@ -19,6 +20,7 @@ import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
+import { buildPopcorn } from '../scene-assets/popcorn.scene-asset.js';
 import { Session } from '../components/session.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
@@ -61,6 +63,8 @@ export class BigfootSystem extends createSystem({
   private lying = new Quaternion();
   private standing = new Quaternion();
   private tmp = new Vector3();
+  private lookTarget = new Vector3();
+  private popcorn?: Object3D;
   private tmp2 = new Vector3();
   private head = new Vector3();
   private m = new Matrix4();
@@ -105,6 +109,8 @@ export class BigfootSystem extends createSystem({
       else if (this.beat.scene === 'draw-window') this.lieDown();
       else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
+    } else if (d.getValue(Session, 'movie') && phase !== RitualPhase.Asleep) {
+      this.movieNight(d);
     } else if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) {
       // Bedtime: he is back in bed, asleep and snoring (the switch happens under a fade).
       if (phase === RitualPhase.Awake && d.getValue(Session, 'bedtime')) this.lieDown();
@@ -252,6 +258,58 @@ export class BigfootSystem extends createSystem({
       const posing = (this.entity?.getValue(Bigfoot, 'pose') ?? 0) > 0;
       this.rig!.play(posing ? 'cheer' : t < 7 ? 'wave' : 'idle');
     }
+  }
+
+  /**
+   * Movie Night: he watches beside the viewer with his popcorn, cheers at the fun
+   * bits, and near the end stretches and turns in (back to bed, snoring).
+   */
+  private movieNight(d: Entity): void {
+    const r = this.rig!.root;
+    const t = d.getValue(Session, 'movieTime') ?? 0;
+    const screen = this.tmp2.fromArray(d.getVectorView(Session, 'movieScreen'));
+    this.showPopcorn(true);
+    if (t > 0 && this.movieEnding(t)) {
+      this.showPopcorn(false);
+      this.lieDown();
+      return;
+    }
+    this.player.head.getWorldPosition(this.head);
+    // Beside the viewer, a little ahead, turned toward the screen.
+    this.tmp.subVectors(screen, this.head).setY(0).normalize();
+    const side = this.tmp2.set(this.tmp.z, 0, -this.tmp.x);
+    r.position.copy(this.head).addScaledVector(side, Tuning.movie.beside).addScaledVector(this.tmp, Tuning.movie.ahead);
+    r.position.y = 0;
+    this.lookTarget.fromArray(d.getVectorView(Session, 'movieScreen'));
+    r.quaternion.copy(this.face(r.position, this.lookTarget));
+    this.setState(BigfootState.Awake);
+    this.rig!.play((d.getValue(Session, 'movieLaugh') ?? 0) > 0 ? 'cheer' : 'idle');
+  }
+
+  /** The last stretch of the film: Bigfoot has had enough and goes to bed. */
+  private movieEnding(t: number): boolean {
+    const v = document.querySelector('video');
+    const dur = v && Number.isFinite(v.duration) ? v.duration : 150;
+    return t > dur - Tuning.movie.yawnBeforeEnd + 4;
+  }
+
+  /** The popcorn bucket in his right hand (made once, on his hand bone). */
+  private showPopcorn(on: boolean): void {
+    if (!this.popcorn && on) {
+      let hand: Object3D | undefined;
+      this.rig!.root.traverse((o) => {
+        if (!hand && /RightHand$/.test(o.name)) hand = o;
+      });
+      if (!hand) return;
+      this.popcorn = buildPopcorn();
+      hand.updateWorldMatrix(true, false);
+      const s = new Vector3();
+      hand.getWorldScale(s);
+      this.popcorn.scale.setScalar(1.6 / Math.max(1e-4, s.x));
+      this.popcorn.position.set(0, 0.08 / Math.max(1e-4, s.x), 0.05 / Math.max(1e-4, s.x));
+      hand.add(this.popcorn);
+    }
+    if (this.popcorn) this.popcorn.visible = on;
   }
 
   private updateZzz(sleeping: boolean, delta: number): void {

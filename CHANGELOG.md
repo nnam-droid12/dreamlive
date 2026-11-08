@@ -2,6 +2,15 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-08 — Scene A: Movie Night with Bigfoot (spatial cinema you actually use)
+
+- **Movie night** (palm menu): the house lights go down and a 3 m screen appears in front of you, fixed in the room. It plays "Big Buck Bunny" (Blender Foundation, CC BY 3.0; a 2.5-minute excerpt, 14 MB), or a video you picked on the start page ("Pick a movie for Movie Night"; the file stays on your device).
+- **The film lights the room.** The picture's average colour is sampled five times a second and drives a light in front of the screen, with a matching glow around it, so walls, furniture and Bigfoot glow with the scenes. The film's sound comes from the screen; the music steps back.
+- **Hands:** pinch the screen to pause or play.
+- **Bigfoot watches beside you** with a striped popcorn bucket in his hand (a new procedural model). He cheers at the fun bits and says three new lines in his voice ("Movie night! I brought popcorn…", "Ha! I love this part!", "Yawn… best movie night ever"). Near the end he turns in for bed, snoring.
+- Automatic bedtime waits until the movie is over.
+- Emulator check: the screen plays the film with picture and sound timing; Bigfoot stands beside the viewer watching.
+
 ## 2026-11-08 — Checked on the Meta VR Glasses emulator profile
 
 - Ran Dreamlive in the Immersive Web Emulator with the **Meta VR Glasses** device profile (`metaVRGlasses`; narrower, square view; hands). The party, guests, lasers, sky and captions all render inside the view.

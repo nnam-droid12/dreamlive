@@ -43,6 +43,10 @@ export const Palette = {
   motesEndingB: 0xffe2a8,
   motesBedtimeA: 0x9fd6ff,
   motesBedtimeB: 0xd8f0ff,
+  /** Popcorn bucket: stripes and kernels. */
+  popcornRed: 0xd8262f,
+  popcornWhite: 0xfbf6ea,
+  popcornButter: 0xf2cf6b,
   /** White doves: feathers, the grey tail fan, the beak. */
   doveWhite: 0xf7f7f2,
   doveGrey: 0xd9dcdf,

@@ -75,6 +75,8 @@ export const RoomSlots = createComponent('RoomSlots', {
   dawn: { type: Types.Float32, default: 0 },
   /** Golden sunset amount (0 = night, 1 = golden hour); RoomTransformSystem drives it. */
   dusk: { type: Types.Float32, default: 1 },
+  /** Movie Night: how far the room's lights are down (0..1). */
+  movieDim: { type: Types.Float32, default: 0 },
   /** The window drawn for Bigfoot opening in the wall (0..1). */
   holeOpen: { type: Types.Float32, default: 0 },
   anchorPoint: { type: Types.Vec3, default: [0, 0, 0] },

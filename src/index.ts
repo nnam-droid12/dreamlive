@@ -36,6 +36,8 @@ import { FilmSystem } from './systems/film-system.js';
 import { CinemaSystem } from './systems/cinema-system.js';
 import { MusicVisualizerSystem } from './systems/music-visualizer-system.js';
 import { PhotoSystem } from './systems/photo-system.js';
+import { MovieNightSystem } from './systems/movie-night-system.js';
+import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -86,6 +88,7 @@ World.create(
     .registerSystem(CinemaSystem)
     .registerSystem(MusicVisualizerSystem)
     .registerSystem(PhotoSystem)
+    .registerSystem(MovieNightSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
     .registerSystem(DreamTvSystem)
@@ -101,6 +104,7 @@ World.create(
   // Dev-only demo recording (`?director`): scripted camera, cards, WebM capture.
   if (Director.enabled) world.registerSystem(DirectorSystem);
   if (Director.offline) offlineRender(world);
+  if (!Director.enabled) mountMoviePicker();
 });
 
 /**

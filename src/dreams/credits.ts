@@ -20,6 +20,8 @@ export const END_CREDITS: readonly CardLine[] = [
   { text: '"Open Skies" and two piano and jazz pieces by Alex Morgan', size: 30, color: BODY },
   { text: '"Happy Pop Instrumental" by Music for Creators', size: 34, color: BODY },
   { text: 'CC BY 4.0, via Free Music Archive', size: 26, style: 'italic', color: BODY },
+  { text: 'Movie Night', size: 34, style: 'italic', color: HEAD, gap: 80 },
+  { text: '"Big Buck Bunny" (c) Blender Foundation, CC BY 3.0', size: 30, color: BODY, gap: 10 },
   { text: 'Voice of Bigfoot', size: 34, style: 'italic', color: HEAD, gap: 80 },
   { text: 'Kokoro text-to-speech (Apache 2.0)', size: 32, color: BODY, gap: 10 },
   { text: 'Built with', size: 34, style: 'italic', color: HEAD, gap: 80 },

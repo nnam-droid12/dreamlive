@@ -32,7 +32,8 @@ export class BedtimeSystem extends createSystem({
       if (d.getValue(Session, 'bedtime')) d.setValue(Session, 'bedtime', false);
     }
     const awake = phase === RitualPhase.Awake;
-    if (awake && !this.autoDone && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.autoAfterSec) {
+    // Not during Movie Night: bedtime can wait for the credits.
+    if (awake && !this.autoDone && !d.getValue(Session, 'movie') && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.autoAfterSec) {
       this.autoDone = true;
       d.setValue(Session, 'bedtime', true);
     }

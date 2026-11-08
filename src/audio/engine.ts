@@ -88,6 +88,7 @@ class AudioEngine {
   private step = 0;
   private hum?: { stop(): void; gain: GainNode };
   private tracks = new Map<string, Track>();
+  private videos = new Map<HTMLVideoElement, { panner: PannerNode; gain: GainNode }>();
   /** Decoded voice lines (short clips), by file name; null = missing. */
   private voices = new Map<string, AudioBuffer | null>();
   private voiceLoading = new Set<string>();
@@ -428,6 +429,26 @@ class AudioEngine {
     if (this.score && this.score !== name) this.stopTrack(this.score);
     this.score = name;
     if (name && this.ctx && this.musicOn) this.startTrack(name, this.music, 0.8, 1.6, true);
+  }
+
+  /**
+   * A video's soundtrack, played from a point in the room (the movie screen).
+   * The element can only be wired once; later calls just move the sound.
+   */
+  attachVideo(el: HTMLVideoElement, at: Vec, gain = 1): void {
+    const c = this.ctx;
+    if (!c) return;
+    let w = this.videos.get(el);
+    if (!w) {
+      const panner = this.panner(at);
+      const g = c.createGain();
+      g.gain.value = gain;
+      c.createMediaElementSource(el).connect(g).connect(panner).connect(this.sfx);
+      w = { panner, gain: g };
+      this.videos.set(el, w);
+    }
+    this.place(w.panner, at);
+    w.gain.gain.setTargetAtTime(gain, c.currentTime, 0.4);
   }
 
   /** One streamed track (an <audio> element routed into the graph; low memory on a headset). */

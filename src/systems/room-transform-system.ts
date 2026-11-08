@@ -145,8 +145,10 @@ export class RoomTransformSystem extends createSystem({
     this.sunDir.multiplyScalar(Math.cos(el)).setY(Math.sin(el));
     this.sun.target.position.set(o[0], o[1], o[2]);
     this.sun.position.set(o[0] + this.sunDir.x * 40, o[1] + this.sunDir.y * 40 + 4, o[2] + this.sunDir.z * 40);
-    this.sun.intensity = cfg.sunIntensity * this.dusk + cfg.dawnLight * cfg.sunIntensity * this.dawn;
-    this.fill.intensity = cfg.fillIntensity * Math.max(this.dusk, this.dawn * cfg.dawnLight);
+    // Movie Night turns the house lights down.
+    const lights = 1 - 0.85 * (d.getValue(RoomSlots, 'movieDim') ?? 0);
+    this.sun.intensity = (cfg.sunIntensity * this.dusk + cfg.dawnLight * cfg.sunIntensity * this.dawn) * lights;
+    this.fill.intensity = cfg.fillIntensity * Math.max(this.dusk, this.dawn * cfg.dawnLight) * lights;
   }
 
   /** The showcase room's veil and ceiling, and the window bay's rectangle on the veil. */

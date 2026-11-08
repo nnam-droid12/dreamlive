@@ -66,7 +66,7 @@ export class ShowcaseSystem extends createSystem({
   private goldenIbl(d: Entity): void {
     const t = Tuning.transform;
     const k = Math.max(d.getValue(RoomSlots, 'dusk') ?? 0, d.getValue(RoomSlots, 'dawn') ?? 0);
-    const ibl = t.iblNight + (t.iblGolden - t.iblNight) * k;
+    const ibl = (t.iblNight + (t.iblGolden - t.iblNight) * k) * (1 - 0.7 * (d.getValue(RoomSlots, 'movieDim') ?? 0));
     if (Math.abs(ibl - this.ibl) < 0.03) return;
     this.ibl = ibl;
     for (const root of this.queries.roots.entities) {

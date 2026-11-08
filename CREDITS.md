@@ -43,6 +43,8 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Bedtime lullaby (`public/audio/music/lullaby.mp3`, first 120 s) | "Jazz Ballad Rainy Night Dark Major Set" by Alex Morgan, via [Free Music Archive](https://freemusicarchive.org/music/alex-morgan/jazz-blues-funk-vol-2/jazz-ballad-rainy-night-dark-major-set/) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | All songs above: loudness-normalised, re-encoded and trimmed with ffmpeg; no other changes | — | — |
 | Bigfoot's voice (`public/audio/voice/*.mp3`, 9 lines from `src/dreams/narration.ts`) | Generated offline with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) 82M (int8 ONNX build via [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx)), voice `am_michael`; pitched down about 10% and warmed with ffmpeg | Model and voices: Apache 2.0; generated clips project-owned |
+| Movie Night film (`public/video/big-buck-bunny.mp4`, a 2.5-minute excerpt re-encoded at 720p) | "Big Buck Bunny" © 2008 Blender Foundation, [peach.blender.org](https://peach.blender.org) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| Movie Night voice lines (`public/audio/voice/movie-*.mp3`) | Generated with Kokoro (see above) | Project-owned |
 | Sound effects, and the TV dream's surf / DJ / ski music: synthesized live in the browser with the Web Audio API (`src/audio/engine.ts`) | Original | Project-owned |
 
 ## Scaffold content

@@ -51,6 +51,9 @@
     <Button id="fx-fireworks" class="b"><ButtonLabel>Fireworks</ButtonLabel></Button>
     <Button id="fx-photo" class="b"><ButtonLabel>Photo</ButtonLabel></Button>
   </div>
+  <div class="row">
+    <Button id="fx-movie" class="b"><ButtonLabel>Movie night</ButtonLabel></Button>
+  </div>
   <div class="label">Weather</div>
   <div class="row">
     <Button id="wx-clear" class="b"><ButtonLabel>Clear</ButtonLabel></Button>

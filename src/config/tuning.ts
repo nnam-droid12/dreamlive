@@ -227,6 +227,24 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  movie: {
+    /** The screen: width (m, 16:9), distance in front of the viewer, height of its centre. */
+    width: 3,
+    distance: 3.4,
+    height: 1.7,
+    /** The film's light on the room: strength, reach, how far in front of the screen it sits. */
+    lightIntensity: 6,
+    lightRange: 9,
+    lightAhead: 1.2,
+    volume: 1,
+    /** Bigfoot cheers at these film times (s); he yawns and turns in this long before the end. */
+    laughs: [24, 58, 97, 128],
+    yawnBeforeEnd: 14,
+    /** Where Bigfoot watches from: beside the viewer (m to the left, m forward). */
+    beside: 1.3,
+    ahead: 0.4,
+  },
+
   photo: {
     /** The finger frame: each hand's thumb-index gap, how far ahead of the eyes, the rectangle's limits (m). */
     openMin: 0.05,
