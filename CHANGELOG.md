@@ -2,6 +2,12 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-08 — Checked on the Meta VR Glasses emulator profile
+
+- Ran Dreamlive in the Immersive Web Emulator with the **Meta VR Glasses** device profile (`metaVRGlasses`; narrower, square view; hands). The party, guests, lasers, sky and captions all render inside the view.
+- The LIVE cinema screen sat at the left edge of the Glasses view, so it moved from about 30° to about 20° from straight ahead (a little further away). It is now inside the view on Glasses and still clear of the action on Quest.
+- IWSDK 1.0.1 has the Glasses emulator profile but not yet the newer `fieldOfViewMask` feature, so that mask is not enabled here.
+
 ## 2026-11-08 — Scene C: snap a photo with Bigfoot
 
 - **Make a director's frame with both hands** (two L shapes, one upright and one upside down) and hold it:

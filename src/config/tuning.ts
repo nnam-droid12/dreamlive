@@ -273,10 +273,11 @@ export const Tuning = {
 
   cinema: {
     /** The floating screen: width (m), and where it floats in rig space (front-left of the viewer). */
-    width: 1.7,
-    x: -1.35,
-    y: 1.75,
-    z: -2.3,
+    // About 20 degrees left of straight ahead: fully inside Meta VR Glasses' narrower view too.
+    width: 1.6,
+    x: -0.95,
+    y: 1.78,
+    z: -2.6,
     /** The live picture: texture size, refresh every N frames, field of view, seconds per shot. */
     texWidth: 640,
     texHeight: 360,
