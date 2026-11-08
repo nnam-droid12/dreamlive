@@ -71,6 +71,8 @@ export class RooftopPartySystem extends createSystem({
   private windowVersion = 0;
   private facades?: FacadeSet;
   private guests?: PartyGuests;
+  private hiddenBehind = false;
+  private behindWas = true;
   private pane?: Object3D;
   private paneHome = new Vector3();
   private standIn?: Object3D;
@@ -116,6 +118,16 @@ export class RooftopPartySystem extends createSystem({
     if (song !== this.song) {
       this.song = song;
       this.party!.setPalette(SONG_PALETTE[song] ?? SONG_PALETTE.afro);
+    }
+    // Another dream world is showing: New York steps aside.
+    const elsewhere = !!(d.getValue(Session, 'world') ?? '');
+    this.party!.root.visible = !elsewhere;
+    if (this.dj) this.dj.root.visible = !elsewhere;
+    if (elsewhere !== this.hiddenBehind) {
+      // Restore the towers behind the room as they were before the other world.
+      if (elsewhere) this.behindWas = this.party!.behind.visible;
+      this.party!.behind.visible = elsewhere ? false : this.behindWas;
+      this.hiddenBehind = elsewhere;
     }
     this.party!.update(this.time, 1 - Sound.beatPhase(this.time, 120), this.energy);
     this.visualize(live || !!dj, realDelta);

@@ -8,6 +8,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 |---|---|---|
 | [Immersive Web SDK](https://github.com/facebook/immersive-web-sdk) (`@iwsdk/core` 1.0.1) | MIT | Framework, ECS, XR session, input |
 | [three.js](https://threejs.org) (`super-three` 0.181) | MIT | Rendering |
+| [webgl-noise](https://github.com/ashima/webgl-noise) 2D simplex noise (Ashima Arts, Stefan Gustavson), in the cloud-sea shader | MIT | Procedural clouds |
 | [@pmndrs/uikit](https://github.com/pmndrs/uikit) | MIT | Spatial UI |
 
 ## Art
@@ -26,6 +27,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Party guests' moves (`public/models/people/moves.glb`): Dance_Loop, Jump_Loop, Spell_Simple_Idle_Loop, Idle_Talking_Loop from the Universal Animation Library by Quaternius; trimmed and resampled | [Quaternius](https://quaternius.com/packs/universalanimationlibrary.html) | CC0 |
 | Building materials (`public/textures/building/`): Concrete034 (colour, normal, roughness), Metal009 (colour, roughness); resized to 512 px WebP | [ambientCG](https://ambientcg.com) | CC0 |
 | Modern skyscrapers (glass curtain walls, concrete slabs, mullion fins, lobbies, setbacks, crowns) | Original, built in code (`src/scene-assets/lib/modern-tower.ts`) | Project-owned |
+| Hot-air balloons, the sea of clouds, cloud puffs and star glints (Above the Clouds) | Original, built in code (`src/scene-assets/balloon.scene-asset.ts`, `src/visuals/cloud-sea.ts`, `src/visuals/soft-sprites.ts`) | Project-owned |
 | Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio

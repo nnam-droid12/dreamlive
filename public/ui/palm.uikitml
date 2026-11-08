@@ -54,6 +54,15 @@
   <div class="row">
     <Button id="fx-movie" class="b"><ButtonLabel>Movie night</ButtonLabel></Button>
   </div>
+  <div class="label">Worlds</div>
+  <div class="row">
+    <Button id="w-city" class="b"><ButtonLabel>City</ButtonLabel></Button>
+    <Button id="w-clouds" class="b"><ButtonLabel>Clouds</ButtonLabel></Button>
+  </div>
+  <div class="row">
+    <Button id="w-winter" class="b"><ButtonLabel>Winter</ButtonLabel></Button>
+    <Button id="w-sea" class="b"><ButtonLabel>Sea</ButtonLabel></Button>
+  </div>
   <div class="label">Weather</div>
   <div class="row">
     <Button id="wx-clear" class="b"><ButtonLabel>Clear</ButtonLabel></Button>

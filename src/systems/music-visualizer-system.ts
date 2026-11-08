@@ -70,6 +70,7 @@ export class MusicVisualizerSystem extends createSystem({
   private styleFor(d: import('@iwsdk/core').Entity): MoteStyle | undefined {
     const phase = d.getValue(Ritual, 'phase');
     if (phase === RitualPhase.Idle) return undefined;
+    if (d.getValue(Session, 'world')) return undefined; // each dream world brings its own air (wisps, snow, rain)
     if (d.getValue(Session, 'bedtime')) return cfg.styles.bedtime;
     if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) return cfg.styles.ending;
     if (phase !== RitualPhase.Asleep) return cfg.styles.bedroom;

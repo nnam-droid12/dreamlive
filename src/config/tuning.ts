@@ -245,6 +245,40 @@ export const Tuning = {
     ahead: 0.4,
   },
 
+  clouds: {
+    /** The cloud sea: its height below the floor (m) and size. */
+    seaY: -9,
+    seaRadius: 600,
+    /** Distant cumulus towers (billboards) and their distance band (m). */
+    puffs: 34,
+    puffNear: 45,
+    puffFar: 220,
+    /** Little clouds drifting through the room that a wave of the hand scatters. */
+    roomPuffs: 7,
+    roomPuffSize: 0.75,
+    /** A hand this close (m) and this fast (m/s) scatters a little cloud; it re-forms after this long (s). */
+    waveReach: 0.45,
+    waveSpeed: 0.35,
+    reformSec: 7,
+    /** Bigfoot's balloon: how far beyond the window (m), how far it drifts to each side, basket floor height, seconds per swing, size. */
+    balloonOut: 8,
+    balloonSwing: 2.2,
+    balloonY: -0.6,
+    balloonLap: 60,
+    balloonScale: 1.0,
+    /** Bigfoot (1.6 m) stands on a step in the basket so he shows from the chest up. */
+    basketStep: 0.38,
+    /** Other balloons far away. */
+    farBalloons: 6,
+    /** Falling stars you can catch: how many at once, fall speed (m/s), touch reach (m), pause between (s). */
+    stars: 2,
+    starFall: 0.13,
+    starReach: 0.2,
+    starGap: 3.5,
+    /** Shooting stars streaking high over the clouds (every so many s). */
+    streakEvery: 5,
+  },
+
   photo: {
     /** The finger frame: each hand's thumb-index gap, how far ahead of the eyes, the rectangle's limits (m). */
     openMin: 0.05,

@@ -43,6 +43,20 @@ export const Palette = {
   motesEndingB: 0xffe2a8,
   motesBedtimeA: 0x9fd6ff,
   motesBedtimeB: 0xd8f0ff,
+  /** Above the Clouds: sunlit cloud tops, violet valley shadows, the morning haze, puff tint, star glow. */
+  cloudLit: 0xfff1df,
+  cloudShade: 0xb3a7c4,
+  cloudHaze: 0xf7c9a8,
+  cloudPuff: 0xfff4ea,
+  starGlow: 0xffe6a8,
+  /** Hot-air balloon: three gore colours, trim, wicker, leather rim, burner flame. */
+  balloonA: 0xe8463a,
+  balloonB: 0xf6c344,
+  balloonC: 0x2f6fb5,
+  balloonTrim: 0x3a2f2a,
+  balloonWicker: 0xa47a48,
+  balloonLeather: 0x5b3a22,
+  balloonFlame: 0xffa040,
   /** Popcorn bucket: stripes and kernels. */
   popcornRed: 0xd8262f,
   popcornWhite: 0xfbf6ea,

@@ -15,7 +15,10 @@ const SOUND_CAPTION_SEC = 3.5;
 const ROOFTOP_MUSIC = new Set(['arrive', 'party-wait']);
 
 /** Each scene's music: the opening, the bedroom, the leaps, gifts at night, the ending, bedtime. */
-function scoreFor(phase: string, scene: string, roof: boolean, bedtime: boolean): string {
+function scoreFor(phase: string, scene: string, roof: boolean, bedtime: boolean, world = ''): string {
+  if (world === 'clouds') return 'bedroom';
+  if (world === 'winter') return 'ending';
+  if (world === 'sea') return 'leap';
   if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) return bedtime ? 'lullaby' : 'ending';
   if (phase !== RitualPhase.Asleep || !roof) return 'dream';
   if (scene === 'draw-window' || scene === 'to-window') return 'bedroom';
@@ -136,7 +139,7 @@ export class AudioSystem extends createSystem({
     }
     const roofNight = d.getValue(DreamDirector, 'chapterId') === 'rooftop-party';
     const sceneNow = phase === RitualPhase.Asleep && readBeat(d, this.beat) ? this.beat.scene : '';
-    Sound.setScore(scoreFor(phase ?? '', sceneNow, roofNight, bed));
+    Sound.setScore(d.getValue(Session, 'movie') ? '' : scoreFor(phase ?? '', sceneNow, roofNight, bed, d.getValue(Session, 'world') ?? ''));
     Sound.tick();
     if (d.hasComponent(Session)) {
       const b = Sound.bands;

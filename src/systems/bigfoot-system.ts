@@ -13,7 +13,7 @@ import {
   Object3D,
 } from '@iwsdk/core';
 import { LoopHandle, Sound } from '../audio/engine.js';
-import { BIGFOOT_HEIGHT, BigfootRig, createBigfoot } from '../characters/bigfoot.js';
+import { BIGFOOT_HEIGHT, BigfootAnim, BigfootRig, createBigfoot } from '../characters/bigfoot.js';
 import { Bigfoot, BigfootState } from '../components/bigfoot.js';
 import { DevControls, GazeTarget } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
@@ -109,6 +109,8 @@ export class BigfootSystem extends createSystem({
       else if (this.beat.scene === 'draw-window') this.lieDown();
       else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
+    } else if (phase !== RitualPhase.Asleep && d.getValue(Session, 'world') && d.getValue(Session, 'worldAnim')) {
+      this.inWorld(d);
     } else if (d.getValue(Session, 'movie') && phase !== RitualPhase.Asleep) {
       this.movieNight(d);
     } else if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) {
@@ -284,6 +286,16 @@ export class BigfootSystem extends createSystem({
     r.quaternion.copy(this.face(r.position, this.lookTarget));
     this.setState(BigfootState.Awake);
     this.rig!.play((d.getValue(Session, 'movieLaugh') ?? 0) > 0 ? 'cheer' : 'idle');
+  }
+
+  /** A dream world (clouds, winter, sea) puts him somewhere in it and picks his move. */
+  private inWorld(d: Entity): void {
+    const r = this.rig!.root;
+    this.showPopcorn(false);
+    r.position.fromArray(d.getVectorView(Session, 'worldSpot'));
+    r.quaternion.setFromAxisAngle(UP, d.getValue(Session, 'worldYaw') ?? 0);
+    this.setState(BigfootState.Awake);
+    this.rig!.play((d.getValue(Session, 'worldAnim') ?? 'idle') as BigfootAnim);
   }
 
   /** The last stretch of the film: Bigfoot has had enough and goes to bed. */

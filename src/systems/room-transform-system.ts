@@ -44,6 +44,7 @@ export class RoomTransformSystem extends createSystem({
   private dusk = 1;
   private sun!: DirectionalLight;
   private fill!: HemisphereLight;
+  private skyline?: import('@iwsdk/core').Object3D;
   private sunDir = new Vector3(0.8, 0.1, -0.6).normalize();
   private a = new Vector3();
   private b = new Vector3();
@@ -80,7 +81,11 @@ export class RoomTransformSystem extends createSystem({
     const dreaming = phase === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = dreaming ? this.beat.scene : '';
     const after = roof && (phase === RitualPhase.Waking || phase === RitualPhase.Awake);
-    const open = after || (roof && (OPEN_SCENES.has(scene) || scene.startsWith('party-')));
+    // Any dream world outside (clouds, winter, sea) opens the room to it as well.
+    const world = d.hasComponent(Session) ? (d.getValue(Session, 'world') ?? '') : '';
+    // The skyline photo outside the showcase glass belongs to New York, not to the other worlds.
+    if (this.skyline) this.skyline.visible = !world;
+    const open = !!world || after || (roof && (OPEN_SCENES.has(scene) || scene.startsWith('party-')));
 
     // The drawn window (DrawWindowSystem sets holeOpen); with no drawing it opens as he gets up.
     const drawn = d.getValue(RoomSlots, 'holeOpen') ?? 0;
@@ -90,7 +95,9 @@ export class RoomTransformSystem extends createSystem({
     const ceilingTarget = open && this.wall > cfg.ceilingAfter ? 1 : 0;
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
     // Time of day: the story's, unless the palm menu chose one.
-    const sky = d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '';
+    // A dream world sets its own sky: sunrise above the clouds, night for winter and the storm.
+    const worldSky = world === 'clouds' ? 'dawn' : world === 'winter' || world === 'sea' ? 'night' : '';
+    const sky = worldSky || (d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '');
     const storyDawn = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
     const dawnTarget = sky === 'dawn' ? 1 : sky ? 0 : storyDawn;
     const storyDusk = !roof ? 1 : after || NIGHT_SCENES.has(scene) ? 0 : scene.startsWith('party-') && scene !== 'party-wait' ? cfg.duskLateParty : 1;
@@ -154,6 +161,7 @@ export class RoomTransformSystem extends createSystem({
   /** The showcase room's veil and ceiling, and the window bay's rectangle on the veil. */
   private find(d: import('@iwsdk/core').Entity): void {
     this.veil = this.scene.getObjectByName('DreamVeil') ?? undefined;
+    this.skyline = this.scene.getObjectByName('Skyline') ?? undefined;
     const ceiling = this.scene.getObjectByName('DreamCeiling') ?? undefined;
     if (!this.veil || !ceiling || !d.getValue(RoomSlots, 'windowReady')) return;
     this.found = true;

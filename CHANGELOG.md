@@ -2,6 +2,21 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-09 — Scene B: Above the Clouds (first of three dream worlds)
+
+- **Dream worlds** on the palm menu: a new Worlds row (City, Clouds, Winter, Sea). Choosing one opens the room to it: the walls and ceiling dissolve, and New York steps aside (party towers, Yeti DJ, traffic, skyline photo). Each world sets its own sky, weather and music.
+- **Above the Clouds:** the room floats over a sea of clouds at sunrise.
+  - The cloud floor is one shader: smooth simplex-noise billows with fine detail, lit gold from the low sun, violet in the valleys, fading into the morning haze.
+  - Towering cumulus stand far off.
+  - Hot-air balloons drift on the wind.
+  - **Bigfoot rides his own balloon** (a new procedural model: a 24-gore envelope, wicker basket, ropes and a burner that flares). He drifts to and fro beyond the window and waves when you look at him.
+- **Hands:**
+  - Little clouds float through the room; wave a hand through one and it scatters into wisps, then re-forms elsewhere.
+  - Stars fall slowly within reach; touch one to catch it, with a chime and a burst of light, and Bigfoot cheers.
+  - Shooting stars streak overhead.
+- Three new voice lines: "Good morning, up here!…", "You caught a star! Make a wish." and "Three stars! That is a dreamer record."
+- Emulator check: the cloud sea, the balloons, Bigfoot in his basket and the little clouds in the room all render; the console shows no new errors.
+
 ## 2026-11-08 — Scene A: Movie Night with Bigfoot (spatial cinema you actually use)
 
 - **Movie night** (palm menu): the house lights go down and a 3 m screen appears in front of you, fixed in the room. It plays "Big Buck Bunny" (Blender Foundation, CC BY 3.0; a 2.5-minute excerpt, 14 MB), or a video you picked on the start page ("Pick a movie for Movie Night"; the file stays on your device).
