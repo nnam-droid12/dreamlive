@@ -229,7 +229,9 @@ export const Tuning = {
 
   photo: {
     /** The finger frame: each hand's thumb-index gap, how far ahead of the eyes, the rectangle's limits (m). */
-    openMin: 0.045,
+    openMin: 0.05,
+    /** Each L's index tip must sit at least this far above (one hand) or below (the other) its thumb tip. */
+    minLift: 0.03,
     minReach: 0.18,
     minWidth: 0.12,
     maxWidth: 0.75,

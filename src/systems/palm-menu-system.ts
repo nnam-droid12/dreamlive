@@ -102,6 +102,7 @@ export class PalmMenuSystem extends createSystem({
     this.on('fx-confetti', () => {
       d.setValue(Session, 'confettiShots', (d.getValue(Session, 'confettiShots') ?? 0) + 1);
     });
+    this.on('fx-photo', () => d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1));
     this.on('fx-fireworks', () => {
       d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
       say('Fireworks over New York!');

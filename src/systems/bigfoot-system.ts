@@ -111,6 +111,8 @@ export class BigfootSystem extends createSystem({
       else this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
     }
 
+    const pose = this.entity.getValue(Bigfoot, 'pose') ?? 0;
+    if (pose > 0) this.entity.setValue(Bigfoot, 'pose', Math.max(0, pose - realDelta));
     const sleeping = this.state() === BigfootState.Sleeping;
     this.snore?.setGain(sleeping ? 0.7 : 0);
     this.updateZzz(sleeping, delta);
@@ -246,7 +248,9 @@ export class BigfootSystem extends createSystem({
       this.setState(BigfootState.Awake);
       r.position.copy(this.exit);
       r.quaternion.copy(this.face(this.exit, this.head));
-      this.rig!.play(t < 7 ? 'wave' : 'idle');
+      // Posing for a photo (the viewer is framing one with their fingers).
+      const posing = (this.entity?.getValue(Bigfoot, 'pose') ?? 0) > 0;
+      this.rig!.play(posing ? 'cheer' : t < 7 ? 'wave' : 'idle');
     }
   }
 

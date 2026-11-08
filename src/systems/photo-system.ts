@@ -166,6 +166,15 @@ export class PhotoSystem extends createSystem({
     let y0 = Infinity;
     let y1 = -Infinity;
     let z = 0;
+    // A director's frame: one L upright, the other upside down (index above thumb on one hand,
+    // below it on the other), so relaxed hands held up together never take a photo.
+    let flip = 0;
+    for (const side of SIDES) {
+      const dy = this.a.copy(this.tips[side][1]).sub(this.tips[side][0]).applyQuaternion(this.inv).y;
+      if (Math.abs(dy) < cfg.minLift) return false;
+      flip += Math.sign(dy);
+    }
+    if (flip !== 0) return false;
     for (const side of SIDES) {
       for (const t of this.tips[side]) {
         const p = this.a.copy(t).sub(this.head).applyQuaternion(this.inv);

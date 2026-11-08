@@ -2,6 +2,17 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-08 — Scene C: snap a photo with Bigfoot
+
+- **Make a director's frame with both hands** (two L shapes, one upright and one upside down) and hold it:
+  - A glowing outline shows what you're framing, and Bigfoot (if he's up) turns to you and cheers for the camera.
+  - The shutter fires with a flash and a click.
+  - Exactly what was inside your fingers becomes a **polaroid** (white card, "Me & Bigfoot" and the date). It pops out where you framed it, hovers, then flies to a **gallery above the TV**.
+- The last four photos are kept between visits, under their own small storage key, and come back on the wall next time.
+- The palm menu's new **Photo** button frames the middle of your view, for anyone who prefers a button.
+- The shot is rendered from your eyes through the framed rectangle (matching direction and field of view), with captions and overlays hidden.
+- Emulator checks: the Photo button path works (flash, polaroid in the centre of the view, gallery row above the TV); clean console. The finger-frame gesture itself could not be driven here, because the CLI cannot set finger poses. Its detection was reviewed in code, and tightened so relaxed hands held up together never trigger it.
+
 ## 2026-11-06 — Realistic modern skyscrapers; trailer hands; small gifts
 
 - **The city towers are now built like real modern skyscrapers** instead of textured boxes:
