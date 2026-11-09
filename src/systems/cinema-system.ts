@@ -28,7 +28,7 @@ const cfg = Tuning.cinema;
 /** Beats with something worth a close-up; the screen shows during these. */
 const LIVE = new Set(['leap-out', 'arrive', 'party-wait', 'leap-back', 'gifts']);
 /** Overlays that must not appear in the shot (head-locked, or the screen itself). */
-const HIDE = ['DreamCinema', 'Caption', 'FilmTitle', 'FilmChapter', 'FilmCredits', 'NightVignette', 'ResumeFade', 'TourFade', 'WindowOutline', 'GhostHandLeft', 'GhostHandRight'];
+const HIDE = ['DreamCinema', 'Caption', 'FilmTitle', 'FilmChapter', 'FilmCredits', 'NightVignette', 'ResumeFade', 'TourFade', 'WindowOutline', 'RealHands'];
 
 /**
  * Spatial cinema: a floating screen shows a live, director-style cut of

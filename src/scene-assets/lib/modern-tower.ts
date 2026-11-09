@@ -124,7 +124,14 @@ export function buildModernTower(spec: TowerSpec, m: TowerMaterials): Group {
   for (const [y0, y1, tw, td] of tiers) {
     for (let y = y0; y < y1 - 0.5; y += STOREY) mat4(0, y + 0.15, 0, tw + 0.14, 0.3, td + 0.14);
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) mat4((sx * tw) / 2, (y0 + y1) / 2, (sz * td) / 2, 0.7, y1 - y0, 0.7);
-    mat4(0, y1 + 0.6, 0, tw + 0.3, 1.2, td + 0.3);
+    // Parapet: a low wall around the roof's rim (the roof itself stays open: on the party tower people stand on it).
+    const ph = spec.crown === false ? 0.9 : 1.2;
+    mat4(0, y1 + ph / 2, td / 2, tw + 0.3, ph, 0.3);
+    mat4(0, y1 + ph / 2, -td / 2, tw + 0.3, ph, 0.3);
+    mat4(tw / 2, y1 + ph / 2, 0, 0.3, ph, td);
+    mat4(-tw / 2, y1 + ph / 2, 0, 0.3, ph, td);
+    // The roof deck itself, flush with the top of the tier.
+    mat4(0, y1 - 0.05, 0, tw, 0.1, td);
   }
   mat4(0, lobbyH + 0.1, d / 2 - 0.2, w * 0.45, 0.25, 3.2);
   mat4(0, lobbyH / 2, 0, w + 0.1, 0.4, d + 0.1);

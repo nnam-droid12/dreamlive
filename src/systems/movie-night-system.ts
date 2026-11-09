@@ -24,11 +24,20 @@ import { Timeline } from '../audio/timeline.js';
 import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { onPress } from '../ui/press.js';
+import { MovieBunny } from '../characters/movie-bunny.js';
+import { buildLoveseat, LOVESEAT } from '../scene-assets/loveseat.scene-asset.js';
 
 const cfg = Tuning.movie;
 
 /** A film the viewer picked on the start page (blob URL), if any; otherwise Big Buck Bunny. */
 export const MovieChoice = { url: '' };
+
+/**
+ * Where everyone sits for Movie Night (world space, set when the film starts):
+ * Bigfoot's seat point on the loveseat, the bunny's, the way the seats face
+ * (yaw), the seat-top height, and Bigfoot's hip height (his own rig reports it).
+ */
+export const MovieSpots = { bigfoot: new Vector3(), bunny: new Vector3(), yaw: 0, seatTop: LOVESEAT.seatTop, ready: false, bunnySeated: false };
 
 /**
  * Movie Night with Bigfoot (spatial cinema you actually use). From the palm
@@ -63,6 +72,18 @@ export class MovieNightSystem extends createSystem({
   private fwd = new Vector3();
   private center = new Vector3();
   private pressBound = false;
+  private sofa!: Group;
+  private bunny = new MovieBunny(cfg.bunnyHeight);
+  private bunnyLoading = false;
+  private dir = new Vector3();
+  private side = new Vector3();
+  private from = new Vector3();
+  private to = new Vector3();
+  private walkFrom = new Vector3();
+  private walkTo = new Vector3();
+  private seatFront = new Vector3();
+  private screenFoot = new Vector3();
+  private sparkle = 0;
   /** Offline Director renders step the film with the story clock (seeking frame by frame), not in real time. */
   private filmClock = 0;
 
@@ -84,6 +105,11 @@ export class MovieNightSystem extends createSystem({
     this.root.visible = false;
     const e = this.world.createTransformEntity(this.root);
     this.world.createTransformEntity(this.screenMesh, { parent: e }).addComponent(RayInteractable);
+    // The loveseat that appears for Movie Night, and the bunny who comes out of the film.
+    this.sofa = buildLoveseat();
+    this.sofa.visible = false;
+    this.world.createTransformEntity(this.sofa);
+    this.world.createTransformEntity(this.bunny.root);
     // The film's light on the room: always present (intensity 0 when off), so turning it on never recompiles.
     this.light = new PointLight(0xffffff, 0, cfg.lightRange, 1.6);
     this.world.createTransformEntity(this.light);
@@ -102,9 +128,16 @@ export class MovieNightSystem extends createSystem({
     this.amount += ((this.on ? 1 : 0) - this.amount) * Math.min(1, realDelta * 1.2);
     d.setValue(RoomSlots, 'movieDim', this.amount);
     this.root.visible = this.amount > 0.01;
+    this.sofa.visible = this.root.visible;
     if (!this.root.visible) {
       this.light.intensity = 0;
+      this.bunny.root.visible = false;
+      MovieSpots.ready = false;
       return;
+    }
+    if (!this.bunnyLoading) {
+      this.bunnyLoading = true;
+      void this.bunny.load().catch(() => undefined);
     }
     const v = this.video;
     if (v && Director.offline && this.on) {
@@ -120,7 +153,9 @@ export class MovieNightSystem extends createSystem({
     const lum = this.light.color.r * 0.3 + this.light.color.g * 0.59 + this.light.color.b * 0.11;
     this.light.intensity = this.amount * cfg.lightIntensity * (0.35 + lum);
     this.haloMat.color.copy(this.light.color);
-    this.haloMat.opacity = this.amount * 0.18;
+    this.sparkle = Math.max(0, this.sparkle - realDelta * 1.5);
+    this.haloMat.opacity = this.amount * (0.18 + this.sparkle * 0.8);
+    this.bunnyScene(d, t, realDelta);
     this.screenMat.color.setScalar(this.amount);
     // Cheers at the fun bits, his lines, and the end of the film.
     for (const at of cfg.laughs) {
@@ -148,6 +183,19 @@ export class MovieNightSystem extends createSystem({
     this.root.lookAt(this.head.x, this.center.y, this.head.z);
     this.light.position.copy(this.center).addScaledVector(this.fwd, -cfg.lightAhead);
     this.center.toArray(d.getVectorView(Session, 'movieScreen'));
+    // The loveseat beside you, facing the screen: Bigfoot's seat further out, the bunny's nearer you.
+    this.dir.copy(this.fwd);
+    this.side.set(this.fwd.z, 0, -this.fwd.x);
+    const H = this.from.copy(this.head).setY(0);
+    MovieSpots.bigfoot.copy(H).addScaledVector(this.side, cfg.sofaBigfoot).addScaledVector(this.dir, cfg.sofaAhead);
+    MovieSpots.bunny.copy(H).addScaledVector(this.side, cfg.sofaBunny).addScaledVector(this.dir, cfg.sofaAhead);
+    MovieSpots.yaw = Math.atan2(this.dir.x, this.dir.z);
+    MovieSpots.ready = true;
+    MovieSpots.bunnySeated = false;
+    this.sofa.position.addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5).addScaledVector(this.dir, 0.33);
+    this.sofa.rotation.set(0, MovieSpots.yaw, 0);
+    this.bunny.root.visible = false;
+    this.bunny.setSeated(false);
     if (!this.video) {
       const v = document.createElement('video');
       v.src = MovieChoice.url || `${import.meta.env.BASE_URL}video/big-buck-bunny.mp4`;
@@ -176,9 +224,85 @@ export class MovieNightSystem extends createSystem({
     d.setValue(Caption, 'ttl', 5);
   }
 
+  /**
+   * The bunny steps out of the film: it grows out of the picture with a burst
+   * of light, hops down, walks over, jumps up beside Bigfoot, sits and eats.
+   */
+  private bunnyScene(d: Entity, ft: number, dt: number): void {
+    const b = this.bunny;
+    if (!b.ready || !this.on) return;
+    const E = cfg.bunnyAt;
+    if (ft < E) {
+      b.root.visible = false;
+      return;
+    }
+    const h = (cfg.width * 9) / 16;
+    const toRoom = this.to.copy(this.dir).negate();
+    // Where it leaves the picture (the bottom of the screen) and lands on the floor.
+    const out = this.screenFoot.copy(this.center).setY(this.center.y - h / 2 + 0.02);
+    const floor = this.walkFrom.copy(this.center).setY(0).addScaledVector(toRoom, 0.9);
+    this.seatFront.copy(MovieSpots.bunny).addScaledVector(this.dir, 0.55);
+    const walkLen = floor.distanceTo(this.seatFront);
+    const tEmerge = 1.6;
+    const tHop = 0.8;
+    const tWalk = walkLen / cfg.bunnyWalk;
+    const tUp = 0.7;
+    const k = ft - E;
+    b.root.visible = true;
+    if (k < tEmerge) {
+      // Out of the picture: small and flat at first, growing as it steps into the room.
+      if (k < 0.1 && this.sparkle < 0.5) {
+        this.sparkle = 1;
+        Sound.play('bloom', this.center, 1);
+      }
+      const e = k / tEmerge;
+      b.root.position.copy(out).addScaledVector(toRoom, 0.05 + e * 0.45);
+      b.root.scale.setScalar(0.25 + 0.75 * e * e * (3 - 2 * e));
+      b.root.rotation.set(0, Math.atan2(toRoom.x, toRoom.z), 0);
+      b.play('Wave');
+    } else if (k < tEmerge + tHop) {
+      const e = (k - tEmerge) / tHop;
+      this.walkTo.copy(out).addScaledVector(toRoom, 0.5);
+      b.root.position.lerpVectors(this.walkTo, floor, e);
+      b.root.position.y = this.walkTo.y * (1 - e) + Math.sin(Math.PI * e) * 0.35;
+      b.root.scale.setScalar(1);
+      b.play('Jump', true);
+    } else if (k < tEmerge + tHop + tWalk) {
+      const e = (k - tEmerge - tHop) / tWalk;
+      b.root.position.lerpVectors(floor, this.seatFront, e);
+      this.walkTo.subVectors(this.seatFront, floor);
+      b.root.rotation.set(0, Math.atan2(this.walkTo.x, this.walkTo.z), 0);
+      b.play('Walk');
+    } else if (k < tEmerge + tHop + tWalk + tUp) {
+      // Up onto the cushion, turning to face the screen.
+      const e = (k - tEmerge - tHop - tWalk) / tUp;
+      b.root.position.lerpVectors(this.seatFront, MovieSpots.bunny, e);
+      b.root.position.y = MovieSpots.seatTop * e + Math.sin(Math.PI * e) * 0.3;
+      b.root.rotation.set(0, MovieSpots.yaw, 0);
+      b.play('Jump', true);
+    } else {
+      if (!MovieSpots.bunnySeated) {
+        MovieSpots.bunnySeated = true;
+        this.say(d, 'movie-bunny', 'Whoa! He came right out of the movie! Sit with us, little buddy.');
+      }
+      // Seated beside Bigfoot, munching its carrot now and then.
+      const bite = (k % cfg.biteEvery) / cfg.biteSec;
+      const eat = bite < 1 ? Math.sin(Math.PI * bite) : 0;
+      b.setSeated(true, eat);
+      b.play(eat > 0.5 ? 'Yes' : 'Idle');
+      b.root.rotation.set(0, MovieSpots.yaw, 0);
+      b.root.position.copy(MovieSpots.bunny);
+      b.root.position.y = MovieSpots.seatTop + 0.04 - b.hipHeight();
+    }
+    b.update(dt);
+  }
+
   private endFilm(d: Entity): void {
     this.on = false;
     this.video?.pause();
+    this.bunny.root.visible = false;
+    this.bunny.setSeated(false);
+    MovieSpots.bunnySeated = false;
     Timeline.log('movie', '', 0);
     d.setValue(Session, 'movieLaugh', 0);
   }

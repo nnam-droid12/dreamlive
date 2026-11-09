@@ -1,3 +1,4 @@
+import { MovieSpots } from './movie-night-system.js';
 import {
   CanvasTexture,
   createSystem,
@@ -69,6 +70,9 @@ export class BigfootSystem extends createSystem({
   private head = new Vector3();
   private m = new Matrix4();
   private faceQuat = new Quaternion();
+  /** A pose on top of his animation this frame (seated for Movie Night) and how far he lifts his popcorn. */
+  private wantPose: '' | 'sit' = '';
+  private wantEat = 0;
   // Rooftop Party route (world space), fixed once the window is known.
   private roofReady = false;
   private windowVersion = 0;
@@ -98,6 +102,7 @@ export class BigfootSystem extends createSystem({
     if (!this.roofReady) this.layoutRooftop(d);
     const phase = d.getValue(Ritual, 'phase');
     const phaseTime = d.getValue(Ritual, 'phaseTime') ?? 0;
+    this.wantPose = '';
 
     if (phase === RitualPhase.Arrival || phase === RitualPhase.Idle) {
       this.lieDown();
@@ -119,6 +124,7 @@ export class BigfootSystem extends createSystem({
       else this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
     }
 
+    this.rig.setPose(this.wantPose, this.wantEat);
     const pose = this.entity.getValue(Bigfoot, 'pose') ?? 0;
     if (pose > 0) this.entity.setValue(Bigfoot, 'pose', Math.max(0, pose - realDelta));
     const sleeping = this.state() === BigfootState.Sleeping;
@@ -277,6 +283,18 @@ export class BigfootSystem extends createSystem({
       return;
     }
     this.player.head.getWorldPosition(this.head);
+    if (MovieSpots.ready) {
+      // On the loveseat beside you, seated, facing the screen, eating popcorn now and then.
+      r.position.copy(MovieSpots.bigfoot).setY(0);
+      r.quaternion.setFromAxisAngle(UP, MovieSpots.yaw);
+      const laugh = (d.getValue(Session, 'movieLaugh') ?? 0) > 0;
+      const bite = (t % Tuning.movie.biteEvery) / Tuning.movie.biteSec;
+      this.wantPose = 'sit';
+      this.wantEat = laugh ? 0 : bite < 1 ? Math.sin(Math.PI * bite) : 0;
+      this.setState(BigfootState.Awake);
+      this.rig!.play('idle');
+      return;
+    }
     // Beside the viewer, a little ahead, turned toward the screen.
     this.tmp.subVectors(screen, this.head).setY(0).normalize();
     const side = this.tmp2.set(this.tmp.z, 0, -this.tmp.x);

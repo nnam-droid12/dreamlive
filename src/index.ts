@@ -37,6 +37,7 @@ import { CinemaSystem } from './systems/cinema-system.js';
 import { MusicVisualizerSystem } from './systems/music-visualizer-system.js';
 import { PhotoSystem } from './systems/photo-system.js';
 import { MovieNightSystem } from './systems/movie-night-system.js';
+import { TvCartoonSystem } from './systems/tv-cartoon-system.js';
 import { CloudWorldSystem } from './systems/cloud-world-system.js';
 import { WinterWorldSystem } from './systems/winter-world-system.js';
 import { SeaWorldSystem } from './systems/sea-world-system.js';
@@ -91,6 +92,7 @@ World.create(
     .registerSystem(CinemaSystem)
     .registerSystem(MusicVisualizerSystem)
     .registerSystem(PhotoSystem)
+    .registerSystem(TvCartoonSystem)
     .registerSystem(CloudWorldSystem)
     .registerSystem(WinterWorldSystem)
     .registerSystem(SeaWorldSystem)

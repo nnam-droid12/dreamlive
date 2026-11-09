@@ -227,6 +227,11 @@ export const Tuning = {
     fadeRate: 1.2,
   },
 
+  tvCartoon: {
+    /** How bright the cartoon on the bedroom TV plays (a TV in a dim room, not a lamp). */
+    brightness: 0.85,
+  },
+
   movie: {
     /** The screen: width (m, 16:9), distance in front of the viewer, height of its centre. */
     width: 3,
@@ -243,6 +248,17 @@ export const Tuning = {
     /** Where Bigfoot watches from: beside the viewer (m to the left, m forward). */
     beside: 1.3,
     ahead: 0.4,
+    /** The loveseat beside you: Bigfoot's seat and the bunny's seat (m to the side), and how far forward. */
+    sofaBigfoot: 1.75,
+    sofaBunny: 1.05,
+    sofaAhead: 0.15,
+    /** The bunny steps out of the film at this film time (s); its size (m), walking speed (m/s). */
+    bunnyAt: 5,
+    bunnyHeight: 0.8,
+    bunnyWalk: 1.0,
+    /** Eating: one bite every this many seconds, each this long. */
+    biteEvery: 4,
+    biteSec: 1.3,
   },
 
   clouds: {

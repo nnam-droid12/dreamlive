@@ -102,6 +102,9 @@ class AudioEngine {
   private kickAt = -10;
   /** Live analysis of the mix, updated by tick(). */
   readonly bands: AudioBands = { bass: 0, mid: 0, high: 0, level: 0, kick: 0 };
+  /** Offline renders: each track's pre-analysed bands (public/audio/music/<name>.bands.json) and when it started. */
+  private bandData = new Map<string, Uint8Array | null>();
+  private trackT0 = new Map<string, number>();
   /** Last caption-worthy sound, consumed by AudioSystem. */
   pendingCaption = '';
 
@@ -347,6 +350,7 @@ class AudioEngine {
     const c = this.ctx;
     if (!c || act === this.act) return;
     Timeline.log('act', act);
+    this.trackT0.set(act, Timeline.t);
     this.act = act;
     this.actLoop?.stop();
     this.actLoop = undefined;
@@ -414,9 +418,11 @@ class AudioEngine {
 
   /** Called every frame: schedules music-box notes and act steps slightly ahead. */
   tick(): void {
+    // An offline render has no live sound to analyse: read the tracks' pre-analysed bands at story time.
+    if (Timeline.on) this.offlineAnalyse();
     const c = this.ctx;
     if (!c || c.state !== 'running') return;
-    this.analyse(c);
+    if (!Timeline.on) this.analyse(c);
     this.tickAct(c);
     if (!this.musicOn || this.dreamTrack) return;
     const beat = 60 / 76;
@@ -436,7 +442,10 @@ class AudioEngine {
    */
   setScore(name: string): void {
     if (name === this.score && (this.tracks.get(name)?.on ?? !name)) return;
-    if (name !== this.score) Timeline.log('score', name);
+    if (name !== this.score) {
+      Timeline.log('score', name);
+      this.trackT0.set(name, Timeline.t);
+    }
     if (this.score && this.score !== name) this.stopTrack(this.score);
     this.score = name;
     if (name && this.ctx && this.musicOn) this.startTrack(name, this.music, 0.8, 1.6, true);
@@ -533,6 +542,47 @@ class AudioEngine {
       .then((buf) => this.voices.set(name, buf))
       .catch(() => this.voices.set(name, null))
       .finally(() => this.voiceLoading.delete(name));
+  }
+
+  /** Offline: the playing song's bands at story time (the party song wins over the scene's score). */
+  private offlineAnalyse(): void {
+    const name = TRACK_ACTS.has(this.act) ? this.act : this.score;
+    const b = this.bands;
+    const data = name ? this.loadBands(name) : null;
+    if (!data) {
+      b.bass *= 0.9;
+      b.mid *= 0.9;
+      b.high *= 0.9;
+      b.level *= 0.9;
+      b.kick *= 0.8;
+      return;
+    }
+    const frames = data.length / 3;
+    const i = Math.floor(Math.max(0, Timeline.t - (this.trackT0.get(name) ?? 0)) * 30) % frames;
+    const gain = name === this.act ? 1 : Math.min(1.2, this.musicLevel / 0.6);
+    b.bass = (data[i * 3] / 255) * gain;
+    b.mid = (data[i * 3 + 1] / 255) * gain;
+    b.high = (data[i * 3 + 2] / 255) * gain;
+    b.level = (b.bass + b.mid + b.high) / 3;
+    const t = Timeline.t;
+    if (b.bass > this.bassAvg * 1.07 && b.bass > 0.3 && t - this.kickAt > 0.28) this.kickAt = t;
+    this.bassAvg += (b.bass - this.bassAvg) * 0.12;
+    b.kick = Math.exp(-(t - this.kickAt) * 7);
+  }
+
+  private loadBands(name: string): Uint8Array | null {
+    if (this.bandData.has(name)) return this.bandData.get(name) ?? null;
+    this.bandData.set(name, null);
+    fetch(`${import.meta.env.BASE_URL}audio/music/${name}.bands.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j: { data: string }) => {
+        const bin = atob(j.data);
+        const out = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) out[k] = bin.charCodeAt(k);
+        this.bandData.set(name, out);
+      })
+      .catch(() => undefined);
+    return null;
   }
 
   /** Reads the mix's spectrum into `bands` and spots kicks (bass jumping above its running average). */

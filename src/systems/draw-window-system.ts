@@ -35,6 +35,8 @@ export class DrawWindowSystem extends createSystem({
 }) {
   private pad?: Entity;
   private outline!: Group;
+  /** Seconds since a too-small drawing was turned down (-1 = none). */
+  private rejectedFor = -1;
   private bars: Mesh[] = [];
   private beat = newBeatContext();
   private start = new Vector3();
@@ -78,6 +80,9 @@ export class DrawWindowSystem extends createSystem({
         if (this.auto >= 1) this.accept(d);
       }
     }
+    // A drawing that was rejected, or a scene that moved on, leaves no stray outline behind.
+    if (!this.dragging && this.opening < 0 && this.outline.visible && (!drawing || this.rejectedFor > 1.5)) this.outline.visible = false;
+    if (this.rejectedFor >= 0) this.rejectedFor += realDelta;
     if (this.opening >= 0) {
       this.opening = Math.min(1, this.opening + delta / cfg.openSec);
       d.setValue(RoomSlots, 'holeOpen', this.opening);
@@ -99,6 +104,7 @@ export class DrawWindowSystem extends createSystem({
     const onDown = (e: { point?: Vector3 }) => {
       if (this.done || !e.point || !this.isDrawingBeat(d)) return;
       this.dragging = true;
+      this.rejectedFor = -1;
       this.start.copy(e.point);
       this.end.copy(e.point);
       this.showOutline();
@@ -115,6 +121,7 @@ export class DrawWindowSystem extends createSystem({
       const h = Math.abs(this.end.y - this.start.y);
       if (w >= cfg.minWidth && h >= cfg.minHeight) this.accept(d);
       else {
+        this.rejectedFor = 0;
         d.setValue(Caption, 'text', 'Draw it bigger: a window Bigfoot can fit through.');
         d.setValue(Caption, 'ttl', 4);
       }

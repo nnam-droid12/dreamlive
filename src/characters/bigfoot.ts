@@ -66,6 +66,13 @@ export interface BigfootRig {
   headPosition(out: Vector3): Vector3;
   /** Advance animation; also applies stand-in procedural motion. */
   update(delta: number): void;
+  /**
+   * A pose on top of the animation: 'sit' (seated, thighs forward, shins down)
+   * with `eat` 0..1 lifting his right hand (the popcorn) to his mouth. '' = none.
+   */
+  setPose(pose: '' | 'sit', eat?: number): void;
+  /** Height of his hips above his root, in metres (where a seat must be for 'sit'). */
+  hipHeight(): number;
   current: BigfootAnim;
 }
 
@@ -83,6 +90,10 @@ export async function createBigfoot(): Promise<BigfootRig> {
   const src = await loadSource();
   return src ? realRig(src.scene, src.clips) : standInRig();
 }
+
+const DOWN = new Vector3(0, -1, 0);
+/** Scratch for the posing helpers (no allocation per frame). */
+const AIM = { a: new Vector3(), c: new Vector3(), delta: new Quaternion(), world: new Quaternion(), parent: new Quaternion(), rootQ: new Quaternion() };
 
 function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   const model = cloneSkinned(scene);
@@ -108,6 +119,73 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   // Skeleton.pose() can't be used: it rebuilds from inverse binds and drops the parents' scale.
   const restPose = bones.map((b) => ({ p: b.position.clone(), q: b.quaternion.clone(), s: b.scale.clone() }));
   const headBone = bones.find((b) => /Head$/.test(b.name));
+  const bone = (re: RegExp) => bones.find((b) => re.test(b.name));
+  const limb = {
+    hips: bone(/Hips$/),
+    lUp: bone(/LeftUpLeg$/),
+    lLeg: bone(/LeftLeg$/),
+    lFoot: bone(/LeftFoot$/),
+    lToe: bone(/LeftToeBase$/),
+    rUp: bone(/RightUpLeg$/),
+    rLeg: bone(/RightLeg$/),
+    rFoot: bone(/RightFoot$/),
+    rToe: bone(/RightToeBase$/),
+    lArm: bone(/LeftArm$/),
+    lFore: bone(/LeftForeArm$/),
+    lHand: bone(/LeftHand$/),
+    rArm: bone(/RightArm$/),
+    rFore: bone(/RightForeArm$/),
+    rHand: bone(/RightHand$/),
+  };
+  let pose: '' | 'sit' = '';
+  let eat = 0;
+  const fwd = new Vector3();
+  const side = new Vector3();
+  const dir = new Vector3();
+  const mouth = new Vector3();
+  /** Turn `b` (in world space) so the line from it to `child` points along `to` (unit). */
+  const aim = (b: Object3D | undefined, child: Object3D | undefined, to: Vector3) => {
+    if (!b || !child || !b.parent) return;
+    b.updateWorldMatrix(true, false);
+    child.updateWorldMatrix(false, false);
+    const a = AIM.a.setFromMatrixPosition(b.matrixWorld);
+    const c = AIM.c.setFromMatrixPosition(child.matrixWorld);
+    const cur = c.sub(a).normalize();
+    if (cur.lengthSq() < 1e-6) return;
+    AIM.delta.setFromUnitVectors(cur, to);
+    b.getWorldQuaternion(AIM.world);
+    AIM.world.premultiply(AIM.delta);
+    b.parent.getWorldQuaternion(AIM.parent);
+    b.quaternion.copy(AIM.parent.invert().multiply(AIM.world));
+    b.updateMatrixWorld(true);
+  };
+  /** Seated: thighs forward, shins down, feet flat; arms in the lap, the right one lifting to eat. */
+  const applySit = () => {
+    root.updateWorldMatrix(true, false);
+    root.getWorldQuaternion(AIM.rootQ);
+    fwd.set(0, 0, 1).applyQuaternion(AIM.rootQ);
+    side.set(1, 0, 0).applyQuaternion(AIM.rootQ);
+    model.updateWorldMatrix(true, true);
+    aim(limb.lUp, limb.lLeg, dir.copy(fwd).addScaledVector(side, 0.2).addScaledVector(DOWN, 0.15).normalize());
+    aim(limb.rUp, limb.rLeg, dir.copy(fwd).addScaledVector(side, -0.2).addScaledVector(DOWN, 0.15).normalize());
+    aim(limb.lLeg, limb.lFoot, dir.copy(DOWN).addScaledVector(fwd, 0.18).normalize());
+    aim(limb.rLeg, limb.rFoot, dir.copy(DOWN).addScaledVector(fwd, 0.18).normalize());
+    aim(limb.lFoot, limb.lToe, fwd);
+    aim(limb.rFoot, limb.rToe, fwd);
+    // Left arm rests on the left thigh.
+    aim(limb.lArm, limb.lFore, dir.copy(DOWN).addScaledVector(fwd, 0.55).addScaledVector(side, 0.2).normalize());
+    aim(limb.lFore, limb.lHand, dir.copy(fwd).addScaledVector(side, -0.25).addScaledVector(DOWN, 0.25).normalize());
+    // Right arm: popcorn in the lap, lifted to the mouth as he eats.
+    aim(limb.rArm, limb.rFore, dir.copy(DOWN).addScaledVector(fwd, 0.5 + eat * 0.4).addScaledVector(side, -0.15).normalize());
+    if (limb.rFore && headBone) {
+      limb.rFore.updateWorldMatrix(true, false);
+      headBone.updateWorldMatrix(true, false);
+      mouth.setFromMatrixPosition(headBone.matrixWorld).addScaledVector(fwd, 0.12).addScaledVector(DOWN, 0.06);
+      const toMouth = AIM.c.copy(mouth).sub(AIM.a.setFromMatrixPosition(limb.rFore.matrixWorld)).normalize();
+      dir.copy(fwd).addScaledVector(side, 0.25).addScaledVector(DOWN, 0.15).normalize().lerp(toMouth, eat).normalize();
+      aim(limb.rFore, limb.rHand, dir);
+    }
+  };
   const chest = bones.find((b) => /Spine2$/.test(b.name)) ?? bones.find((b) => /Spine1?$/.test(b.name));
   let breath = 0;
   const skinned: SkinnedMesh[] = [];
@@ -160,8 +238,19 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       if (active) next.crossFadeFrom(active, opts.fade ?? 0.35, false);
       active = next;
     },
+    setPose(next, e = 0) {
+      if (next !== pose) measureIn = 0;
+      pose = next;
+      eat = Math.min(1, Math.max(0, e));
+    },
+    hipHeight() {
+      if (!limb.hips) return HEIGHT * 0.3;
+      root.updateWorldMatrix(true, true);
+      return root.worldToLocal(AIM.a.setFromMatrixPosition(limb.hips.matrixWorld)).y * root.scale.y;
+    },
     update(delta) {
       mixer.update(delta);
+      if (pose === 'sit') applySit();
       breath += delta;
       if (chest) chest.scale.setScalar(rig.current === 'rest' ? 1 + Math.sin(breath * 1.4) * 0.025 : 1);
       // Self-grounding: whatever height the caller placed him at is the surface his
@@ -258,6 +347,10 @@ function standInRig(): BigfootRig {
     },
     headPosition(out) {
       return root.localToWorld(out.set(0, 1.62, 0.1));
+    },
+    setPose() {},
+    hipHeight() {
+      return 0.5;
     },
     update(delta) {
       t += delta;

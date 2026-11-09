@@ -91,6 +91,12 @@ export const Palette = {
   lighthouseRed: 0xb3262b,
   lighthouseIron: 0x23262b,
   lighthouseLamp: 0xfff1c8,
+  /** Movie Night: the velvet loveseat and the bunny from the film. */
+  sofaVelvet: 0x2f5d62,
+  sofaSheen: 0x9fd1cf,
+  sofaWood: 0x6b4428,
+  bunnyFur: 0xf4f1ea,
+  bunnyPink: 0xf2a7b5,
   /** Hot-air balloon: three gore colours, trim, wicker, leather rim, burner flame. */
   balloonA: 0xe8463a,
   balloonB: 0xf6c344,

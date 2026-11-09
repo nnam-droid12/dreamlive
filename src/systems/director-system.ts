@@ -21,7 +21,7 @@ import { Timeline } from '../audio/timeline.js';
 import { Director, DirectorFrame } from '../config/director.js';
 import { makeTitleCard, TitleCard } from '../visuals/title-card.js';
 import { DirectorHands, HandShot } from './director-hands.js';
-import { GhostHand } from './director-ghost-hands.js';
+import { RealHands } from './real-hands.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { WorldSpots } from './lib/world-kit.js';
@@ -53,7 +53,7 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { movie: 9, movieEnd: 30, photo: 31, snap: 34, clouds: 38, puff: 47, star: 53, winter: 61, fire: 70, shake: 76, sea: 84, whale: 94, flood: 102, bed: 110, end: 120 };
+const TOUR = { movie: 9, movieEnd: 30, photo: 31, snap: 34, clouds: 38, puff: 47, star: 53, winter: 61, fire: 70, shake: 76, sea: 84, whale: 94, flood: 102, bed: 110, end: 136 };
 /** Resting hands for the tour, held lower so they stay out of the downward-looking world shots. */
 const TOUR_REST_L: HandShot = { ...REST_L, at: new Vector3(-0.25, -0.95, -0.1) };
 const TOUR_REST_R: HandShot = { ...REST_R, at: new Vector3(0.25, -0.95, -0.1) };
@@ -113,6 +113,7 @@ export class DirectorSystem extends createSystem({
   private cues = new Set<string>();
   private saveTimeline?: () => void;
   private hands?: DirectorHands;
+  private realHands?: RealHands;
   private recording = false;
 
   init(): void {
@@ -129,12 +130,11 @@ export class DirectorSystem extends createSystem({
     this.feature = makeTitleCard(1024, 150, 0.56);
     this.feature.mesh.renderOrder = 1001;
     this.world.createTransformEntity(this.feature.mesh);
-    const ghosts = { left: new GhostHand('left'), right: new GhostHand('right') };
-    ghosts.left.root.name = 'GhostHandLeft';
-    ghosts.right.root.name = 'GhostHandRight';
-    this.world.createTransformEntity(ghosts.left.root);
-    this.world.createTransformEntity(ghosts.right.root);
-    this.hands = new DirectorHands(ghosts);
+    // Life-size articulated hands for the camera, following the emulated hands' joints.
+    this.realHands = new RealHands();
+    this.world.createTransformEntity(this.realHands.root);
+    void this.realHands.load();
+    this.hands = new DirectorHands();
   }
 
   update(realDelta: number): void {
@@ -401,7 +401,7 @@ export class DirectorSystem extends createSystem({
   /** The tour after the dream: what happens when, and its captions. */
   private tourScript(d: Entity): string {
     const tt = this.tourTime();
-    if (tt < 0) return 'The end credits roll';
+    if (tt < 0) return 'Every dream leaves a memory';
     const world = (name: string) => {
       d.setValue(Session, 'world', name);
       Timeline.log('world', name);
@@ -419,7 +419,7 @@ export class DirectorSystem extends createSystem({
       world('');
       d.setValue(Session, 'bedtime', true);
     }
-    if (tt < 8) return 'The end credits roll';
+    if (tt < 8) return 'Every dream leaves a memory';
     if (tt < TOUR.movie + 10) return 'Movie night with Bigfoot';
     if (tt < TOUR.movieEnd) return 'The film lights up your room';
     if (tt < TOUR.clouds) return 'Frame a photo with your fingers';
@@ -432,7 +432,7 @@ export class DirectorSystem extends createSystem({
     if (tt < TOUR.whale) return 'Surf the storm with Bigfoot';
     if (tt < TOUR.flood) return 'Whales breach beside you';
     if (tt < TOUR.bed) return 'The storm floods in: touch the water';
-    return 'Bedtime: rain on the glass';
+    return tt < TOUR.bed + 8 ? 'Bedtime: rain on the glass' : 'The end credits roll';
   }
 
   /** A soft dark band behind the feature caption, so it reads over bright and busy shots. */
@@ -468,12 +468,12 @@ export class DirectorSystem extends createSystem({
     };
     let left = REST_L;
     let right = REST_R;
-    if (scene === 'draw-window' && t > 1.5 && t < 7.5) {
-      // Point at the wall, pinch, drag corner to corner, release.
-      const a = frameToWorld(f, { x: 0, y: 0.3, z: -0.75 }, H_TMP.a);
-      const b = frameToWorld(f, { x: 0, y: 2.6, z: 0.75 }, H_TMP.b);
+    if (scene === 'draw-window' && t > 1.5 && t < 8.5) {
+      // Point at the wall's lower corner, pinch, drag a big window up to the top corner, hold, release.
+      const a = frameToWorld(f, { x: 0, y: 0.25, z: -0.8 }, H_TMP.a);
+      const b = frameToWorld(f, { x: 0, y: 2.75, z: 0.8 }, H_TMP.b);
       const k = Math.min(1, Math.max(0, (t - 3) / 3));
-      right = { ...DRAW_R, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 6.2 ? 1 : 0 };
+      right = { ...DRAW_R, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 7.4 ? 1 : 0 };
     } else if (scene.startsWith('party-') && t < 8) {
       // Dancing: hands up, palms facing each other, swaying on the beat.
       const s = Math.sin(this.clock * 4.2);
@@ -528,6 +528,7 @@ export class DirectorSystem extends createSystem({
       right = { at: H_TMP.r.copy(head.worldToLocal(dip)), rot: Q_ID, pose: 'open', pinch: 0 };
     }
     this.hands.apply(this.player, left, right, ease);
+    this.realHands?.update(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
   }
 
   /** True the first time a named cue is reached. */

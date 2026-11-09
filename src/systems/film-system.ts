@@ -2,6 +2,7 @@ import { createSystem, Quaternion, Vector3, VisibilityState } from '@iwsdk/core'
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
+import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { END_CREDITS } from '../dreams/credits.js';
@@ -109,11 +110,18 @@ export class FilmSystem extends createSystem({
       }
     }
     // End credits, a moment after he wakes from the Rooftop dream.
-    if (roof && phase === RitualPhase.Awake && !this.rolled && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.creditsAt) {
+    // (The Director's film tours the rest first and rolls them over bedtime, at the very end.)
+    const creditsDue = Director.enabled ? !!d.getValue(Session, 'bedtime') : (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.creditsAt;
+    if (roof && phase === RitualPhase.Awake && !this.rolled && creditsDue && !d.getValue(Session, 'movie')) {
       this.rolled = true;
       this.rollAge = 0;
       this.place(this.credits, 0, 0.05, cfg.distance + 0.4);
       this.credits.mesh.visible = true;
+    }
+    // A movie starting clears the credits off the screen.
+    if (this.rollAge >= 0 && d.getValue(Session, 'movie')) {
+      this.rollAge = -1;
+      this.credits.mesh.visible = false;
     }
     if (this.rollAge >= 0) this.roll(realDelta);
     for (const s of this.showing) this.fade(s, realDelta);
