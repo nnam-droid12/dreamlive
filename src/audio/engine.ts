@@ -14,7 +14,7 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 };
 
 export type SoundName =
-  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop' | 'shutter';
+  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop' | 'shutter' | 'thunder' | 'whale';
 export type LoopName = 'waves' | 'wind' | 'snore' | 'rain';
 export type ActName = '' | 'surf' | 'dj' | 'ski' | 'disco' | 'afro' | 'house';
 
@@ -215,6 +215,17 @@ class AudioEngine {
         break;
       case 'rainStart':
         this.noiseBurst(t, 1.5, 3200, 0.08, out);
+        break;
+      case 'thunder':
+        // A sharp crack, then a long rolling rumble.
+        this.noiseBurst(t, 0.35, 2600, 0.3, out);
+        this.rumble(t + 0.05, 4.5, 0.9, out);
+        this.duck(0.5, 3);
+        break;
+      case 'whale':
+        // A long, low, gliding whale call.
+        this.glide(midi(43), midi(50), t, 2.6, 0.16, out);
+        this.glide(midi(55), midi(48), t + 1.8, 2.2, 0.1, out);
         break;
       case 'firework':
         // A low thump, then a crackle.
@@ -675,6 +686,42 @@ class AudioEngine {
     o.connect(g).connect(out);
     o.start(t);
     o.stop(t + decay + 0.05);
+  }
+
+  /** Low rolling noise (thunder, surf thumps): looped noise through a low-pass, swelling and dying away. */
+  private rumble(t: number, dur: number, gain: number, out: AudioNode): void {
+    const c = this.ctx!;
+    const src = c.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(260, t);
+    f.frequency.exponentialRampToValueAtTime(70, t + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.15);
+    g.gain.setTargetAtTime(gain * 0.5, t + 0.4, 0.5);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(out);
+    src.start(t);
+    src.stop(t + dur + 0.05);
+  }
+
+  /** A sine that glides from one pitch to another (the whale's song). */
+  private glide(from: number, to: number, t: number, dur: number, gain: number, out: AudioNode): void {
+    const c = this.ctx!;
+    const o = c.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(from, t);
+    o.frequency.exponentialRampToValueAtTime(to, t + dur * 0.8);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + dur * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.05);
   }
 
   private noiseBurst(t: number, dur: number, freq: number, gain: number, out: AudioNode): void {

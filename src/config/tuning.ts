@@ -314,6 +314,46 @@ export const Tuning = {
     fireRange: 6,
   },
 
+  sea: {
+    /** Still-water level below the floor (m); the ocean mesh size and detail. */
+    seaY: -2.6,
+    oceanSize: 520,
+    oceanSegments: 200,
+    /** Gerstner swells: direction (x, z), steepness (sum under 1), wavelength (m). */
+    waves: [
+      { dx: 1, dz: 0.2, steep: 0.24, length: 38 },
+      { dx: 0.7, dz: 0.7, steep: 0.18, length: 22 },
+      { dx: -0.3, dz: 1, steep: 0.14, length: 13 },
+      { dx: 0.9, dz: -0.45, steep: 0.1, length: 7.5 },
+    ],
+    /** Lightning: seconds between strikes (min, max), first strike, how far out (m). */
+    strikeGap: [6, 14],
+    firstStrike: 4,
+    strikeNear: 70,
+    strikeFar: 170,
+    /** Light: the dim storm light, sky fill, and the flash at a strike. */
+    stormLight: 0.25,
+    stormFill: 0.35,
+    flash: 7,
+    /** Bigfoot's surf run: this far out of the window (m), drifting this far either way, seconds per run. */
+    surfOut: 13,
+    surfSwing: 3.2,
+    surfRun: 16,
+    /** Whales: how many, their swim radius band (m), seconds between breaches. */
+    whales: 2,
+    whaleRadius: [45, 75],
+    breachGap: [14, 24],
+    breachSec: 4.2,
+    /** The lighthouse: how far out and to the side (m), beam turns per minute. */
+    lighthouseOut: 110,
+    lighthouseSide: 45,
+    beamRpm: 6,
+    /** Ankle-deep water on the floor: ripples from the rain (per second) and from a hand below this height (m). */
+    floodDepth: 0.02,
+    rainRipples: 7,
+    handDip: 0.6,
+  },
+
   photo: {
     /** The finger frame: each hand's thumb-index gap, how far ahead of the eyes, the rectangle's limits (m). */
     openMin: 0.05,

@@ -29,6 +29,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Modern skyscrapers (glass curtain walls, concrete slabs, mullion fins, lobbies, setbacks, crowns) | Original, built in code (`src/scene-assets/lib/modern-tower.ts`) | Project-owned |
 | Hot-air balloons, the sea of clouds, cloud puffs and star glints (Above the Clouds) | Original, built in code (`src/scene-assets/balloon.scene-asset.ts`, `src/visuals/cloud-sea.ts`, `src/visuals/soft-sprites.ts`) | Project-owned |
 | Winter Night: snowy spruces, the town Christmas tree, the stone fireplace, the ice rink, snowy land, aurora, snowfall and flames | Original, built in code (`src/scene-assets/snow-pine.scene-asset.ts`, `christmas-tree.scene-asset.ts`, `fireplace.scene-asset.ts`, `src/visuals/winter-fx.ts`, `src/systems/winter-world-system.ts`) | Project-owned |
+| Storm at Sea: the ocean (Gerstner waves), storm clouds, lightning, lighthouse and beam, humpback whales, spray, the flooded floor; thunder and whale-call sounds | Original, built in code (`src/visuals/sea-fx.ts`, `src/scene-assets/lighthouse.scene-asset.ts`, `whale.scene-asset.ts`, `src/systems/sea-world-system.ts`, `src/audio/engine.ts`) | Project-owned |
 | Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio

@@ -2,6 +2,18 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-09 — Scene E: Storm at Sea
+
+- **Storm at Sea** (palm menu, Worlds row): the room stands at the edge of a wild night ocean.
+  - **The ocean:** a Gerstner-wave shader (four swells with exact normals, fine chop, the dark sky reflected at grazing angles, green light through the thin crests, foam on the steep tops) under rolling storm clouds, with rain on the glass.
+  - **Lightning** splits the sky: a jagged forked bolt, then the clouds, the sea and the room flash, and thunder rolls in after the light (a new synthesized crack and rumble).
+  - **A lighthouse** on a rocky islet (new model) sweeps its twin beams across the water.
+  - **Humpback whales** (new model, with long white flippers, throat grooves and notched flukes) cruise under the surface and breach with a whale call and spray.
+  - **Bigfoot surfs** the swells out of the window on his board, riding the real wave height and slope.
+- **Hands:** the storm has flooded the room ankle-deep. Rain rings the water, and a hand dipped low sends out ripples with a splash.
+- Three new voice lines: "Whoa, what a storm!…", "Ha! Thunder doesn't scare me!" and "Look, a whale!…"
+- Emulator check: the ocean, storm clouds, lighthouse beam, Bigfoot surfing and a whale breach all render; the console shows no new errors.
+
 ## 2026-11-09 — Scene D: Winter Night
 
 - **Winter Night** (palm menu, Worlds row): the room stands on a snowy hillside under the northern lights, with three green-to-violet aurora curtains rippling across a starry sky.
