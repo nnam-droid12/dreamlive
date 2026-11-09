@@ -81,7 +81,7 @@ export class RoomTransformSystem extends createSystem({
     const dreaming = phase === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = dreaming ? this.beat.scene : '';
     const after = roof && (phase === RitualPhase.Waking || phase === RitualPhase.Awake);
-    // Any dream world outside (clouds, winter, sea) opens the room to it as well.
+    // Any dream world outside (clouds, sea) opens the room to it as well.
     const world = d.hasComponent(Session) ? (d.getValue(Session, 'world') ?? '') : '';
     // The skyline photo outside the showcase glass belongs to New York, not to the other worlds.
     if (this.skyline) this.skyline.visible = !world;
@@ -95,8 +95,8 @@ export class RoomTransformSystem extends createSystem({
     const ceilingTarget = open && this.wall > cfg.ceilingAfter ? 1 : 0;
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
     // Time of day: the story's, unless the palm menu chose one.
-    // A dream world sets its own sky: sunrise above the clouds, night for winter and the storm.
-    const worldSky = world === 'clouds' ? 'dawn' : world === 'winter' || world === 'sea' ? 'night' : '';
+    // A dream world sets its own sky: sunrise above the clouds, night for the storm.
+    const worldSky = world === 'clouds' ? 'dawn' : world === 'sea' ? 'night' : '';
     const sky = worldSky || (d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '');
     const storyDawn = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
     const dawnTarget = sky === 'dawn' ? 1 : sky ? 0 : storyDawn;

@@ -295,39 +295,14 @@ export const Tuning = {
     streakEvery: 5,
   },
 
-  winter: {
-    /** The frozen lake: its centre this far out of the window (m), radius, board height. */
-    rinkOut: 11,
-    rinkRadius: 7.5,
-    boardHeight: 0.5,
-    /** String-light posts around the rink, and bulbs per span. */
-    posts: 10,
-    bulbsPerSpan: 9,
-    /** Spruce forest: how many, nearest and furthest (m), share on the window side. */
-    pines: 170,
-    pineNear: 26,
-    pineFar: 150,
-    pineFront: 0.7,
-    /** Skaters (party guests) and their lap: radius band (m), seconds per lap. */
-    skaters: 6,
-    skateRadius: [4.2, 6.6],
-    skateLap: 26,
-    /** Bigfoot skates an inner circle (m), seconds per lap. */
-    bigfootRadius: 3.1,
-    bigfootLap: 20,
-    /** Snowfall: flakes, box around you (m), normal share falling, how long a shake keeps the blizzard (s). */
-    flakes: 2600,
-    snowBox: { x: 16, y: 9, z: 16 },
-    snowBase: 0.3,
-    blizzardSec: 8,
-    /** A shake: both hands' average speed (m/s) held this long (s). */
-    shakeSpeed: 0.9,
-    shakeHold: 0.35,
-    /** Lights: moonlight, sky fill, the fire's glow (and its reach), the tree's glow. */
-    moon: 0.9,
-    skyFill: 0.55,
-    fire: 2.4,
-    fireRange: 6,
+  street: {
+    /** Bigfoot's stroll: walking speed (m/s), and when he stops to wave (s). */
+    walkSpeed: 1.35,
+    waveAt: 7,
+    /** Yellow cabs on the street and their speed (m/s); people walking the sidewalks. */
+    taxis: 4,
+    taxiSpeed: 7,
+    walkers: 6,
   },
 
   sea: {
@@ -352,9 +327,12 @@ export const Tuning = {
     stormFill: 0.35,
     flash: 7,
     /** Bigfoot's surf run: this far out of the window (m), drifting this far either way, seconds per run. */
-    surfOut: 13,
-    surfSwing: 3.2,
-    surfRun: 16,
+    surfOut: 7,
+    surfSwing: 3.4,
+    /** His carving speed (radians of the carve per second): fast at first, easing to slow over surfEase seconds. */
+    surfFast: 2.4,
+    surfSlow: 0.45,
+    surfEase: 7,
     /** Whales: how many, their swim radius band (m), seconds between breaches. */
     whales: 2,
     whaleRadius: [45, 75],

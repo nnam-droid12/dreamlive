@@ -166,13 +166,17 @@ def world_beds(events, start, total):
         seg = np.zeros((n, 2), np.float32)
         if name == 'clouds':
             seg += wind * gust * 0.06
-        elif name == 'winter':
-            seg += wind * gust * 0.08
-            pops = np.zeros(n, np.float32)
-            for i in rng.integers(0, n, int(n / SR * 6)):
-                m = min(n - i, int(0.02 * SR))
-                pops[i:i + m] += rng.standard_normal(m).astype(np.float32) * np.exp(-np.arange(m) / (0.004 * SR)) * 0.08
-            seg += np.stack([pops, pops], 1)
+        elif name == 'street':
+            # Traffic hum, tyres on asphalt, and the odd cab horn.
+            hum = np.stack([smooth(noise[:, 0], 0.006), smooth(noise[:, 1], 0.006)], 1)
+            hum /= np.abs(hum).max() + 1e-6
+            seg += hum * 0.1 + wind * 0.03
+            for at in np.arange(3.0, n / SR - 1, 6.5):
+                m = int(0.35 * SR)
+                i = int(at * SR)
+                tt2 = np.arange(m) / SR
+                horn = (np.sign(np.sin(2 * np.pi * 415 * tt2)) * 0.5 + np.sin(2 * np.pi * 523 * tt2)) * np.minimum(1, tt2 * 40) * np.exp(-tt2 * 4) * 0.03
+                seg[i:i + m] += np.stack([horn, horn * 0.8], 1)[: max(0, min(m, n - i))]
         elif name == 'sea':
             surf = np.stack([smooth(noise[:, 0], 0.0012), smooth(noise[:, 1], 0.0012)], 1)
             surf /= np.abs(surf).max() + 1e-6

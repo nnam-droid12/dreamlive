@@ -17,8 +17,8 @@ const ROOFTOP_MUSIC = new Set(['arrive', 'party-wait']);
 /** Each scene's music: the opening, the bedroom, the leaps, gifts at night, the ending, bedtime. */
 function scoreFor(phase: string, scene: string, roof: boolean, bedtime: boolean, world = ''): string {
   if (world === 'clouds') return 'clouds';
-  if (world === 'winter') return 'winter';
   if (world === 'sea') return 'sea';
+  if (world === 'street') return 'bedroom';
   if (phase === RitualPhase.Waking || phase === RitualPhase.Awake) return bedtime ? 'lullaby' : 'ending';
   if (phase !== RitualPhase.Asleep || !roof) return 'dream';
   if (scene === 'draw-window' || scene === 'to-window') return 'bedroom';

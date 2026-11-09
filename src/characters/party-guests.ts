@@ -33,9 +33,13 @@ export interface Guest {
   mixer: AnimationMixer;
   action: AnimationAction;
   rate: number;
+  /** Where the owner placed it (the dance bounce rides on top), and its own beat offset. */
+  baseY?: number;
+  phase: number;
 }
 
-const MOVES = ['Dance_Loop', 'Dance_Loop', 'Dance_Loop', 'Jump_Loop', 'Spell_Simple_Idle_Loop', 'Idle_Talking_Loop'];
+/** Party moves: real dancing and jumping (no idles: everyone on the floor is dancing). */
+const MOVES = ['Dance_Loop', 'Dance_Loop', 'Jump_Loop', 'Dance_Loop', 'Dance_Loop', 'Jump_Loop'];
 
 /** Paint clothes on a skinned body by rest-pose position (metres; feet at 0, arms out along X). */
 function dress(mat: MeshStandardMaterial, o: Outfit): void {
@@ -80,6 +84,7 @@ export class PartyGuests {
   readonly root = new Group();
   readonly guests: Guest[] = [];
   private clips = new Map<string, AnimationClip>();
+  private clock = 0;
 
   /** Loads the two bodies and the moves, then makes `count` guests; resolves when ready. */
   async load(count: number, outfits: readonly number[], skin: readonly number[], pickMoves: readonly string[] = MOVES): Promise<void> {
@@ -111,14 +116,23 @@ export class PartyGuests {
       action.play();
       action.time = (i * 0.37) % (clip?.duration ?? 1);
       const rate = 0.9 + ((i * 0.53) % 1) * 0.25;
-      this.guests.push({ root: body, mixer, action, rate });
+      this.guests.push({ root: body, mixer, action, rate, phase: (i * 0.731) % 1 });
       this.root.add(body);
     }
   }
 
   /** Advance the dance; `energy` 0..1 (party life) and `kick` (music) make them move a little harder. */
-  update(delta: number, energy: number, kick: number): void {
-    const k = (0.55 + 0.45 * energy) * (1 + 0.12 * kick);
-    for (const g of this.guests) g.mixer.update(delta * g.rate * k);
+  update(delta: number, energy: number, kick: number, bounce = 1): void {
+    const k = (0.75 + 0.45 * energy) * (1 + 0.15 * kick);
+    this.clock += delta;
+    for (const g of this.guests) {
+      g.mixer.update(delta * g.rate * k);
+      if (!bounce) continue;
+      // On top of the move: a bounce on the beat (~120 bpm) and a sway, each guest a little off the others.
+      g.baseY ??= g.root.position.y;
+      const beat = (this.clock * 2 + g.phase) % 1;
+      g.root.position.y = g.baseY + Math.abs(Math.sin(beat * Math.PI)) * 0.06 * bounce * (0.6 + energy * 0.4);
+      g.root.rotation.z = Math.sin((this.clock + g.phase * 3) * Math.PI) * 0.06 * bounce;
+    }
   }
 }

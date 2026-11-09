@@ -24,6 +24,7 @@ import { Timeline } from '../audio/timeline.js';
 import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { onPress } from '../ui/press.js';
+import { seekForRender } from '../visuals/offline-video.js';
 import { MovieBunny } from '../characters/movie-bunny.js';
 import { buildLoveseat, LOVESEAT } from '../scene-assets/loveseat.scene-asset.js';
 
@@ -37,7 +38,7 @@ export const MovieChoice = { url: '' };
  * Bigfoot's seat point on the loveseat, the bunny's, the way the seats face
  * (yaw), the seat-top height, and Bigfoot's hip height (his own rig reports it).
  */
-export const MovieSpots = { bigfoot: new Vector3(), bunny: new Vector3(), yaw: 0, seatTop: LOVESEAT.seatTop, ready: false, bunnySeated: false };
+export const MovieSpots = { bigfoot: new Vector3(), bunny: new Vector3(), yaw: 0, seatTop: LOVESEAT.seatTop, ready: false, bunnySeated: false, bunnyNow: new Vector3() };
 
 /**
  * Movie Night with Bigfoot (spatial cinema you actually use). From the palm
@@ -142,9 +143,7 @@ export class MovieNightSystem extends createSystem({
     const v = this.video;
     if (v && Director.offline && this.on) {
       this.filmClock += realDelta;
-      if (!v.paused) v.pause();
-      if (!v.seeking) v.currentTime = this.filmClock;
-      if (this.texture && v.readyState >= 2) this.texture.needsUpdate = true;
+      seekForRender(v, this.texture, this.filmClock);
     }
     const t = v ? (Director.offline && this.on ? this.filmClock : v.currentTime) : 0;
     d.setValue(Session, 'movieTime', t);
@@ -295,6 +294,7 @@ export class MovieNightSystem extends createSystem({
       b.root.position.y = MovieSpots.seatTop + 0.04 - b.hipHeight();
     }
     b.update(dt);
+    MovieSpots.bunnyNow.copy(b.root.position);
   }
 
   private endFilm(d: Entity): void {

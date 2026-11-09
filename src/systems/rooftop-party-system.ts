@@ -120,7 +120,9 @@ export class RooftopPartySystem extends createSystem({
       this.party!.setPalette(SONG_PALETTE[song] ?? SONG_PALETTE.afro);
     }
     // Another dream world is showing: New York steps aside.
-    const elsewhere = !!(d.getValue(Session, 'world') ?? '');
+    const w = d.getValue(Session, 'world') ?? '';
+    // (The street walk is New York too: the towers stay.)
+    const elsewhere = !!w && w !== 'street';
     this.party!.root.visible = !elsewhere;
     if (this.dj) this.dj.root.visible = !elsewhere;
     if (elsewhere !== this.hiddenBehind) {

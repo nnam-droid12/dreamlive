@@ -102,7 +102,7 @@ export class PalmMenuSystem extends createSystem({
     this.on('fx-confetti', () => {
       d.setValue(Session, 'confettiShots', (d.getValue(Session, 'confettiShots') ?? 0) + 1);
     });
-    const worlds: Record<string, string> = { city: 'Back to New York.', clouds: 'Above the clouds.', winter: 'A winter night.', sea: 'A storm at sea.' };
+    const worlds: Record<string, string> = { city: 'Back to New York.', clouds: 'Above the clouds.', sea: 'A storm at sea.' };
     for (const w of Object.keys(worlds)) {
       this.on(`w-${w}`, () => {
         d.setValue(Session, 'world', w === 'city' ? '' : w);

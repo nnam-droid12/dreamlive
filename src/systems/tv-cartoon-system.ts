@@ -15,6 +15,7 @@ import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
+import { seekForRender } from '../visuals/offline-video.js';
 
 const cfg = Tuning.tvCartoon;
 
@@ -57,9 +58,7 @@ export class TvCartoonSystem extends createSystem({
     this.clock += realDelta;
     if (Director.offline) {
       // Step the picture with the story clock (the render is slower than real time).
-      if (!v.paused) v.pause();
-      if (!v.seeking && v.duration) v.currentTime = this.clock % v.duration;
-      if (this.texture && v.readyState >= 2) this.texture.needsUpdate = true;
+      seekForRender(v, this.texture, this.clock);
     } else if (v.paused) void v.play().catch(() => undefined);
   }
 

@@ -25,6 +25,7 @@ import { RealHands } from './real-hands.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { WorldSpots } from './lib/world-kit.js';
+import { MovieSpots } from './movie-night-system.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 
 const UP = new Vector3(0, 1, 0);
@@ -53,7 +54,7 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { movie: 9, movieEnd: 30, photo: 31, snap: 34, clouds: 38, puff: 47, star: 53, winter: 61, fire: 70, shake: 76, sea: 84, whale: 94, flood: 102, bed: 110, end: 136 };
+const TOUR = { movie: 9, bunny: 14, sofa: 24, movieEnd: 36, photo: 37, snap: 40, street: 44, streetLow: 54, clouds: 62, puff: 70, star: 75, sea: 81, whale: 95, flood: 103, bed: 111, end: 137 };
 /** Resting hands for the tour, held lower so they stay out of the downward-looking world shots. */
 const TOUR_REST_L: HandShot = { ...REST_L, at: new Vector3(-0.25, -0.95, -0.1) };
 const TOUR_REST_R: HandShot = { ...REST_R, at: new Vector3(0.25, -0.95, -0.1) };
@@ -289,25 +290,37 @@ export class DirectorSystem extends createSystem({
     };
     const at = (x: number, y: number, z: number) => frameToWorld(f, { x, y, z }, new Vector3());
     const tv = new Vector3().fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
+    const screen = new Vector3().fromArray(d.getVectorView(Session, 'movieScreen'));
     if (tt < TOUR.movie) this.aim(seat.clone().setY(1.3), tv.clone().setY(1.5));
-    else if (tt < TOUR.movieEnd) {
-      // Behind the viewer's seat: the big screen, the film's light on the room, Bigfoot beside you.
-      const screen = new Vector3().fromArray(d.getVectorView(Session, 'movieScreen'));
-      const dir = this.toward(seat, screen);
-      this.aim(seat.clone().addScaledVector(dir, -1.1).setY(1.55), screen);
-    } else if (tt < TOUR.clouds) {
+    else if (tt < TOUR.movieEnd && MovieSpots.ready) {
+      const sofa = new Vector3().addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5);
+      const toScreen = this.toward(sofa, screen);
+      const side = new Vector3(toScreen.z, 0, -toScreen.x);
+      if (tt < TOUR.bunny) {
+        // Behind the loveseat: Bigfoot and the viewer's seat in the foreground, the big screen beyond.
+        this.aim(sofa.clone().addScaledVector(toScreen, -1.9).addScaledVector(side, -0.6).setY(1.75), screen.clone().setY(screen.y - 0.2));
+      } else if (tt < TOUR.sofa) {
+        // The bunny steps out of the picture, hops down and walks over: watch it from the side.
+        const b = MovieSpots.bunnyNow;
+        const mid = new Vector3().addVectors(screen, sofa).multiplyScalar(0.5).setY(0);
+        this.aim(mid.addScaledVector(side, -2.4).setY(1.35), b.clone().setY(b.y + 0.45));
+      } else {
+        // On the loveseat together, lit by the film: from just in front of them.
+        this.aim(sofa.clone().addScaledVector(toScreen, 1.9).addScaledVector(side, 0.35).setY(1.1), sofa.clone().setY(0.85));
+      }
+    } else if (tt < TOUR.street) {
       if (head) this.aim(head.clone().addScaledVector(this.toward(head, seat), 2.2).setY(1.45), head);
+    } else if (tt < TOUR.clouds) {
+      // Walking the street: a tracking shot ahead of him, then low, looking up at the towers.
+      const w = WorldSpots.walker;
+      if (tt < TOUR.streetLow) this.aim(w.clone().addScaledVector(f.along, 3.4).addScaledVector(f.out, 1.5).setY(w.y + 1.55), w.clone().setY(w.y + 1.15));
+      else this.aim(w.clone().addScaledVector(f.along, 4.5).addScaledVector(f.out, 2.6).setY(w.y + 0.45), w.clone().setY(w.y + 2.6));
     } else if (tt < TOUR.puff) this.aim(at(-1.0, 1.5, 0.3), WorldSpots.balloon.clone().setY(WorldSpots.balloon.y + 1.9));
     else if (tt < TOUR.star) {
       const p = WorldSpots.puff;
       this.aim(p.clone().addScaledVector(this.toward(p, seat), 0.6).setY(p.y + 0.12), p);
-    } else if (tt < TOUR.winter) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
-    else if (tt < TOUR.fire) this.aim(at(-0.8, 1.55, 0.2), WorldSpots.rink.clone().setY(1.0));
-    else if (tt < TOUR.shake) {
-      const fire = WorldSpots.fire;
-      this.aim(fire.clone().addScaledVector(this.toward(fire, seat), 2.3).setY(1.3), fire.clone().setY(0.6));
-    } else if (tt < TOUR.sea) this.aim(at(-1.5, 1.4, 0.3), at(30, 26, 0));
-    else if (tt < TOUR.whale) this.aim(at(-0.8, 1.5, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.0));
+    } else if (tt < TOUR.sea) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
+    else if (tt < TOUR.whale) this.aim(at(-0.3, 1.5, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.0));
     else if (tt < TOUR.flood) this.aim(at(-0.6, 1.6, 0.3), WorldSpots.whale);
     else this.aim(at(-2.6, 1.35, 0.9), at(-1.8, 0, 0.8));
     return true;
@@ -409,8 +422,8 @@ export class DirectorSystem extends createSystem({
     if (tt > TOUR.movie && this.cue('movie')) d.setValue(Session, 'movie', true);
     if (tt > TOUR.movieEnd && this.cue('movie-end')) d.setValue(Session, 'movie', false);
     if (tt > TOUR.snap && this.cue('snap')) d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1);
+    if (tt > TOUR.street && this.cue('street')) world('street');
     if (tt > TOUR.clouds && this.cue('clouds')) world('clouds');
-    if (tt > TOUR.winter && this.cue('winter')) world('winter');
     if (tt > TOUR.sea && this.cue('sea')) world('sea');
     if (tt > TOUR.sea + 7 && this.cue('strike-1')) WorldSpots.strikeNow = true;
     if (tt > TOUR.whale && this.cue('breach')) WorldSpots.breachNow = true;
@@ -420,15 +433,14 @@ export class DirectorSystem extends createSystem({
       d.setValue(Session, 'bedtime', true);
     }
     if (tt < 8) return 'Every dream leaves a memory';
-    if (tt < TOUR.movie + 10) return 'Movie night with Bigfoot';
-    if (tt < TOUR.movieEnd) return 'The film lights up your room';
-    if (tt < TOUR.clouds) return 'Frame a photo with your fingers';
+    if (tt < TOUR.bunny) return 'Movie night with Bigfoot';
+    if (tt < TOUR.sofa) return 'A movie star walks out to join you';
+    if (tt < TOUR.movieEnd) return 'Popcorn on the sofa, lit by the film';
+    if (tt < TOUR.street) return 'Frame a photo with your fingers';
+    if (tt < TOUR.clouds) return 'Bigfoot walks the streets of New York';
     if (tt < TOUR.puff) return 'Fly above the clouds';
     if (tt < TOUR.star) return 'Wave the little clouds away';
-    if (tt < TOUR.winter) return 'Catch a falling star';
-    if (tt < TOUR.fire) return 'Skate under the northern lights';
-    if (tt < TOUR.shake) return 'A crackling fire in your room';
-    if (tt < TOUR.sea) return 'Shake your hands for a blizzard';
+    if (tt < TOUR.sea) return 'Catch a falling star';
     if (tt < TOUR.whale) return 'Surf the storm with Bigfoot';
     if (tt < TOUR.flood) return 'Whales breach beside you';
     if (tt < TOUR.bed) return 'The storm floods in: touch the water';
@@ -511,18 +523,11 @@ export class DirectorSystem extends createSystem({
       const k = tt - TOUR.puff - 1.5;
       const s = k < 1 ? k : 2 - k;
       right = { ...DANCE_R, at: H_TMP.r.set(0.35 - 0.65 * s, -0.1, -0.55) };
-    } else if (tt >= TOUR.star && tt < TOUR.winter && WorldSpots.starOn) {
+    } else if (tt >= TOUR.star && tt < TOUR.sea && WorldSpots.starOn) {
       // Reach for the falling star once it is within reach.
       head.updateMatrixWorld(true);
       const p = head.worldToLocal(H_TMP.aim.copy(WorldSpots.star));
       if (p.length() < 1.0) right = { at: H_TMP.r.copy(p).add(H_TMP.off.set(0.02, -0.06, 0.06)), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
-    } else if (tt >= TOUR.shake + 1 && tt < TOUR.shake + 5) {
-      // Shaking both hands (fast, unsmoothed) for the blizzard.
-      const s = Math.sin(this.clock * 12) * 0.14;
-      const c = Math.cos(this.clock * 12) * 0.07;
-      left = { ...DANCE_L, at: H_TMP.l.set(-0.2 + s, -0.08 + c, -0.42) };
-      right = { ...DANCE_R, at: H_TMP.r.set(0.2 - s, -0.08 - c, -0.42) };
-      ease = 1;
     } else if (tt >= TOUR.flood + 1 && tt < TOUR.flood + 6.5) {
       // A hand dipped into the floodwater, bobbing in and out.
       head.updateMatrixWorld(true);
@@ -653,7 +658,13 @@ export class DirectorSystem extends createSystem({
       const c = canvas!;
       c.getContext('2d')?.putImageData(img, 0, 0);
       const name = `frame-${String(n++).padStart(5, '0')}.jpg`;
-      void c.convertToBlob({ type: 'image/jpeg', quality: 0.92 }).then((b) => fetch(`/__director-save?name=${name}`, { method: 'POST', body: b }));
+      // At most two frames in flight: the render waits for the saves (no dropped frames).
+      DirectorFrame.busy++;
+      void c
+        .convertToBlob({ type: 'image/jpeg', quality: 0.92 })
+        .then((b) => fetch(`/__director-save?name=${name}`, { method: 'POST', body: b }))
+        .catch(() => undefined)
+        .finally(() => DirectorFrame.busy--);
     };
     this.saveTimeline = () => {
       const base = Director.fileName.replace(/\.webm$/, '');

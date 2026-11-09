@@ -189,9 +189,9 @@ function handMaterial(): MeshStandardMaterial {
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 2.2);
-        totalEmissiveRadiance += vec3(0.75, 0.85, 1.0) * rim * 1.1 + vec3(0.06);`,
+        totalEmissiveRadiance += vec3(0.85, 0.92, 1.0) * rim * 1.6 + vec3(0.12);`,
       )
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.1 + rim * rim * 0.75, 0.0, 0.85);');
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.2 + rim * 0.8, 0.0, 0.9);');
   };
   return mat;
 }

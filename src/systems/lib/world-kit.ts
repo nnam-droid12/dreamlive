@@ -19,6 +19,7 @@ export const WorldSpots = {
   fire: new Vector3(),
   board: new Vector3(),
   whale: new Vector3(),
+  walker: new Vector3(),
   breachNow: false,
   strikeNow: false,
 };

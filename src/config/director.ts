@@ -34,4 +34,14 @@ export const Director = {
  * Shared with other systems while Director mode runs: the offline render loop's
  * after-frame hook, and whether the cinema screen may show in the current shot.
  */
-export const DirectorFrame = { onFrame: undefined as undefined | (() => void), cinema: true, offscreen: false };
+export const DirectorFrame = {
+  onFrame: undefined as undefined | (() => void),
+  cinema: true,
+  offscreen: false,
+  /**
+   * Offline renders wait while anything is pending: frames still being saved,
+   * or a video still seeking to this step's picture. While busy, the story does
+   * not advance and no frame is captured (so none is ever dropped or stale).
+   */
+  busy: 0,
+};

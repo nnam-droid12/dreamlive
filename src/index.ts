@@ -39,8 +39,8 @@ import { PhotoSystem } from './systems/photo-system.js';
 import { MovieNightSystem } from './systems/movie-night-system.js';
 import { TvCartoonSystem } from './systems/tv-cartoon-system.js';
 import { CloudWorldSystem } from './systems/cloud-world-system.js';
-import { WinterWorldSystem } from './systems/winter-world-system.js';
 import { SeaWorldSystem } from './systems/sea-world-system.js';
+import { StreetWalkSystem } from './systems/street-walk-system.js';
 import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
@@ -94,8 +94,8 @@ World.create(
     .registerSystem(PhotoSystem)
     .registerSystem(TvCartoonSystem)
     .registerSystem(CloudWorldSystem)
-    .registerSystem(WinterWorldSystem)
     .registerSystem(SeaWorldSystem)
+    .registerSystem(StreetWalkSystem)
     .registerSystem(MovieNightSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)
@@ -130,7 +130,11 @@ function offlineRender(world: Awaited<ReturnType<typeof World.create>>): void {
   let t = 0;
   Timeline.on = true;
   const update = world.update.bind(world);
+  let waiting = false;
   world.update = (_delta: number, _time: number) => {
+    // Something still pending (saving frames, a video seeking): hold this step.
+    waiting = DirectorFrame.busy > 0;
+    if (waiting) return;
     t += step;
     Timeline.t = t;
     update(step, t);
@@ -138,6 +142,6 @@ function offlineRender(world: Awaited<ReturnType<typeof World.create>>): void {
   const render = r.render.bind(r);
   r.render = (scene, camera) => {
     render(scene, camera);
-    if (!DirectorFrame.offscreen) DirectorFrame.onFrame?.();
+    if (!DirectorFrame.offscreen && !waiting) DirectorFrame.onFrame?.();
   };
 }

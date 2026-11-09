@@ -60,7 +60,6 @@
     <Button id="w-clouds" class="b"><ButtonLabel>Clouds</ButtonLabel></Button>
   </div>
   <div class="row">
-    <Button id="w-winter" class="b"><ButtonLabel>Winter</ButtonLabel></Button>
     <Button id="w-sea" class="b"><ButtonLabel>Sea</ButtonLabel></Button>
   </div>
   <div class="label">Weather</div>

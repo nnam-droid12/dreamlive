@@ -89,6 +89,8 @@ export class SeaWorldSystem extends createSystem({
   private thunderIn = -1;
   private strikes = 0;
   private cheer = 0;
+  private surfPhase = 0;
+  private sprayIn = 0;
   private rainIn = 0;
   private dipped = [false, false];
   private waves?: ReturnType<typeof Sound.loop>;
@@ -147,7 +149,7 @@ export class SeaWorldSystem extends createSystem({
     }
     // Spray: soft white puffs thrown up where a whale breaks the surface.
     const tex = cloudTexture(9, 128);
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 40; i++) {
       const sprite = new Sprite(new SpriteMaterial({ map: tex, color: Palette.oceanFoam, transparent: true, depthWrite: false, opacity: 0 }));
       sprite.visible = false;
       this.root.add(sprite);
@@ -207,7 +209,7 @@ export class SeaWorldSystem extends createSystem({
       WorldSpots.breachNow = false;
       this.whales[0].wait = 0;
     }
-    this.surf(d);
+    this.surf(d, dt);
     WorldSpots.board.copy(this.board.position);
     if (this.whales[0]) WorldSpots.whale.copy(this.whales[0].obj.position);
     this.swimWhales(d, dt);
@@ -238,6 +240,7 @@ export class SeaWorldSystem extends createSystem({
     if (!Showcase.enabled) this.flood.mesh.position.set(this.head.x, cfg.floodDepth, this.head.z);
     this.strikeIn = cfg.firstStrike;
     this.strikes = 0;
+    this.surfPhase = 0;
     if (!this.waves) this.waves = Sound.loop('waves', this.tmp.copy(this.windowAt).addScaledVector(this.out, 8), 0);
     this.kit.preload(['sea-hello', 'sea-thunder', 'sea-whale']);
     this.kit.caption(d, 'Storm at Sea');
@@ -289,22 +292,37 @@ export class SeaWorldSystem extends createSystem({
   }
 
   /** Bigfoot rides the swells out of the window, carving to and fro. */
-  private surf(d: Entity): void {
-    const run = Math.sin((this.time / cfg.surfRun) * Math.PI * 2);
-    const p = this.tmp.copy(this.windowAt).addScaledVector(this.out, cfg.surfOut + Math.sin(this.time * 0.37) * 1.5).addScaledVector(this.along, run * cfg.surfSwing);
+  /**
+   * Bigfoot surfs right outside the window: big fast carves across the swell at
+   * first, spray flying off the board, then gradually easing into a slow,
+   * relaxed glide. He leans into each turn.
+   */
+  private surf(d: Entity, dt: number): void {
+    const speed = cfg.surfSlow + (cfg.surfFast - cfg.surfSlow) * Math.exp(-this.time / cfg.surfEase);
+    this.surfPhase += speed * dt;
+    const s = Math.sin(this.surfPhase);
+    const c = Math.cos(this.surfPhase);
+    const p = this.tmp.copy(this.windowAt).addScaledVector(this.out, cfg.surfOut + Math.sin(this.surfPhase * 0.5) * 1.2).addScaledVector(this.along, s * cfg.surfSwing);
     const y = cfg.seaY + swellHeight(cfg.waves, p.x, p.z, this.time) + 0.12;
     swellSlope(cfg.waves, p.x, p.z, this.time, this.slope);
     this.board.position.set(p.x, y, p.z);
-    // Board nose (+X in its frame) along the direction of travel; rider faces +Z (toward the room side).
-    const heading = Math.cos((this.time / cfg.surfRun) * Math.PI * 2) >= 0 ? 1 : -1;
+    // Board nose (+X in its frame) along the direction of travel, banked into the carve.
+    const heading = c >= 0 ? 1 : -1;
     const yaw = Math.atan2(-this.along.z * heading, this.along.x * heading);
+    const lateral = Math.abs(c) * speed * cfg.surfSwing; // m/s across the window
     this.board.rotation.set(0, yaw, 0);
-    this.board.rotateX(-this.slope.z * 0.6);
+    this.board.rotateX(-this.slope.z * 0.6 - s * heading * 0.25 * Math.min(1, lateral / 4));
     this.board.rotateZ(this.slope.x * 0.6);
     this.tmp2.set(p.x, y + 0.08, p.z);
+    // Spray off the tail while he is going fast.
+    this.sprayIn -= dt * Math.min(1, lateral / 3);
+    if (lateral > 1.5 && this.sprayIn <= 0) {
+      this.sprayIn = 0.12;
+      this.burst(this.tmp2, 1, 0.5);
+    }
     // He stands across the board (as a surfer does), on whichever side faces the room.
     const facesRoom = Math.sin(yaw) * (this.head.x - p.x) + Math.cos(yaw) * (this.head.z - p.z) > 0;
-    const anim = this.cheer > 0 ? 'cheer' : 'idle';
+    const anim = this.cheer > 0 ? 'cheer' : lateral > 2.5 ? 'dance' : 'idle';
     this.kit.placeBigfoot(d, this.tmp2, facesRoom ? yaw : yaw + Math.PI, anim);
     if (this.time > 3) this.kit.say(d, 'sea-hello', "Whoa, what a storm! Hold on tight, I'm going surfing!", p);
   }
@@ -356,14 +374,14 @@ export class SeaWorldSystem extends createSystem({
     }
   }
 
-  private burst(at: Vector3, n: number): void {
+  private burst(at: Vector3, n: number, size = 1): void {
     let made = 0;
     for (const s of this.splashes) {
       if (s.age >= 0) continue;
       s.age = 0;
-      s.size = 2 + Math.random() * 3;
+      s.size = (2 + Math.random() * 3) * size;
       s.sprite.position.copy(at).add(this.tmp2.set((Math.random() - 0.5) * 4, 0.5, (Math.random() - 0.5) * 4));
-      s.vel.set((Math.random() - 0.5) * 4, 5 + Math.random() * 6, (Math.random() - 0.5) * 4);
+      s.vel.set((Math.random() - 0.5) * 4 * size, (5 + Math.random() * 6) * size, (Math.random() - 0.5) * 4 * size);
       s.sprite.visible = true;
       if (++made >= n) break;
     }

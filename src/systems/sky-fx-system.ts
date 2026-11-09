@@ -100,9 +100,9 @@ export class SkyFxSystem extends createSystem({
     this.fireworks.update(delta);
     this.confetti.update(delta);
 
-    // A dream world brings its own weather: clear above the clouds, snow in winter, rain in the storm.
+    // A dream world brings its own weather: clear above the clouds, rain in the storm.
     const world = d.getValue(Session, 'world') ?? '';
-    const worldWeather = world === 'clouds' ? 'clear' : world === 'winter' ? 'snow' : world === 'sea' ? 'rain' : '';
+    const worldWeather = world === 'clouds' ? 'clear' : world === 'sea' ? 'rain' : '';
     const kind = (worldWeather || (d.getValue(Session, 'weather') ?? 'clear')) as WeatherKind;
     this.weather.update(kind, delta, this.time, cfg.weatherRate, cfg.rainSpeed, cfg.snowSpeed);
     this.rain(this.weather.rainLevel);

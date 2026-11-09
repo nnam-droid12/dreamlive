@@ -73,6 +73,8 @@ export class BigfootSystem extends createSystem({
   /** A pose on top of his animation this frame (seated for Movie Night) and how far he lifts his popcorn. */
   private wantPose: '' | 'sit' = '';
   private wantEat = 0;
+  private popQ = new Quaternion();
+  private popParentQ = new Quaternion();
   // Rooftop Party route (world space), fixed once the window is known.
   private roofReady = false;
   private windowVersion = 0;
@@ -132,6 +134,7 @@ export class BigfootSystem extends createSystem({
     this.updateZzz(sleeping, delta);
     this.entity.setValue(Bigfoot, 'stateTime', (this.entity.getValue(Bigfoot, 'stateTime') ?? 0) + delta);
     this.rig.update(delta);
+    this.uprightPopcorn();
     if (this.target?.object3D) this.rig.headPosition(this.target.object3D.position);
   }
 
@@ -321,6 +324,16 @@ export class BigfootSystem extends createSystem({
     const v = document.querySelector('video');
     const dur = v && Number.isFinite(v.duration) ? v.duration : 150;
     return t > dur - Tuning.movie.yawnBeforeEnd + 4;
+  }
+
+  /** Whatever his hand does, the bucket stays upright (popcorn never spills), turned the way he faces. */
+  private uprightPopcorn(): void {
+    const p = this.popcorn;
+    if (!p?.visible || !p.parent) return;
+    this.rig!.root.getWorldQuaternion(this.popQ);
+    p.parent.updateWorldMatrix(true, false);
+    p.parent.getWorldQuaternion(this.popParentQ);
+    p.quaternion.copy(this.popParentQ.invert().multiply(this.popQ));
   }
 
   /** The popcorn bucket in his right hand (made once, on his hand bone). */

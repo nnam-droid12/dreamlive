@@ -1,12 +1,11 @@
 import { AssetType, defineAssets } from '@iwsdk/core';
 import djBooth from './scene-assets/dj-booth.scene-asset.js';
 import balloon from './scene-assets/balloon.scene-asset.js';
-import christmasTree from './scene-assets/christmas-tree.scene-asset.js';
 import dove from './scene-assets/dove.scene-asset.js';
-import fireplace from './scene-assets/fireplace.scene-asset.js';
 import lighthouse from './scene-assets/lighthouse.scene-asset.js';
+import streetLamp from './scene-assets/street-lamp.scene-asset.js';
+import taxi from './scene-assets/taxi.scene-asset.js';
 import whale from './scene-assets/whale.scene-asset.js';
-import snowPine from './scene-assets/snow-pine.scene-asset.js';
 import popcorn from './scene-assets/popcorn.scene-asset.js';
 import landmarkDeco from './scene-assets/landmark-deco.scene-asset.js';
 import landmarkGlass from './scene-assets/landmark-glass.scene-asset.js';
@@ -32,12 +31,11 @@ export default defineAssets({
   skis,
   'dj-booth': djBooth,
   balloon,
-  christmasTree,
   dove,
-  fireplace,
   lighthouse,
+  streetLamp,
+  taxi,
   whale,
-  snowPine,
   popcorn,
   'landmark-deco': landmarkDeco,
   'landmark-glass': landmarkGlass,

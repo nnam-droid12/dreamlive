@@ -40,7 +40,7 @@ export const Session = createComponent('Session', {
   photoShots: { type: Types.Int16, default: 0 },
   /** Movie Night: on, the film's time, seconds left of Bigfoot's laugh, and where the screen stands. */
   movie: { type: Types.Boolean, default: false },
-  /** The dream world outside: '' = New York (the Rooftop Party), or 'clouds' | 'winter' | 'sea'. */
+  /** The dream world outside: '' = New York (the Rooftop Party), or 'clouds' | 'sea' | 'street'. */
   world: { type: Types.String, default: '' },
   /** Where the dream world puts Bigfoot (world space, his floor), his heading (rad), and his move ('' = his usual routine). */
   worldSpot: { type: Types.Vec3, default: [0, 0, 0] },
