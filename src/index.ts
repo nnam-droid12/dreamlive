@@ -38,6 +38,7 @@ import { MusicVisualizerSystem } from './systems/music-visualizer-system.js';
 import { PhotoSystem } from './systems/photo-system.js';
 import { MovieNightSystem } from './systems/movie-night-system.js';
 import { CloudWorldSystem } from './systems/cloud-world-system.js';
+import { WinterWorldSystem } from './systems/winter-world-system.js';
 import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
@@ -90,6 +91,7 @@ World.create(
     .registerSystem(MusicVisualizerSystem)
     .registerSystem(PhotoSystem)
     .registerSystem(CloudWorldSystem)
+    .registerSystem(WinterWorldSystem)
     .registerSystem(MovieNightSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)

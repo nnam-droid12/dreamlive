@@ -2,6 +2,17 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-09 — Scene D: Winter Night
+
+- **Winter Night** (palm menu, Worlds row): the room stands on a snowy hillside under the northern lights, with three green-to-violet aurora curtains rippling across a starry sky.
+- **The land:** snow-laden spruce forest (a new procedural model: five drooping needle tiers, each carrying a snow cap) on rolling hills, with mountains at the horizon.
+- **The rink:** out of the window, a frozen lake with polished ice, white boards and a red rail, string lights sagging between posts, and a 5 m town Christmas tree in the middle (a new model with baubles, twinkling fairy lights and a glowing star).
+- **Skaters:** Bigfoot and six party guests in winter colours skate around the tree, leaning into the curve. Bigfoot waves as he passes you.
+- **Fireplace:** a stone fireplace in the room (a new model: fieldstone courses, oak mantel, hearth, chimney breast, logs with embers). A flame shader burns in it and its flickering light warms the room.
+- **Hands:** snow falls into the open room; shake your hands and it becomes a blizzard for a while (wind up, Bigfoot cheers).
+- Two new voice lines: "Brrr, a winter night! Come skate with me…" and "Whoa, a blizzard! You are a winter wizard."
+- Emulator check: aurora, forest, rink, skaters, Bigfoot and the fire all render.
+
 ## 2026-11-09 — Scene B: Above the Clouds (first of three dream worlds)
 
 - **Dream worlds** on the palm menu: a new Worlds row (City, Clouds, Winter, Sea). Choosing one opens the room to it: the walls and ceiling dissolve, and New York steps aside (party towers, Yeti DJ, traffic, skyline photo). Each world sets its own sky, weather and music.

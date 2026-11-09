@@ -49,6 +49,29 @@ export const Palette = {
   cloudHaze: 0xf7c9a8,
   cloudPuff: 0xfff4ea,
   starGlow: 0xffe6a8,
+  /** Winter Night: snow, spruce, the town Christmas tree, the fireplace, the rink, moonlight, aurora. */
+  snowWhite: 0xf4f8ff,
+  snowShade: 0x9fb2d8,
+  pineBark: 0x4a3426,
+  pineNeedles: 0x1f3a2c,
+  xmasNeedles: 0x1d4a2e,
+  xmasRed: 0xc8102e,
+  xmasGold: 0xe8b84a,
+  xmasStar: 0xffd56a,
+  xmasBulb: 0xffc070,
+  fireStone: 0x8a8378,
+  fireChimney: 0xd9d2c6,
+  fireSoot: 0x161210,
+  fireMantel: 0x6b4a2f,
+  fireEmber: 0xff5a1a,
+  fireGlow: 0xff8a3a,
+  iceRink: 0xcfe6f5,
+  rinkBoard: 0xf2f2f2,
+  moonLight: 0xbfd0ff,
+  winterSky: 0x7e93c8,
+  winterGround: 0x2a3550,
+  auroraGreen: 0x3dffa0,
+  auroraViolet: 0x8a5cff,
   /** Hot-air balloon: three gore colours, trim, wicker, leather rim, burner flame. */
   balloonA: 0xe8463a,
   balloonB: 0xf6c344,
@@ -105,5 +128,7 @@ export const PaletteSets = {
   /** Party guests: outfit colours (shirts, trousers, dresses, sneakers) and skin tones (multiplied with the skin texture). */
   guestOutfits: [0xf2f2ee, 0x2f4f8f, 0xd6455d, 0xf4c95d, 0x3fa58a, 0x7d5bc4, 0x1d1d22, 0xe9824a, 0x6fb7e8, 0xe8a0c8, 0x9a7b5a, 0x44484f],
   guestSkin: [0xffffff, 0xf3d6c0, 0xc79a80, 0x8a6250],
+  /** Skaters' winter coats, scarves and boots. */
+  skaterOutfits: [0xb3202a, 0x1f3f7a, 0xf2f2ee, 0x2e6b4f, 0xd98a2b, 0x5a3d7a, 0x22252b, 0x8fb8de],
   crowdOutfits: [0xe8b38a, 0x5f8fd6, 0xd65f7a, 0xf2d27a, 0x6fc9a8, 0xb98ae0, 0xf0f0ea, 0x3d3f52, 0xe07a4a],
 } as const;

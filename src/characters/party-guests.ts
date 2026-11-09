@@ -82,7 +82,7 @@ export class PartyGuests {
   private clips = new Map<string, AnimationClip>();
 
   /** Loads the two bodies and the moves, then makes `count` guests; resolves when ready. */
-  async load(count: number, outfits: readonly number[], skin: readonly number[]): Promise<void> {
+  async load(count: number, outfits: readonly number[], skin: readonly number[], pickMoves: readonly string[] = MOVES): Promise<void> {
     const base = `${import.meta.env.BASE_URL}models/people/`;
     const [male, female, moves] = await Promise.all(['male', 'female', 'moves'].map((n) => AssetManager.loadGLTF(`${base}${n}.glb`)));
     for (const c of moves.animations) this.clips.set(c.name, c);
@@ -106,7 +106,7 @@ export class PartyGuests {
         m.material = mat;
       });
       const mixer = new AnimationMixer(body);
-      const clip = this.clips.get(MOVES[(i * 7) % MOVES.length]) ?? this.clips.get('Dance_Loop');
+      const clip = this.clips.get(pickMoves[(i * 7) % pickMoves.length]) ?? this.clips.get('Dance_Loop');
       const action = mixer.clipAction(clip!);
       action.play();
       action.time = (i * 0.37) % (clip?.duration ?? 1);

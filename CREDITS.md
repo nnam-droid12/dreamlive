@@ -28,6 +28,7 @@ Every third-party asset, sound and library used in the shipped build is listed h
 | Building materials (`public/textures/building/`): Concrete034 (colour, normal, roughness), Metal009 (colour, roughness); resized to 512 px WebP | [ambientCG](https://ambientcg.com) | CC0 |
 | Modern skyscrapers (glass curtain walls, concrete slabs, mullion fins, lobbies, setbacks, crowns) | Original, built in code (`src/scene-assets/lib/modern-tower.ts`) | Project-owned |
 | Hot-air balloons, the sea of clouds, cloud puffs and star glints (Above the Clouds) | Original, built in code (`src/scene-assets/balloon.scene-asset.ts`, `src/visuals/cloud-sea.ts`, `src/visuals/soft-sprites.ts`) | Project-owned |
+| Winter Night: snowy spruces, the town Christmas tree, the stone fireplace, the ice rink, snowy land, aurora, snowfall and flames | Original, built in code (`src/scene-assets/snow-pine.scene-asset.ts`, `christmas-tree.scene-asset.ts`, `fireplace.scene-asset.ts`, `src/visuals/winter-fx.ts`, `src/systems/winter-world-system.ts`) | Project-owned |
 | Showcase bedroom (bed, TV, console, side table, art, curtains) | Original, built in code (`src/showcase/`) from the textures above | Project-owned |
 
 ## Audio
