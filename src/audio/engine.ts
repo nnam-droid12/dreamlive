@@ -14,7 +14,7 @@ export const SOUND_CAPTIONS: Partial<Record<SoundName, string>> = {
 };
 
 export type SoundName =
-  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop' | 'shutter' | 'thunder' | 'whale';
+  | 'chime' | 'bloom' | 'bell' | 'splash' | 'door' | 'catch' | 'wake' | 'rainStart' | 'hush' | 'firework' | 'pop' | 'shutter' | 'thunder' | 'whale' | 'clap' | 'bump' | 'giggle';
 export type LoopName = 'waves' | 'wind' | 'snore' | 'rain';
 export type ActName = '' | 'surf' | 'dj' | 'ski' | 'disco' | 'afro' | 'house';
 
@@ -218,6 +218,20 @@ class AudioEngine {
         break;
       case 'rainStart':
         this.noiseBurst(t, 1.5, 3200, 0.08, out);
+        break;
+      case 'clap':
+        // A hand clap: a bright, short burst of noise with a little room.
+        this.noiseBurst(t, 0.09, 2400, 0.55, out);
+        this.noiseBurst(t + 0.012, 0.22, 1400, 0.18, out);
+        break;
+      case 'bump':
+        // A fist bump: a soft low thump and a sparkle.
+        this.noiseBurst(t, 0.14, 180, 0.6, out);
+        [91, 96].forEach((n, i) => this.tone(midi(n), t + 0.05 + i * 0.06, 0.8, 0.08, out));
+        break;
+      case 'giggle':
+        // A little rising sparkle of notes (hearts, tickles).
+        [84, 88, 91, 93].forEach((n, i) => this.tone(midi(n), t + i * 0.07, 0.5, 0.06, out));
         break;
       case 'thunder':
         // A sharp crack, then a long rolling rumble.

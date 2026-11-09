@@ -84,6 +84,9 @@ export const Palette = {
   steamStack: 0xf06a1f,
   lampSteel: 0x5f646b,
   lampGlow: 0xffe2b0,
+  /** Friend moments: sparkles and hearts. */
+  sparkGold: 0xffe3a0,
+  heartPink: 0xff6f9c,
   /** Hot-air balloon: three gore colours, trim, wicker, leather rim, burner flame. */
   balloonA: 0xe8463a,
   balloonB: 0xf6c344,

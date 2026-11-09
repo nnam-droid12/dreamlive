@@ -1,6 +1,6 @@
 import { AssetManager, Color, FrontSide, Group, Matrix4, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from '@iwsdk/core';
 
-const JOINTS: XRHandJoint[] = [
+export const JOINTS: XRHandJoint[] = [
   'wrist',
   'thumb-metacarpal',
   'thumb-phalanx-proximal',
@@ -41,7 +41,7 @@ const Q = new Quaternion();
 const ONE = new Vector3(1, 1, 1);
 
 /** IWER keeps a joint's pose (relative to the hand's target ray) in a symbol-keyed field. */
-function jointOffset(js: object): ArrayLike<number> | undefined {
+export function jointOffset(js: object): ArrayLike<number> | undefined {
   for (const k of Object.getOwnPropertySymbols(js)) {
     const v = (js as Record<symbol, { offsetMatrix?: ArrayLike<number> } | undefined>)[k];
     if (v?.offsetMatrix) return v.offsetMatrix;

@@ -73,6 +73,16 @@ export interface BigfootRig {
   setPose(pose: '' | 'sit', eat?: number): void;
   /** Height of his hips above his root, in metres (where a seat must be for 'sit'). */
   hipHeight(): number;
+  /** Turn his head toward a world point (null = let the animation lead). */
+  setLook(target: Vector3 | null): void;
+  /**
+   * Reach a hand to a world point exactly (two-bone IK on top of the animation),
+   * the hand open with fingers up ('palm', a high-five) or a fist forward ('fist').
+   * null releases it.
+   */
+  setReach(hand: 'left' | 'right', target: Vector3 | null, shape?: 'palm' | 'fist'): void;
+  /** World position of a hand (for contact checks). */
+  handPosition(hand: 'left' | 'right', out: Vector3): Vector3;
   current: BigfootAnim;
 }
 
@@ -94,6 +104,20 @@ export async function createBigfoot(): Promise<BigfootRig> {
 const DOWN = new Vector3(0, -1, 0);
 /** Scratch for the posing helpers (no allocation per frame). */
 const AIM = { a: new Vector3(), c: new Vector3(), delta: new Quaternion(), world: new Quaternion(), parent: new Quaternion(), rootQ: new Quaternion() };
+/** Scratch for the arm IK and head look. */
+const IK = {
+  s: new Vector3(),
+  e: new Vector3(),
+  e2: new Vector3(),
+  w: new Vector3(),
+  t: new Vector3(),
+  t2: new Vector3(),
+  u: new Vector3(),
+  n: new Vector3(),
+  q: new Quaternion(),
+  q2: new Quaternion(),
+  yAxis: new Vector3(0, 1, 0),
+};
 
 function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   const model = cloneSkinned(scene);
@@ -138,6 +162,64 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     rHand: bone(/RightHand$/),
   };
   let pose: '' | 'sit' = '';
+  const look = { on: false, target: new Vector3(), weight: 0 };
+  const reach = {
+    left: { on: false, target: new Vector3(), weight: 0, shape: 'palm' as 'palm' | 'fist' },
+    right: { on: false, target: new Vector3(), weight: 0, shape: 'palm' as 'palm' | 'fist' },
+  };
+  const index1 = { left: bone(/LeftHandIndex1$/), right: bone(/RightHandIndex1$/) };
+  /** Two-bone IK: shoulder → elbow → wrist reaches `target`, elbow bending down and out. */
+  const ikArm = (sideName: 'left' | 'right', target: Vector3, w: number, shape: 'palm' | 'fist') => {
+    const arm = sideName === 'left' ? limb.lArm : limb.rArm;
+    const fore = sideName === 'left' ? limb.lFore : limb.rFore;
+    const hand = sideName === 'left' ? limb.lHand : limb.rHand;
+    if (!arm || !fore || !hand) return;
+    root.updateWorldMatrix(true, false);
+    root.getWorldQuaternion(AIM.rootQ);
+    fwd.set(0, 0, 1).applyQuaternion(AIM.rootQ);
+    side.set(1, 0, 0).applyQuaternion(AIM.rootQ);
+    model.updateWorldMatrix(true, true);
+    const S = IK.s.setFromMatrixPosition(arm.matrixWorld);
+    const E0 = IK.e.setFromMatrixPosition(fore.matrixWorld);
+    const W0 = IK.w.setFromMatrixPosition(hand.matrixWorld);
+    const a = S.distanceTo(E0);
+    const b = E0.distanceTo(W0);
+    // Blend the goal from where the hand is now toward the target (weight 0..1).
+    const T = IK.t.copy(W0).lerp(target, w);
+    const u = IK.u.subVectors(T, S);
+    const d = Math.min(Math.max(u.length(), 1e-3), a + b - 1e-3);
+    u.normalize();
+    const x = (a * a - b * b + d * d) / (2 * d);
+    const h = Math.sqrt(Math.max(0, a * a - x * x));
+    const pole = IK.n.copy(DOWN).addScaledVector(side, sideName === 'left' ? 0.6 : -0.6).addScaledVector(fwd, -0.3);
+    pole.addScaledVector(u, -pole.dot(u)).normalize();
+    const E = IK.e2.copy(S).addScaledVector(u, x).addScaledVector(pole, h);
+    aim(arm, fore, dir.subVectors(E, S).normalize());
+    const Tr = IK.t2.copy(S).addScaledVector(u, d);
+    aim(fore, hand, dir.subVectors(Tr, E).normalize());
+    // The hand: fingers up for a high-five, forward for a fist bump.
+    const idx = index1[sideName];
+    if (idx) aim(hand, idx, shape === 'palm' ? dir.set(0, 1, 0).addScaledVector(fwd, 0.25).normalize() : dir.subVectors(target, E).normalize());
+  };
+  /** Turn the head toward the look target (clamped, so it never twists unnaturally). */
+  const applyLook = () => {
+    if (!headBone || !headBone.parent || look.weight < 0.01) return;
+    root.getWorldQuaternion(AIM.rootQ);
+    fwd.set(0, 0, 1).applyQuaternion(AIM.rootQ);
+    headBone.updateWorldMatrix(true, false);
+    const want = IK.u.subVectors(look.target, IK.s.setFromMatrixPosition(headBone.matrixWorld)).normalize();
+    // Clamp: at most ~70° to either side and ~35° up or down from straight ahead.
+    const yawTo = Math.atan2(want.x, want.z) - Math.atan2(fwd.x, fwd.z);
+    const yaw = Math.max(-1.2, Math.min(1.2, Math.atan2(Math.sin(yawTo), Math.cos(yawTo))));
+    const pitch = Math.max(-0.6, Math.min(0.6, Math.asin(Math.max(-1, Math.min(1, want.y)))));
+    IK.q.setFromAxisAngle(IK.yAxis, yaw * look.weight);
+    IK.n.set(fwd.z, 0, -fwd.x).applyAxisAngle(IK.yAxis, yaw * look.weight);
+    IK.q2.setFromAxisAngle(IK.n, -pitch * look.weight);
+    headBone.getWorldQuaternion(AIM.world).premultiply(IK.q).premultiply(IK.q2);
+    headBone.parent.getWorldQuaternion(AIM.parent);
+    headBone.quaternion.copy(AIM.parent.invert().multiply(AIM.world));
+    headBone.updateMatrixWorld(true);
+  };
   let eat = 0;
   const fwd = new Vector3();
   const side = new Vector3();
@@ -238,6 +320,19 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       if (active) next.crossFadeFrom(active, opts.fade ?? 0.35, false);
       active = next;
     },
+    setLook(target) {
+      look.on = !!target;
+      if (target) look.target.copy(target);
+    },
+    setReach(h, target, shape = 'palm') {
+      reach[h].on = !!target;
+      reach[h].shape = shape;
+      if (target) reach[h].target.copy(target);
+    },
+    handPosition(h, out) {
+      const hb = h === 'left' ? limb.lHand : limb.rHand;
+      return hb ? hb.getWorldPosition(out) : root.localToWorld(out.set(h === 'left' ? 0.4 : -0.4, 1.0, 0.2));
+    },
     setPose(next, e = 0) {
       if (next !== pose) measureIn = 0;
       pose = next;
@@ -251,6 +346,14 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     update(delta) {
       mixer.update(delta);
       if (pose === 'sit') applySit();
+      // Reaching and looking ease in and out (no snapping).
+      for (const h of ['left', 'right'] as const) {
+        const r = reach[h];
+        r.weight += ((r.on ? 1 : 0) - r.weight) * Math.min(1, delta * 6);
+        if (r.weight > 0.01) ikArm(h, r.target, r.weight, r.shape);
+      }
+      look.weight += ((look.on ? 1 : 0) - look.weight) * Math.min(1, delta * 4);
+      applyLook();
       breath += delta;
       if (chest) chest.scale.setScalar(rig.current === 'rest' ? 1 + Math.sin(breath * 1.4) * 0.025 : 1);
       // Self-grounding: whatever height the caller placed him at is the surface his
@@ -351,6 +454,11 @@ function standInRig(): BigfootRig {
     setPose() {},
     hipHeight() {
       return 0.5;
+    },
+    setLook() {},
+    setReach() {},
+    handPosition(h, out) {
+      return root.localToWorld(out.set(h === 'left' ? 0.5 : -0.5, 1.0, 0.2));
     },
     update(delta) {
       t += delta;

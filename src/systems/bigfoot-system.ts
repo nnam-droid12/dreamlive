@@ -1,3 +1,4 @@
+import { BigfootControl } from './lib/bigfoot-control.js';
 import { MovieSpots } from './movie-night-system.js';
 import {
   CanvasTexture,
@@ -116,6 +117,8 @@ export class BigfootSystem extends createSystem({
       else if (this.beat.scene === 'draw-window') this.lieDown();
       else if (ROOFTOP_SCENES.has(this.beat.scene) || this.beat.scene.startsWith('party-')) this.rooftop(this.beat.scene, this.beat.time);
       else this.setState(BigfootState.InTv);
+    } else if (phase === RitualPhase.Awake && BigfootControl.active) {
+      this.friend();
     } else if (phase !== RitualPhase.Asleep && d.getValue(Session, 'world') && d.getValue(Session, 'worldAnim')) {
       this.inWorld(d);
     } else if (d.getValue(Session, 'movie') && phase !== RitualPhase.Asleep) {
@@ -127,6 +130,11 @@ export class BigfootSystem extends createSystem({
     }
 
     this.rig.setPose(this.wantPose, this.wantEat);
+    // The friend system's look and reach (released whenever it is not in charge).
+    const fc = BigfootControl.active && phase === RitualPhase.Awake;
+    this.rig.setLook(fc && BigfootControl.looking ? BigfootControl.look : null);
+    this.rig.setReach('right', fc && BigfootControl.reach.right ? BigfootControl.reachAt.right : null, BigfootControl.shape.right);
+    this.rig.setReach('left', fc && BigfootControl.reach.left ? BigfootControl.reachAt.left : null, BigfootControl.shape.left);
     const pose = this.entity.getValue(Bigfoot, 'pose') ?? 0;
     if (pose > 0) this.entity.setValue(Bigfoot, 'pose', Math.max(0, pose - realDelta));
     const sleeping = this.state() === BigfootState.Sleeping;
@@ -135,6 +143,8 @@ export class BigfootSystem extends createSystem({
     this.entity.setValue(Bigfoot, 'stateTime', (this.entity.getValue(Bigfoot, 'stateTime') ?? 0) + delta);
     this.rig.update(delta);
     this.uprightPopcorn();
+    this.rig.handPosition('left', BigfootControl.hand.left);
+    this.rig.handPosition('right', BigfootControl.hand.right);
     if (this.target?.object3D) this.rig.headPosition(this.target.object3D.position);
   }
 
@@ -309,7 +319,19 @@ export class BigfootSystem extends createSystem({
     this.rig!.play((d.getValue(Session, 'movieLaugh') ?? 0) > 0 ? 'cheer' : 'idle');
   }
 
-  /** A dream world (clouds, winter, sea) puts him somewhere in it and picks his move. */
+  /** Hanging out with you after the dream: the friend system says where he stands and what he does. */
+  private friend(): void {
+    const r = this.rig!.root;
+    this.showPopcorn(false);
+    r.position.copy(BigfootControl.spot);
+    // A laugh shakes him a little.
+    if (BigfootControl.shake > 0) r.position.x += Math.sin(performance.now() * 0.05) * 0.015 * BigfootControl.shake;
+    r.quaternion.setFromAxisAngle(UP, BigfootControl.yaw);
+    this.setState(BigfootState.Awake);
+    this.rig!.play(BigfootControl.anim as BigfootAnim);
+  }
+
+  /** A dream world (clouds, sea, the street) puts him somewhere in it and picks his move. */
   private inWorld(d: Entity): void {
     const r = this.rig!.root;
     this.showPopcorn(false);

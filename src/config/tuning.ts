@@ -295,6 +295,22 @@ export const Tuning = {
     streakEvery: 5,
   },
 
+  friend: {
+    /** The hangout starts this long after he wakes; he stands this far in front of you and walks at this speed. */
+    startAfter: 6,
+    distance: 1.05,
+    walkSpeed: 0.9,
+    /** How close your hand must be: a high-five / fist bump held out to him, his head (pat), his belly (tickle), and a touch. */
+    reach: 0.95,
+    patReach: 0.28,
+    tickleReach: 0.24,
+    contact: 0.16,
+    /** Seconds between moments; the hint card shows this long, and again after this long with nothing happening. */
+    cooldown: 0.8,
+    hintSec: 7,
+    hintAgainSec: 25,
+  },
+
   street: {
     /** Bigfoot's stroll: walking speed (m/s), and when he stops to wave (s). */
     walkSpeed: 1.35,

@@ -25,6 +25,8 @@ import { RealHands } from './real-hands.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { WorldSpots } from './lib/world-kit.js';
+import { BigfootControl } from './lib/bigfoot-control.js';
+import { FriendCue } from './friend-system.js';
 import { MovieSpots } from './movie-night-system.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 
@@ -54,7 +56,11 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { movie: 9, bunny: 14, sofa: 24, movieEnd: 36, photo: 37, snap: 40, street: 44, streetLow: 54, clouds: 62, puff: 70, star: 75, sea: 81, whale: 95, flood: 103, bed: 111, end: 137 };
+const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, sea: 113, whale: 127, flood: 135, bed: 143, end: 169 };
+/** Thumb pointing up for a right-hand thumbs-up (palm turned inward). */
+const Q_THUMB_R = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2);
+/** The hangout's hand moments, in seconds after it starts. */
+const FRIEND = { wave: 2, five: 6, bump: 10, thumbs: 14, rock: 17, tickle: 22, pat: 26, end: 30 };
 /** Resting hands for the tour, held lower so they stay out of the downward-looking world shots. */
 const TOUR_REST_L: HandShot = { ...REST_L, at: new Vector3(-0.25, -0.95, -0.1) };
 const TOUR_REST_R: HandShot = { ...REST_R, at: new Vector3(0.25, -0.95, -0.1) };
@@ -282,7 +288,7 @@ export class DirectorSystem extends createSystem({
   /** The tour's shots: the cinema screen, Bigfoot for the photo, then each world's best views. */
   private tourShot(d: Entity, seat: Vector3, head: Vector3 | undefined): boolean {
     const tt = this.tourTime();
-    if (tt < 8 || tt >= TOUR.bed) return false;
+    if (tt < TOUR.friend || tt >= TOUR.bed) return false;
     const f = {
       origin: new Vector3().fromArray(d.getVectorView(RoomSlots, 'windowOrigin')),
       out: new Vector3().fromArray(d.getVectorView(RoomSlots, 'windowOut')),
@@ -291,6 +297,11 @@ export class DirectorSystem extends createSystem({
     const at = (x: number, y: number, z: number) => frameToWorld(f, { x, y, z }, new Vector3());
     const tv = new Vector3().fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));
     const screen = new Vector3().fromArray(d.getVectorView(Session, 'movieScreen'));
+    if (tt >= TOUR.friend && tt < TOUR.friendEnd) {
+      // The hangout: from your seat, across the open floor toward the window; he comes to you.
+      this.aim(seat.clone().setY(1.42), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(1.15));
+      return true;
+    }
     if (tt < TOUR.movie) this.aim(seat.clone().setY(1.3), tv.clone().setY(1.5));
     else if (tt < TOUR.movieEnd && MovieSpots.ready) {
       const sofa = new Vector3().addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5);
@@ -419,6 +430,7 @@ export class DirectorSystem extends createSystem({
       d.setValue(Session, 'world', name);
       Timeline.log('world', name);
     };
+    FriendCue.on = tt >= TOUR.friend && tt < TOUR.friendEnd;
     if (tt > TOUR.movie && this.cue('movie')) d.setValue(Session, 'movie', true);
     if (tt > TOUR.movieEnd && this.cue('movie-end')) d.setValue(Session, 'movie', false);
     if (tt > TOUR.snap && this.cue('snap')) d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1);
@@ -432,7 +444,18 @@ export class DirectorSystem extends createSystem({
       world('');
       d.setValue(Session, 'bedtime', true);
     }
-    if (tt < 8) return 'Every dream leaves a memory';
+    if (tt < TOUR.friend) return 'Every dream leaves a memory';
+    if (tt < TOUR.friendEnd) {
+      const f = tt - TOUR.friend;
+      if (f < FRIEND.wave) return 'Bigfoot, your friend: talk with your hands';
+      if (f < FRIEND.five) return 'Wave, and he waves back';
+      if (f < FRIEND.bump) return 'High-five: his hand meets yours';
+      if (f < FRIEND.thumbs) return 'Fist bump';
+      if (f < FRIEND.rock) return 'Thumbs up';
+      if (f < FRIEND.tickle) return 'Rock on, and he dances';
+      if (f < FRIEND.pat) return 'Tickle him';
+      return 'Pat his head';
+    }
     if (tt < TOUR.bunny) return 'Movie night with Bigfoot';
     if (tt < TOUR.sofa) return 'A movie star walks out to join you';
     if (tt < TOUR.movieEnd) return 'Popcorn on the sofa, lit by the film';
@@ -514,7 +537,34 @@ export class DirectorSystem extends createSystem({
       left = TOUR_REST_L;
       right = TOUR_REST_R;
     }
-    if (tt >= TOUR.photo && tt < TOUR.photo + 5.5) {
+    if (tt >= TOUR.friend && tt < TOUR.friendEnd) {
+      const f = tt - TOUR.friend;
+      const sp = BigfootControl.spot;
+      head.updateMatrixWorld(true);
+      const local = (x: number, y: number, z: number) => head.worldToLocal(H_TMP.aim.set(x, y, z));
+      if (f >= FRIEND.wave && f < FRIEND.wave + 3) {
+        // A wave: open hand up by the shoulder, swinging side to side.
+        right = { at: H_TMP.r.set(0.2 + Math.sin(f * Math.PI * 4) * 0.13, -0.02, -0.42), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
+      } else if (f >= FRIEND.five && f < FRIEND.five + 3) {
+        // A high-five held up to him.
+        right = { at: H_TMP.r.set(0.08, 0.02, -0.5), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
+      } else if (f >= FRIEND.bump && f < FRIEND.bump + 3) {
+        right = { at: H_TMP.r.set(0.06, -0.12, -0.52), rot: Q_ID, pose: 'fist', pinch: 0 };
+      } else if (f >= FRIEND.thumbs && f < FRIEND.thumbs + 2.5) {
+        right = { at: H_TMP.r.set(0.16, -0.1, -0.4), rot: Q_THUMB_R, pose: 'thumbs-up', pinch: 0 };
+      } else if (f >= FRIEND.rock && f < FRIEND.rock + 4) {
+        right = { at: H_TMP.r.set(0.16, 0.04, -0.42), rot: Q_UP_FINGERS, pose: 'rock', pinch: 0 };
+      } else if (f >= FRIEND.tickle && f < FRIEND.tickle + 3.5) {
+        // Fingers wiggling on his belly.
+        const to = H_TMP.off.subVectors(this.camPos, sp).setY(0).normalize();
+        const p = local(sp.x + to.x * 0.3 + Math.sin(f * 30) * 0.04, 0.85 + Math.cos(f * 26) * 0.03, sp.z + to.z * 0.3);
+        right = { at: H_TMP.r.copy(p), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
+      } else if (f >= FRIEND.pat && f < FRIEND.pat + 3.5) {
+        // Patting the top of his head.
+        const p = local(sp.x, 1.66 + Math.abs(Math.sin(f * Math.PI * 2.5)) * 0.06, sp.z);
+        right = { at: H_TMP.r.copy(p), rot: Q_ID, pose: 'flat', pinch: 0 };
+      }
+    } else if (tt >= TOUR.photo && tt < TOUR.photo + 5.5) {
       // A finger frame around Bigfoot.
       left = FRAME_L;
       right = FRAME_R;

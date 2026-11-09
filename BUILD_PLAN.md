@@ -148,6 +148,22 @@ Order:
 
 Commit after each.
 
+
+## 2g. Go deep — 2026-11-09 (owner: "projects that win now go very deep… let's go very deep")
+
+Depth over breadth for the last 9 days. Owner picked three pillars, built in this order (stop after each for review):
+
+**Pillar 1. Bigfoot, a living friend (hands-first).** After the dream he hangs out about 1 m in front of you, eyes following you, and responds to your hands, on a real Quest (tracked joints) and in the film (the emulator's joints feed the same recogniser):
+- wave → he waves back; high-five → his hand meets yours exactly (two-bone IK), clap and sparkles; fist bump → his fist meets yours, "Boom!";
+- thumbs up → happy cheer; rock sign → he dances; pat his head → leans in, giggles, hearts; tickle his belly → belly laugh; point → he looks where you point.
+- Hand-sign recogniser from the 25 joints (finger extension, palm direction, motion); reactions with voice, sound and light; a short in-world hint of what to try.
+
+**Pillar 2. It remembers you.** Every night builds on the last: he greets you by what you did before (song, photos, gifts, high-fives), and the room fills with shared memories.
+
+**Pillar 3. Your real room (MR).** Passthrough: walls and furniture from scene understanding; Bigfoot walks around and sits on your real furniture, hides behind it (depth), the window is drawn on your real wall.
+
+Also from owner review 2: Winter removed; New York street walk added; the film must show Movie Night with the bunny and Bigfoot eating on the sofa; surfing close and fast-then-slow.
+
 ## 3. Experience design (the full script)
 
 ### 3.1 Session structure (about 8–9 minutes total)
