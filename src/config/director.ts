@@ -18,6 +18,8 @@ export const Director = {
   enabled: on,
   record: on && !params.has('norecord'),
   offline: on && params.has('offline'),
+  /** `&tour`: skip the dream and play only the tour after it (for checking those shots). */
+  tour: on && params.has('tour'),
   fps: 30,
   width: Number(params.get('w') ?? 0),
   height: Number(params.get('h') ?? 0),

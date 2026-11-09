@@ -22,7 +22,7 @@ import { Tuning } from '../config/tuning.js';
 import { buildBalloon } from '../scene-assets/balloon.scene-asset.js';
 import { CloudSea } from '../visuals/cloud-sea.js';
 import { cloudTexture, starTexture } from '../visuals/soft-sprites.js';
-import { WorldKit } from './lib/world-kit.js';
+import { WorldKit, WorldSpots } from './lib/world-kit.js';
 
 const cfg = Tuning.clouds;
 
@@ -163,7 +163,7 @@ export class CloudWorldSystem extends createSystem({
     const dt = Math.min(realDelta, 0.1);
     if (this.kit.step(d, dt, 0.5)) this.begin(d);
     const k = this.kit.amount;
-    this.root.visible = k > 0;
+    this.root.visible = k > 0 && (this.kit.on || k > 0.3);
     this.wind?.setGain(k * 0.35);
     if (!this.root.visible) return;
     this.time += dt;
@@ -186,6 +186,16 @@ export class CloudWorldSystem extends createSystem({
     this.fallingStars(d, dt, k);
     this.shootingStar(dt, k);
     this.balloons(d, dt);
+    WorldSpots.balloon.copy(this.balloon.position);
+    WorldSpots.puff.copy(this.near[0].home);
+    WorldSpots.starOn = false;
+    for (const s of this.stars) {
+      if (s.active) {
+        WorldSpots.star.copy(s.sprite.position);
+        WorldSpots.starOn = true;
+        break;
+      }
+    }
     if (this.cheer > 0) this.cheer -= dt;
   }
 

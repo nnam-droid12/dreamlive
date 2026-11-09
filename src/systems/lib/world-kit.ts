@@ -6,6 +6,24 @@ import { Session } from '../../components/session.js';
 type Vec = { x: number; y: number; z: number };
 
 /**
+ * Points of interest the dream worlds publish every frame (world space), so the
+ * Director's camera and hands can find them for the trailer; plus two cues it
+ * can pull (a whale breach, a lightning strike).
+ */
+export const WorldSpots = {
+  balloon: new Vector3(),
+  star: new Vector3(),
+  starOn: false,
+  puff: new Vector3(),
+  rink: new Vector3(),
+  fire: new Vector3(),
+  board: new Vector3(),
+  whale: new Vector3(),
+  breachNow: false,
+  strikeNow: false,
+};
+
+/**
  * Shared pieces of the dream worlds (clouds, winter, sea): the fade in and out,
  * both hands (position and speed, from the grip spaces, which follow the hands
  * when hand tracking is on), Bigfoot's place in the world, and his lines.
@@ -29,8 +47,9 @@ export class WorldKit {
     if (started) this.spoke.clear();
     if (!want && this.on) d.setValue(Session, 'worldAnim', '');
     this.on = want;
-    this.amount += ((want ? 1 : 0) - this.amount) * Math.min(1, dt * rate);
-    if (!want && this.amount < 0.002) this.amount = 0;
+    // Fade in gently; when another world takes over, clear away quickly (worlds must never overlap).
+    this.amount += ((want ? 1 : 0) - this.amount) * Math.min(1, dt * (want ? rate : 6));
+    if (!want && this.amount < 0.05) this.amount = 0;
     return started;
   }
 

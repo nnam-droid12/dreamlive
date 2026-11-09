@@ -34,7 +34,7 @@ import { snowPineGeometry, snowPineMaterial } from '../scene-assets/snow-pine.sc
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { softDotTexture } from '../visuals/soft-sprites.js';
 import { Aurora, buildFlames, buildSnowLand, landHeight, Snowfall } from '../visuals/winter-fx.js';
-import { WorldKit } from './lib/world-kit.js';
+import { WorldKit, WorldSpots } from './lib/world-kit.js';
 
 const cfg = Tuning.winter;
 const UP = new Vector3(0, 1, 0);
@@ -180,7 +180,7 @@ export class WinterWorldSystem extends createSystem({
     const dt = Math.min(realDelta, 0.1);
     if (this.kit.step(d, dt, 0.5)) this.begin(d);
     const k = this.kit.amount;
-    this.root.visible = k > 0;
+    this.root.visible = k > 0 && (this.kit.on || k > 0.3);
     this.moon.intensity = k * cfg.moon;
     this.fill.intensity = k * cfg.skyFill;
     this.wind?.setGain(k * (0.2 + this.blizzard * 0.5));
@@ -240,6 +240,8 @@ export class WinterWorldSystem extends createSystem({
     this.sky.rotation.y = Math.atan2(-this.out.x, -this.out.z);
     this.scatterPines();
     this.placeFireplace();
+    WorldSpots.rink.copy(this.rinkAt);
+    this.fireplace.getWorldPosition(WorldSpots.fire);
     this.blizzard = 0;
     if (!this.wind) this.wind = Sound.loop('wind', this.rinkAt, 0);
     if (!this.crackle) this.crackle = Sound.loop('rain', this.fireplace.position, 0);

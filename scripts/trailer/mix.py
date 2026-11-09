@@ -106,7 +106,100 @@ def sfx_bank():
         'chime': (tone_arp([88], 0.1, 1.2, 0.2), 0.7),
         'wake': (tone_arp([60, 64, 67, 72, 76], 0.12, 1.6, 0.12), 0.9),
         'pop': (noise_burst(0.25, 0.0002, 0.4, 3), 0.8),
+        'thunder': (thunder(), 1.0),
+        'whale': (whale_call(), 0.9),
+        'hush': (noise_burst(1.4, 0.0006, 0.18, 5), 0.8),
+        'splash': (noise_burst(0.7, 0.0003, 0.45, 6), 0.9),
+        'shutter': (noise_burst(0.12, 0.00005, 0.5, 7), 0.8),
     }
+
+
+def thunder():
+    """A sharp crack, then a long low rumble that rolls and dies away."""
+    crack = noise_burst(0.4, 0.0001, 0.6, 11)
+    rng = np.random.default_rng(12)
+    n = int(5.0 * SR)
+    x = smooth(rng.standard_normal(n).astype(np.float32), 0.004)
+    x = smooth(x, 0.002)
+    env = np.minimum(1, np.arange(n) / (0.15 * SR)) * np.exp(-np.arange(n) / SR * 0.9)
+    roll = 1 + 0.5 * np.sin(np.arange(n) / SR * 2 * np.pi * 0.7)
+    y = x * env * roll
+    y = y / (np.abs(y).max() + 1e-6) * 0.95
+    out = np.stack([y, y], 1).astype(np.float32)
+    out[:len(crack)] += crack
+    return out
+
+
+def whale_call():
+    """Two long, low, gliding sine moans."""
+    out = np.zeros(int(4.5 * SR), np.float32)
+    for f0, f1, at, dur, g in ((98, 147, 0.0, 2.6, 0.16), (196, 131, 1.8, 2.2, 0.1)):
+        n = int(dur * SR)
+        t = np.arange(n) / SR
+        f = f0 * (f1 / f0) ** np.minimum(1, t / (dur * 0.8))
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        env = np.minimum(1, t / (dur * 0.3)) * np.exp(-np.maximum(0, t - dur * 0.3) * 2.0)
+        i = int(at * SR)
+        out[i:i + n] += np.sin(ph) * env * g
+    return np.stack([out, out], 1)
+
+
+def world_beds(events, start, total):
+    """Ambience for each dream world while it is open: wind, fire crackle, waves and rain."""
+    rng = np.random.default_rng(21)
+    bed = np.zeros((total, 2), np.float32)
+    worlds = [e for e in events if e['type'] == 'world']
+    for k, e in enumerate(worlds):
+        name = e['name']
+        if not name:
+            continue
+        t0 = max(0, e['t'] - start)
+        t1 = (worlds[k + 1]['t'] - start) if k + 1 < len(worlds) else total / SR
+        n = int((t1 - t0) * SR)
+        if n <= 0:
+            continue
+        tt = np.arange(n) / SR
+        noise = rng.standard_normal((n, 2)).astype(np.float32)
+        wind = np.stack([smooth(noise[:, 0], 0.003), smooth(noise[:, 1], 0.003)], 1)
+        wind /= np.abs(wind).max() + 1e-6
+        gust = (0.6 + 0.4 * np.sin(tt * 2 * np.pi * 0.11) * np.sin(tt * 2 * np.pi * 0.047 + 1))[:, None]
+        seg = np.zeros((n, 2), np.float32)
+        if name == 'clouds':
+            seg += wind * gust * 0.06
+        elif name == 'winter':
+            seg += wind * gust * 0.08
+            pops = np.zeros(n, np.float32)
+            for i in rng.integers(0, n, int(n / SR * 6)):
+                m = min(n - i, int(0.02 * SR))
+                pops[i:i + m] += rng.standard_normal(m).astype(np.float32) * np.exp(-np.arange(m) / (0.004 * SR)) * 0.08
+            seg += np.stack([pops, pops], 1)
+        elif name == 'sea':
+            surf = np.stack([smooth(noise[:, 0], 0.0012), smooth(noise[:, 1], 0.0012)], 1)
+            surf /= np.abs(surf).max() + 1e-6
+            swell = (0.35 + 0.65 * (0.5 + 0.5 * np.sin(tt * 2 * np.pi / 7.5)) ** 2)[:, None]
+            hiss = noise - np.stack([smooth(noise[:, 0], 0.0002), smooth(noise[:, 1], 0.0002)], 1)
+            seg += surf * swell * 0.16 + hiss * 0.03 + wind * gust * 0.05
+        fade = min(n, int(1.5 * SR))
+        seg[:fade] *= np.linspace(0, 1, fade, dtype=np.float32)[:, None]
+        seg[-fade:] *= np.linspace(1, 0, fade, dtype=np.float32)[:, None]
+        add(bed, seg, t0, 1.0)
+    return bed
+
+
+def movie_sound(events, start, total):
+    """The film's own soundtrack while Movie Night plays (from the excerpt in public/video)."""
+    out = np.zeros((total, 2), np.float32)
+    ev = [e for e in events if e['type'] == 'movie']
+    for k, e in enumerate(ev):
+        if not e['name'] or e['name'] == 'own':
+            continue
+        t0 = e['t'] - start
+        t1 = next((x['t'] - start for x in ev[k + 1:] if not x['name']), total / SR)
+        clip = load(os.path.join(ROOT, 'public', 'video', e['name'] + '.mp4'))[: int((t1 - t0) * SR)]
+        fade = min(len(clip), int(1.0 * SR))
+        clip[-fade:] *= np.linspace(1, 0, fade, dtype=np.float32)[:, None]
+        add(out, clip, t0, 0.8)
+    return out
 
 
 def main(frames_path, timeline_path, out_path):
@@ -193,7 +286,9 @@ def main(frames_path, timeline_path, out_path):
         ramp = np.minimum(1, np.arange(n, dtype=np.float32) / (2 * SR))[:, None]
         fx[total - n:] += hiss * 0.035 * ramp
 
-    mix = (amb + songs) * duck[:, None] + voice + fx
+    beds = world_beds(events, start, total)
+    film = movie_sound(events, start, total)
+    mix = (amb + songs + film * 0.9) * duck[:, None] + voice + fx + beds
     peak = float(np.abs(mix).max())
     mix = np.tanh(mix / max(peak, 1e-6) * 1.4) * 0.9  # gentle limiter
     wav = out_path.replace('.mp4', '-mix.wav')

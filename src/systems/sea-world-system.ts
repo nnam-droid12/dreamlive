@@ -24,7 +24,7 @@ import { buildWhale } from '../scene-assets/whale.scene-asset.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { buildBeam, FloodWater, Lightning, Ocean, StormClouds, swellHeight, swellSlope } from '../visuals/sea-fx.js';
 import { cloudTexture } from '../visuals/soft-sprites.js';
-import { WorldKit } from './lib/world-kit.js';
+import { WorldKit, WorldSpots } from './lib/world-kit.js';
 
 const cfg = Tuning.sea;
 
@@ -168,7 +168,7 @@ export class SeaWorldSystem extends createSystem({
     const dt = Math.min(realDelta, 0.1);
     if (this.kit.step(d, dt, 0.5)) this.begin(d);
     const k = this.kit.amount;
-    this.root.visible = k > 0;
+    this.root.visible = k > 0 && (this.kit.on || k > 0.3);
     this.waves?.setGain(k * 0.9);
     if (!this.root.visible) {
       this.light.intensity = 0;
@@ -199,7 +199,17 @@ export class SeaWorldSystem extends createSystem({
     this.beam.rotation.y = (this.time / 60) * cfg.beamRpm * Math.PI * 2;
     for (const m of this.beamMats) m.uniforms.uOpacity.value = k;
 
+    if (WorldSpots.strikeNow) {
+      WorldSpots.strikeNow = false;
+      this.strikeIn = 0;
+    }
+    if (WorldSpots.breachNow && this.whales[0]?.breach < 0) {
+      WorldSpots.breachNow = false;
+      this.whales[0].wait = 0;
+    }
     this.surf(d);
+    WorldSpots.board.copy(this.board.position);
+    if (this.whales[0]) WorldSpots.whale.copy(this.whales[0].obj.position);
     this.swimWhales(d, dt);
     this.spray(dt, k);
     this.floodTick(dt, k);

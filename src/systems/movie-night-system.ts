@@ -20,6 +20,8 @@ import { Caption, Ritual } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
+import { Timeline } from '../audio/timeline.js';
+import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { onPress } from '../ui/press.js';
 
@@ -61,6 +63,8 @@ export class MovieNightSystem extends createSystem({
   private fwd = new Vector3();
   private center = new Vector3();
   private pressBound = false;
+  /** Offline Director renders step the film with the story clock (seeking frame by frame), not in real time. */
+  private filmClock = 0;
 
   init(): void {
     this.root = new Group();
@@ -103,7 +107,13 @@ export class MovieNightSystem extends createSystem({
       return;
     }
     const v = this.video;
-    const t = v ? v.currentTime : 0;
+    if (v && Director.offline && this.on) {
+      this.filmClock += realDelta;
+      if (!v.paused) v.pause();
+      if (!v.seeking) v.currentTime = this.filmClock;
+      if (this.texture && v.readyState >= 2) this.texture.needsUpdate = true;
+    }
+    const t = v ? (Director.offline && this.on ? this.filmClock : v.currentTime) : 0;
     d.setValue(Session, 'movieTime', t);
     this.sample(realDelta);
     this.light.color.lerp(this.target, Math.min(1, realDelta * 4));
@@ -156,7 +166,10 @@ export class MovieNightSystem extends createSystem({
     }
     Sound.attachVideo(this.video, this.center, cfg.volume);
     this.video.currentTime = 0;
-    void this.video.play().catch(() => undefined);
+    this.filmClock = 0;
+    Timeline.log('movie', MovieChoice.url ? 'own' : 'big-buck-bunny', 1);
+    if (Director.offline) this.video.muted = true;
+    else void this.video.play().catch(() => undefined);
     this.say(d, 'movie-start', 'Movie night! I brought popcorn. Pinch the screen to pause.');
     const title = MovieChoice.url ? 'Your movie' : '"Big Buck Bunny" by the Blender Foundation (CC BY 3.0)';
     d.setValue(Caption, 'text', `Movie Night: ${title}`);
@@ -166,6 +179,7 @@ export class MovieNightSystem extends createSystem({
   private endFilm(d: Entity): void {
     this.on = false;
     this.video?.pause();
+    Timeline.log('movie', '', 0);
     d.setValue(Session, 'movieLaugh', 0);
   }
 
