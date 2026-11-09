@@ -2,6 +2,21 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-09 — Owner review of the first full film: fixes
+
+- **Rooftop party:** guests and Bigfoot no longer sink into the roof. The new towers had a solid 1.2 m block on the roof; it is now a real roof with a parapet round the edge.
+- **Draw the window:** the hand drags a full, floor-to-ceiling window. A drawing that is too small no longer leaves a stray outline on screen.
+- **Hands in the film:** life-size, fully articulated hands (the WebXR generic hand mesh, skinned to all 25 tracked joints) in a milky, glass-rimmed look like Meta's, instead of the capsule stand-ins.
+- **The bedroom TV** plays a cartoon (Caminandes 2, CC BY) instead of sitting black.
+- **Movie Night:**
+  - A velvet loveseat appears beside you. Bigfoot sits on it and eats popcorn, his hand going to his mouth.
+  - Five seconds into the film, the bunny steps out of the screen with a burst of light, hops down, walks over and jumps up beside Bigfoot. It sits, munching its carrot, and Bigfoot says: "Whoa! He came right out of the movie!"
+- **End credits** roll at the very end (over bedtime) and never over the movie.
+- **Music:** each dream world has its own score (soaring orchestral, Christmas bells, epic storm). In offline renders the visualizer reads pre-analysed music bands, so it still dances in the film.
+- **Rain on the glass** is now clear water drops (bright rim, glint) instead of solid blue blobs. The storm sea is shaded per pixel (no blocky foam).
+- Bigfoot rests on the mattress instead of above it.
+- Worlds clear away quickly, so two worlds never show at once.
+
 ## 2026-11-09 — Scene E: Storm at Sea
 
 - **Storm at Sea** (palm menu, Worlds row): the room stands at the edge of a wild night ocean.

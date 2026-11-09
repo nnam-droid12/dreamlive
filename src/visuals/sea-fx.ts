@@ -91,10 +91,10 @@ export class Ocean {
         uniform float uTime;
         uniform vec4 uW[4];
         varying vec3 vWorld;
-        varying vec3 vNormal;
-        varying float vCrest;
+        varying vec2 vBase;
         void main() {
           vec3 p = (modelMatrix * vec4(position, 1.0)).xyz;
+          vBase = p.xz;
           vec3 base = p;
           vec3 tangent = vec3(1.0, 0.0, 0.0);
           vec3 binormal = vec3(0.0, 0.0, 1.0);
@@ -114,21 +114,35 @@ export class Ocean {
             binormal += vec3(-d.x * d.y * q * s, d.y * q * co, -d.y * d.y * q * s);
             crest += q * s;
           }
-          vNormal = normalize(cross(binormal, tangent));
           vWorld = p;
-          vCrest = crest;
           gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
         }`,
       fragmentShader: /* glsl */ `
         uniform float uTime, uOpacity, uFlash;
         uniform vec3 uCenter, uDeep, uScatter, uFoam, uSky, uHorizon;
+        uniform vec4 uW[4];
         varying vec3 vWorld;
-        varying vec3 vNormal;
-        varying float vCrest;
+        varying vec2 vBase;
         float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float n(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
           return mix(mix(h(i), h(i + vec2(1, 0)), u.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), u.x), u.y); }
         void main() {
+          // The swell's normal and crest, per pixel (smooth however coarse the mesh is).
+          vec3 tangent = vec3(1.0, 0.0, 0.0);
+          vec3 binormal = vec3(0.0, 0.0, 1.0);
+          float vCrest = 0.0;
+          for (int i = 0; i < 4; i++) {
+            vec2 d = uW[i].xy;
+            float k = 6.2831853 / uW[i].w;
+            float c = sqrt(9.8 / k);
+            float f = k * (dot(d, vBase) - c * uTime);
+            float q = uW[i].z;
+            float s = sin(f), co = cos(f);
+            tangent += vec3(-d.x * d.x * q * s, d.x * q * co, -d.x * d.y * q * s);
+            binormal += vec3(-d.x * d.y * q * s, d.y * q * co, -d.y * d.y * q * s);
+            vCrest += q * s;
+          }
+          vec3 vNormal = normalize(cross(binormal, tangent));
           vec3 view = normalize(cameraPosition - vWorld);
           float dist = length(vWorld.xz - uCenter.xz);
           float near = 1.0 - smoothstep(30.0, 160.0, dist);

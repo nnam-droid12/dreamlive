@@ -549,7 +549,7 @@ export class BigfootSystem extends createSystem({
     this.tvFloor.set(anchor.x, 0, anchor.z).addScaledVector(normal, 0.55);
     if (Showcase.enabled) {
       const bed = NycLayout.bed;
-      this.restPos.copy(bed.top);
+      this.restPos.copy(bed.top).setY(bed.top.y - 0.08);
       this.restAxis.set(-1, 0, 0);
       this.exitTop.set(bed.top.x + bed.length / 2 - 0.25, bed.top.y, bed.top.z);
       this.exit.set(bed.top.x + bed.length / 2 + 0.45, 0, bed.top.z);

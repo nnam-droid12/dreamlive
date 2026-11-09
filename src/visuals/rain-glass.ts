@@ -43,10 +43,15 @@ export function buildRainGlass(width: number, height: number, tint: number): Mes
         float y = -sin(t + sin(t + sin(t) * 0.5)) * 0.45;
         y -= (gv.x - x) * (gv.x - x);
         vec2 dropPos = (gv - vec2(x, y)) / aspect;
-        float drop = smoothstep(0.05, 0.03, length(dropPos));
+        // A water drop is clear: a bright rim where it bends the light, a faint body, one glint.
+        float r = length(dropPos);
+        float body = smoothstep(0.045, 0.03, r);
+        float rim = body - smoothstep(0.034, 0.018, r);
+        float glint = smoothstep(0.012, 0.0, length(dropPos - vec2(-0.012, 0.014)));
+        float drop = rim * 0.75 + body * 0.12 + glint;
         vec2 trailPos = (gv - vec2(x, t * 0.25)) / aspect;
         trailPos.y = (fract(trailPos.y * 8.0) - 0.5) / 8.0;
-        float trail = smoothstep(0.03, 0.01, length(trailPos));
+        float trail = smoothstep(0.02, 0.008, length(trailPos));
         float fogTrail = smoothstep(-0.05, 0.05, dropPos.y) * smoothstep(0.5, y, gv.y);
         trail *= fogTrail;
         return drop + trail * 0.6 * step(0.35, n);
@@ -54,8 +59,8 @@ export function buildRainGlass(width: number, height: number, tint: number): Mes
       void main() {
         vec2 m = vUv * uSize;
         float t = uTime;
-        float v = layer(m * 3.2, t) + layer(m * 5.1 + 7.3, t * 1.1) * 0.7;
-        float a = clamp(v, 0.0, 1.0) * 0.9 * uAmount;
+        float v = layer(m * 5.5, t) + layer(m * 8.7 + 7.3, t * 1.1) * 0.6;
+        float a = clamp(v, 0.0, 1.0) * 0.55 * uAmount;
         if (a < 0.004) discard;
         gl_FragColor = vec4(uTint * a, a);
       }`,

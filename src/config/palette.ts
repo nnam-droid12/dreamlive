@@ -12,7 +12,7 @@ export const Palette = {
   lanternGlow: 0xffd89a,
   pinkSoft: 0xf6a8c8,
   /** Weather: rain streaks, snowflakes, fog. */
-  rain: 0xaec4e8,
+  rain: 0xdde7f2,
   snow: 0xf4f8ff,
   fog: 0x39415a,
   /** Landmark towers: deco limestone, gilded crown, supertall glass, lit windows, aircraft beacons. */
