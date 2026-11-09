@@ -1,4 +1,4 @@
-import { AssetManager, Color, FrontSide, Group, Matrix4, MeshStandardMaterial, Object3D, SkinnedMesh } from '@iwsdk/core';
+import { AssetManager, Color, FrontSide, Group, Matrix4, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from '@iwsdk/core';
 
 const JOINTS: XRHandJoint[] = [
   'wrist',
@@ -28,6 +28,27 @@ const JOINTS: XRHandJoint[] = [
   'pinky-finger-tip',
 ];
 
+/** The slice of the emulator's (IWER) hand the trailer reads. */
+export interface EmulatedHand {
+  connected: boolean;
+  position: { x: number; y: number; z: number };
+  quaternion: { x: number; y: number; z: number; w: number };
+  inputSource?: { hand?: { get(j: string): object | undefined } };
+}
+
+const V = new Vector3();
+const Q = new Quaternion();
+const ONE = new Vector3(1, 1, 1);
+
+/** IWER keeps a joint's pose (relative to the hand's target ray) in a symbol-keyed field. */
+function jointOffset(js: object): ArrayLike<number> | undefined {
+  for (const k of Object.getOwnPropertySymbols(js)) {
+    const v = (js as Record<symbol, { offsetMatrix?: ArrayLike<number> } | undefined>)[k];
+    if (v?.offsetMatrix) return v.offsetMatrix;
+  }
+  return undefined;
+}
+
 type FillPosesFrame = XRFrame & { fillPoses?: (spaces: XRSpace[], base: XRSpace, out: Float32Array) => boolean };
 
 interface Side {
@@ -52,6 +73,7 @@ export class RealHands {
   };
   private poses = new Float32Array(JOINTS.length * 16);
   private m = new Matrix4();
+  private base = new Matrix4();
   private ready = false;
 
   constructor() {
@@ -81,6 +103,40 @@ export class RealHands {
       s.root.add(scene);
     }
     this.ready = true;
+  }
+
+  /**
+   * Follow the emulator's hands directly (Director renders): each joint's matrix
+   * relative to the hand's target ray, on top of the hand's pose in rig space.
+   */
+  updateFromEmulator(hands: { left?: EmulatedHand; right?: EmulatedHand } | undefined, rig: Object3D): void {
+    this.root.visible = false;
+    if (!this.ready || !hands) return;
+    rig.updateMatrixWorld();
+    rig.matrixWorld.decompose(this.root.position, this.root.quaternion, this.root.scale);
+    let any = false;
+    for (const side of ['left', 'right'] as const) {
+      const h = hands[side];
+      const s = this.sides[side];
+      s.root.visible = false;
+      if (!h?.connected || !h.inputSource?.hand) continue;
+      this.base.compose(V.set(h.position.x, h.position.y, h.position.z), Q.set(h.quaternion.x, h.quaternion.y, h.quaternion.z, h.quaternion.w), ONE);
+      let ok = true;
+      for (let i = 0; i < JOINTS.length; i++) {
+        const bone = s.bones[i];
+        const js = h.inputSource.hand.get(JOINTS[i]);
+        const off = js && jointOffset(js);
+        if (!bone || !off) {
+          ok = false;
+          continue;
+        }
+        this.m.fromArray(off).premultiply(this.base);
+        this.m.decompose(bone.position, bone.quaternion, bone.scale);
+      }
+      s.root.visible = ok;
+      any ||= ok;
+    }
+    this.root.visible = any;
   }
 
   /** Follow the tracked hands this frame: joint poses in the reference space, the rig's world matrix on top. */
@@ -116,14 +172,14 @@ export class RealHands {
   }
 }
 
-/** Milky translucent skin with a glassy, slightly blue rim (the look of Meta's hands). */
+/** Light, see-through glass with a bright, slightly blue rim (the look of Meta's hands). */
 function handMaterial(): MeshStandardMaterial {
   const mat = new MeshStandardMaterial({
     color: new Color(0xf2f4f8),
     roughness: 0.35,
     metalness: 0,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.35,
     depthWrite: true,
     side: FrontSide,
   });
@@ -133,9 +189,9 @@ function handMaterial(): MeshStandardMaterial {
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 2.2);
-        totalEmissiveRadiance += vec3(0.62, 0.72, 0.95) * rim * 0.9 + vec3(0.1);`,
+        totalEmissiveRadiance += vec3(0.75, 0.85, 1.0) * rim * 1.1 + vec3(0.06);`,
       )
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.42 + rim * 0.55, 0.0, 1.0);');
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.1 + rim * rim * 0.75, 0.0, 0.85);');
   };
   return mat;
 }

@@ -473,7 +473,9 @@ export class DirectorSystem extends createSystem({
       const a = frameToWorld(f, { x: 0, y: 0.25, z: -0.8 }, H_TMP.a);
       const b = frameToWorld(f, { x: 0, y: 2.75, z: 0.8 }, H_TMP.b);
       const k = Math.min(1, Math.max(0, (t - 3) / 3));
-      right = { ...DRAW_R, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 7.4 ? 1 : 0 };
+      // The hand itself sweeps up and across as it drags (the pinch ray follows the hand).
+      const hand = H_TMP.r.set(-0.04 + 0.2 * k, -0.24 + 0.46 * k, -0.42);
+      right = { ...DRAW_R, at: hand, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 7.4 ? 1 : 0 };
     } else if (scene.startsWith('party-') && t < 8) {
       // Dancing: hands up, palms facing each other, swaying on the beat.
       const s = Math.sin(this.clock * 4.2);
@@ -528,7 +530,7 @@ export class DirectorSystem extends createSystem({
       right = { at: H_TMP.r.copy(head.worldToLocal(dip)), rot: Q_ID, pose: 'open', pinch: 0 };
     }
     this.hands.apply(this.player, left, right, ease);
-    this.realHands?.update(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
+    this.realHands?.updateFromEmulator(this.hands.deviceHands() as never, this.player);
   }
 
   /** True the first time a named cue is reached. */

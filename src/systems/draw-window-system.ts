@@ -1,3 +1,4 @@
+import { Director } from '../config/director.js';
 import {
   BoxGeometry,
   createSystem,
@@ -73,8 +74,11 @@ export class DrawWindowSystem extends createSystem({
     const drawing = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat) && this.beat.scene === 'draw-window';
     if (drawing && !this.done) {
       // No drawing yet? After a while the window draws itself, slowly, so it reads as magic.
-      if (!this.dragging && this.beat.time > cfg.autoAfterSec) {
-        this.auto = Math.min(1, this.auto + delta / cfg.autoDrawSec);
+      // (In the Director's film it is drawn in step with the scripted hand's sweep, floor to ceiling.)
+      const after = Director.enabled ? cfg.directorDrawAt : cfg.autoAfterSec;
+      const over = Director.enabled ? cfg.directorDrawSec : cfg.autoDrawSec;
+      if (!this.dragging && this.beat.time > after) {
+        this.auto = Math.min(1, this.auto + delta / over);
         this.defaultRect(this.start, this.end, this.auto);
         this.showOutline();
         if (this.auto >= 1) this.accept(d);
@@ -102,7 +106,7 @@ export class DrawWindowSystem extends createSystem({
     this.pad = this.world.createTransformEntity(mesh);
     this.pad.addComponent(RayInteractable);
     const onDown = (e: { point?: Vector3 }) => {
-      if (this.done || !e.point || !this.isDrawingBeat(d)) return;
+      if (Director.enabled || this.done || !e.point || !this.isDrawingBeat(d)) return;
       this.dragging = true;
       this.rejectedFor = -1;
       this.start.copy(e.point);

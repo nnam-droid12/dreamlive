@@ -84,6 +84,11 @@ export class DirectorHands {
     return d;
   }
 
+  /** The emulator's hands (for drawing them in captures), once connected. */
+  deviceHands(): IwerDevice['hands'] {
+    return this.connect()?.hands;
+  }
+
   /** Pose both hands (rig = the player rig, for converting world aim points); k = easing 0..1. */
   apply(rig: Object3D, left: HandShot, right: HandShot, k: number): void {
     const d = this.connect();

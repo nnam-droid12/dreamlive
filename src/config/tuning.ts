@@ -487,6 +487,9 @@ export const Tuning = {
     /** With no drawing, the window starts drawing itself after this long, taking this long. */
     autoAfterSec: 9,
     autoDrawSec: 2.5,
+    /** In the Director's film: the outline grows with the scripted hand's sweep (beat time it starts, how long). */
+    directorDrawAt: 3,
+    directorDrawSec: 3,
     /** The drawn window dissolves open over this long. */
     openSec: 1.4,
     /** The invisible drawing surface over the wall, and the smallest window accepted. */
