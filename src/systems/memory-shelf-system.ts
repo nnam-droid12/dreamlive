@@ -2,6 +2,7 @@ import {
   createSystem,
   Entity,
   Group,
+  Hovered,
   Mesh,
   MeshStandardMaterial,
   Pressed,
@@ -92,6 +93,9 @@ export class MemoryShelfSystem extends createSystem({
       this.slot(i, this.slotPos);
       this.slotPos.y += Math.sin(this.time * 1.4 + i) * 0.004;
       obj.position.lerp(this.slotPos, k);
+      // Distance interaction: the orb under your ray swells, so you see what a pinch will pick.
+      const want = this.shelved[i].hasComponent(Hovered) ? cfg.hoverScale : 1;
+      obj.scale.setScalar(obj.scale.x + (want - obj.scale.x) * Math.min(1, delta * 12));
       const inner = obj.getObjectByName('Moment');
       if (inner) inner.rotation.y += delta * 0.6;
     }

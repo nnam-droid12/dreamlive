@@ -22,7 +22,7 @@ started, understand the interactions, and enjoy the experience?"
 | Found the palm menu (turn the left palm up) | | |
 | Tried Fireworks / Confetti / Weather from the palm menu | | |
 | Started Movie Night and noticed the bunny walking out of the film | | |
-| Tried a world: Clouds (wave a cloud away), Winter (shake hands), Sea | | |
+| Tried a world: Clouds (wave a cloud away), Sea, the New York street | | |
 | Took a photo with the finger frame (or the palm Photo button) | | |
 
 ## Questions afterwards (write their exact words)

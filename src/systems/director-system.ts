@@ -20,6 +20,7 @@ import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { Timeline } from '../audio/timeline.js';
 import { Director, DirectorFrame } from '../config/director.js';
+import { Tuning } from '../config/tuning.js';
 import { makeTitleCard, TitleCard } from '../visuals/title-card.js';
 import { DirectorHands, HandShot } from './director-hands.js';
 import { RealHands } from './real-hands.js';
@@ -306,7 +307,12 @@ export class DirectorSystem extends createSystem({
       this.aim(seat.clone().setY(1.5), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(1.05));
       return true;
     }
-    if (tt < TOUR.movie) this.aim(seat.clone().setY(1.3), tv.clone().setY(1.5));
+    if (tt < TOUR.movie) {
+      // He remembers you: the friendship board on his wall, the tally of your visits.
+      const b = Tuning.memory.board;
+      const face = new Vector3(Math.sin(b.yaw), 0, Math.cos(b.yaw));
+      this.aim(new Vector3(b.x, b.y - 0.05, b.z).addScaledVector(face, 1.5), new Vector3(b.x, b.y - 0.05, b.z));
+    }
     else if (tt < TOUR.movieEnd && MovieSpots.ready) {
       const sofa = new Vector3().addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5);
       const toScreen = this.toward(sofa, screen);

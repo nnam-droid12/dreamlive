@@ -10,6 +10,11 @@ A lovable Bigfoot naps in your room, and he tells you his dream out loud. His wi
 - **A music visualizer:** the whole skyline turns into a VU meter.
 - **You join in:** turn your palm up to be the DJ, fire confetti and fireworks, or change the weather.
 
+- **Bigfoot is your friend:** wave and he waves back. High-five him, fist-bump him, give a thumbs up, throw the rock sign and he dances, pat his head or tickle him. Your tracked hands are read joint by joint.
+- **Step into the story:** at Movie Night he sits beside you on a loveseat with popcorn, and the bunny walks out of the film to join you.
+- **Dream worlds:** above the clouds, a storm at sea where he surfs past your window, and a walk down a New York street between the skyscrapers.
+- **He remembers you:** come back and he greets you by your last visit, and a chalkboard on his wall keeps your story together (stored only on your device).
+
 Night falls for the fireworks. He leaps home and catches the gifts the Yeti throws, stacking them on his floor, and some fly to you. End credits roll, then **Bedtime**: rain on the glass while he snores. Each night leaves a memory orb on your shelf.
 
 Dreamlive is a seated, hands-first mixed-reality experience for Meta Quest 3 / 3S and Meta VR Glasses, built with the [Immersive Web SDK (IWSDK)](https://iwsdk.dev) on WebXR. It is an entry to the Meta VR Start Developer Competition 2026 (Entertainment track, New Experience division).
@@ -25,6 +30,7 @@ Dreamlive is a seated, hands-first mixed-reality experience for Meta Quest 3 / 3
 - **Look** at sleeping Bigfoot to wake him (or just wait).
 - **Look** at a glowing light by the window to choose the song (or pinch it). Do nothing and the party chooses for you.
 - **Catch** the gifts the Yeti throws through the window (or what flies out of the TV) with your hand. Catch the night's goal for a golden memory.
+- **Play with Bigfoot using your hands:** wave, raise a palm for a high-five, a fist for a fist bump, thumbs up, rock on, pat his head, tickle his belly, or point somewhere and he looks. A card shows the signs.
 - **Pinch** an orb on your Memory Shelf to dream it again.
 - **Turn your left palm up** (or press X on the left controller) for the palm menu:
   - be the DJ (pick the Yeti's song);

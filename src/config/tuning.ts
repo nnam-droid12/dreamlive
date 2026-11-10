@@ -569,6 +569,8 @@ export const Tuning = {
     /** Orbs shown on the ledge (newest kept; storage keeps more). */
     capacity: 7,
     spacing: 0.125,
+    /** An orb under your ray (or hand) grows to this scale. */
+    hoverScale: 1.2,
     /** Ledge center: this far along the wall from the TV center (negative = left), and this far down. */
     offsetRight: -1.95,
     /** Outside the showcase: the ledge starts this far beyond the TV's left edge. */
