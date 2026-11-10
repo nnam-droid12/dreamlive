@@ -63,6 +63,10 @@ export function makeTitleCard(px: number, py: number, widthM: number): TitleCard
     for (const l of lines) {
       y += l.gap ?? 0;
       g.font = `${l.style ?? ''} ${l.size}px Georgia, 'Times New Roman', serif`;
+      // A line too long for the card shrinks to fit (never clipped at the edge).
+      const room = px - 48;
+      const wide = g.measureText(l.text).width;
+      if (wide > room) g.font = `${l.style ?? ''} ${Math.floor((l.size * room) / wide)}px Georgia, 'Times New Roman', serif`;
       const x = align === 'center' ? px / 2 : px - 24;
       g.shadowColor = `rgba(${scrim}, 0.8)`;
       g.shadowBlur = 14;

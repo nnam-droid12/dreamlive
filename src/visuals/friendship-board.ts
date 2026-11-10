@@ -22,7 +22,8 @@ export class FriendshipBoard {
     this.tex = new CanvasTexture(this.canvas);
     this.tex.colorSpace = SRGBColorSpace;
     const board = new Mesh(new PlaneGeometry(width, height), new MeshStandardMaterial({ map: this.tex, roughness: 0.95 }));
-    board.position.z = 0.012;
+    // Just proud of the frame's front face (the frame is 2.5 cm deep, centred on the root).
+    board.position.z = 0.0125 + 0.003;
     const frame = new Mesh(bevelBox(width + 0.07, height + 0.07, 0.025, 0.008), new MeshStandardMaterial({ color: Palette.boardFrame, roughness: 0.55 }));
     this.root.add(frame, board);
   }

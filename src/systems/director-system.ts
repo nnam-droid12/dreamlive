@@ -628,7 +628,8 @@ export class DirectorSystem extends createSystem({
     head.getWorldQuaternion(m.quaternion);
     m.translateZ(-0.9);
     m.translateX(0.25);
-    m.translateY(-0.3);
+    // Low in the frame, below the experience's own captions.
+    m.translateY(-0.355);
   }
 
   /** Title card at the start, end card once he's awake and the orb is shelved. */
