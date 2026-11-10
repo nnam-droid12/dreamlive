@@ -133,6 +133,7 @@ export class BigfootSystem extends createSystem({
     // The friend system's look and reach (released whenever it is not in charge).
     const fc = BigfootControl.active && phase === RitualPhase.Awake;
     this.rig.setLook(fc && BigfootControl.looking ? BigfootControl.look : null);
+    this.rig.setUpright(fc ? 0.85 : 0);
     this.rig.setReach('right', fc && BigfootControl.reach.right ? BigfootControl.reachAt.right : null, BigfootControl.shape.right);
     this.rig.setReach('left', fc && BigfootControl.reach.left ? BigfootControl.reachAt.left : null, BigfootControl.shape.left);
     const pose = this.entity.getValue(Bigfoot, 'pose') ?? 0;
@@ -143,6 +144,7 @@ export class BigfootSystem extends createSystem({
     this.entity.setValue(Bigfoot, 'stateTime', (this.entity.getValue(Bigfoot, 'stateTime') ?? 0) + delta);
     this.rig.update(delta);
     this.uprightPopcorn();
+    if (import.meta.env.DEV) BigfootControl.info = `${this.rig.current} head${(this.rig.headPosition(this.tmp).y - this.rig.root.position.y).toFixed(2)}`;
     this.rig.handPosition('left', BigfootControl.hand.left);
     this.rig.handPosition('right', BigfootControl.hand.right);
     if (this.target?.object3D) this.rig.headPosition(this.target.object3D.position);
@@ -326,9 +328,10 @@ export class BigfootSystem extends createSystem({
     r.position.copy(BigfootControl.spot);
     // A laugh shakes him a little.
     if (BigfootControl.shake > 0) r.position.x += Math.sin(performance.now() * 0.05) * 0.015 * BigfootControl.shake;
+    if (BigfootControl.hop > 0) r.position.y += Math.sin(Math.PI * BigfootControl.hop) * 0.12;
     r.quaternion.setFromAxisAngle(UP, BigfootControl.yaw);
     this.setState(BigfootState.Awake);
-    this.rig!.play(BigfootControl.anim as BigfootAnim);
+    this.rig!.play(BigfootControl.anim as BigfootAnim, { once: BigfootControl.anim === 'jump' });
   }
 
   /** A dream world (clouds, sea, the street) puts him somewhere in it and picks his move. */

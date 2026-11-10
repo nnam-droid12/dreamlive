@@ -83,6 +83,8 @@ export interface BigfootRig {
   setReach(hand: 'left' | 'right', target: Vector3 | null, shape?: 'palm' | 'fist'): void;
   /** World position of a hand (for contact checks). */
   handPosition(hand: 'left' | 'right', out: Vector3): Vector3;
+  /** Stand tall: straighten his spine toward vertical (0..1) on top of the animation. */
+  setUpright(amount: number): void;
   current: BigfootAnim;
 }
 
@@ -163,6 +165,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   };
   let pose: '' | 'sit' = '';
   const look = { on: false, target: new Vector3(), weight: 0 };
+  const upright = { want: 0, weight: 0 };
+  const spine = bone(/Spine$/);
+  const neck = bone(/Neck$/);
   const reach = {
     left: { on: false, target: new Vector3(), weight: 0, shape: 'palm' as 'palm' | 'fist' },
     right: { on: false, target: new Vector3(), weight: 0, shape: 'palm' as 'palm' | 'fist' },
@@ -320,6 +325,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       if (active) next.crossFadeFrom(active, opts.fade ?? 0.35, false);
       active = next;
     },
+    setUpright(a) {
+      upright.want = Math.max(0, Math.min(1, a));
+    },
     setLook(target) {
       look.on = !!target;
       if (target) look.target.copy(target);
@@ -346,6 +354,14 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     update(delta) {
       mixer.update(delta);
       if (pose === 'sit') applySit();
+      // Standing tall: the line from his lower spine to his neck turned toward vertical.
+      upright.weight += (upright.want - upright.weight) * Math.min(1, delta * 3);
+      if (upright.weight > 0.01 && spine && neck) {
+        spine.updateWorldMatrix(true, false);
+        neck.updateWorldMatrix(false, false);
+        const cur = IK.u.setFromMatrixPosition(neck.matrixWorld).sub(IK.s.setFromMatrixPosition(spine.matrixWorld)).normalize();
+        aim(spine, neck, cur.lerp(IK.yAxis, upright.weight).normalize());
+      }
       // Reaching and looking ease in and out (no snapping).
       for (const h of ['left', 'right'] as const) {
         const r = reach[h];
@@ -457,6 +473,7 @@ function standInRig(): BigfootRig {
     },
     setLook() {},
     setReach() {},
+    setUpright() {},
     handPosition(h, out) {
       return root.localToWorld(out.set(h === 'left' ? 0.5 : -0.5, 1.0, 0.2));
     },

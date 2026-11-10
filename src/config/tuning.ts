@@ -299,11 +299,12 @@ export const Tuning = {
     /** The hangout starts this long after he wakes; he stands this far in front of you and walks at this speed. */
     startAfter: 6,
     distance: 1.05,
+    filmDistance: 1.45,
     walkSpeed: 0.9,
     /** How close your hand must be: a high-five / fist bump held out to him, his head (pat), his belly (tickle), and a touch. */
     reach: 0.95,
     patReach: 0.28,
-    tickleReach: 0.24,
+    tickleReach: 0.36,
     contact: 0.16,
     /** Seconds between moments; the hint card shows this long, and again after this long with nothing happening. */
     cooldown: 0.8,

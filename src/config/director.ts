@@ -20,6 +20,8 @@ export const Director = {
   offline: on && params.has('offline'),
   /** `&tour`: skip the dream and play only the tour after it (for checking those shots). */
   tour: on && params.has('tour'),
+  /** `&debug`: print the systems' diagnostics (Session.debug) on the frames, for checking test renders. */
+  debug: on && params.has('debug'),
   fps: 30,
   width: Number(params.get('w') ?? 0),
   height: Number(params.get('h') ?? 0),

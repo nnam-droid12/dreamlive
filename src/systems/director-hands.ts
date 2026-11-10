@@ -1,4 +1,5 @@
 import { Matrix4, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
+import { FilmHands } from './lib/film-hands.js';
 import type { GhostHand } from './director-ghost-hands.js';
 
 /** The slice of the emulator (IWER) device the Director drives: headset pose and hands. */
@@ -23,6 +24,8 @@ interface IwerHand {
   pin?: unknown;
   setPin?(pin: null): void;
   updatePinchValue(v: number): void;
+  /** Re-applies the pose to the joints (setting poseId alone leaves them as they were). */
+  updateHandPose?(): void;
 }
 interface IwerDevice {
   position: IwerVec;
@@ -43,6 +46,16 @@ export interface HandShot {
 }
 
 const UP = new Vector3(0, 1, 0);
+
+/** Adds poses to an emulated hand's pose store (kept under a symbol key) that it does not have yet. */
+function addPoses(hand: object | undefined, poses: Record<string, unknown>): void {
+  if (!hand) return;
+  for (const k of Object.getOwnPropertySymbols(hand)) {
+    const store = (hand as Record<symbol, { poses?: Record<string, unknown> } | undefined>)[k];
+    if (!store?.poses) continue;
+    for (const [id, pose] of Object.entries(poses)) if (!(id in store.poses)) store.poses[id] = pose;
+  }
+}
 const ZERO = new Vector3();
 
 /**
@@ -81,6 +94,13 @@ export class DirectorHands {
     if (d.controllers?.right) d.controllers.right.connected = false;
     if (d.hands?.left) d.hands.left.connected = true;
     if (d.hands?.right) d.hands.right.connected = true;
+    // The emulator built into the page only knows default, pinch and point: give its hands the
+    // rest of IWER's pose library (fist, thumbs-up, rock, open...) so the film can show them.
+    void import('iwer/lib/device/configs/hand/library.js')
+      .then((lib) => {
+        for (const h of [d.hands?.left, d.hands?.right]) addPoses(h, lib.libraryHandPoses as Record<string, unknown>);
+      })
+      .catch(() => undefined);
     return d;
   }
 
@@ -137,9 +157,14 @@ export class DirectorHands {
     // A pinned hand snaps back to its pin; let go first (as the emulator's own set-transform does).
     if (hand.pin) hand.setPin?.(null);
     hand.position.set(cur.p.x, cur.p.y, cur.p.z);
+    const fh = hand === this.device?.hands?.left ? FilmHands.left : FilmHands.right;
+    fh.p.copy(cur.p);
+    fh.q.copy(cur.q);
+    FilmHands.on = true;
     hand.quaternion.set(cur.q.x, cur.q.y, cur.q.z, cur.q.w);
     if (hand.poseId !== s.pose) hand.poseId = s.pose;
     hand.updatePinchValue(cur.pinch);
+    hand.updateHandPose?.();
     if (ghost) {
       this.wp.copy(cur.p);
       rig.localToWorld(this.wp);

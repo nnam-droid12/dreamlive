@@ -8,6 +8,7 @@ import {
   ShaderMaterial,
   Sprite,
   SpriteMaterial,
+  Quaternion,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -59,6 +60,8 @@ interface Splash {
 export class SeaWorldSystem extends createSystem({
   director: { required: [Ritual, Session, RoomSlots] },
 }) {
+  /** The head's orientation in the world (the rig may be turned, e.g. by the Director). */
+  private headQ = new Quaternion();
   private kit = new WorldKit('sea');
   private root!: Group;
   private ocean!: Ocean;
@@ -179,7 +182,7 @@ export class SeaWorldSystem extends createSystem({
     }
     this.time += dt;
     this.player.head.getWorldPosition(this.head);
-    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.quaternion).setY(0);
+    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.headQ)).setY(0);
     if (this.fwd.lengthSq() < 1e-4) this.fwd.set(0, 0, -1);
     this.fwd.normalize();
     this.kit.readHands(this.player.gripSpaces.left, this.player.gripSpaces.right, dt);
@@ -223,7 +226,7 @@ export class SeaWorldSystem extends createSystem({
     const out = d.getVectorView(RoomSlots, 'windowOut');
     const al = d.getVectorView(RoomSlots, 'windowAlong');
     this.player.head.getWorldPosition(this.head);
-    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.quaternion).setY(0).normalize();
+    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.headQ)).setY(0).normalize();
     if (out[0] || out[2]) {
       this.out.set(out[0], 0, out[2]).normalize();
       this.along.set(al[0], 0, al[2]).normalize();

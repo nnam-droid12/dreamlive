@@ -121,6 +121,7 @@ export class DirectorSystem extends createSystem({
   private saveTimeline?: () => void;
   private hands?: DirectorHands;
   private realHands?: RealHands;
+  private debugEvery = 0;
   private recording = false;
 
   init(): void {
@@ -299,7 +300,7 @@ export class DirectorSystem extends createSystem({
     const screen = new Vector3().fromArray(d.getVectorView(Session, 'movieScreen'));
     if (tt >= TOUR.friend && tt < TOUR.friendEnd) {
       // The hangout: from your seat, across the open floor toward the window; he comes to you.
-      this.aim(seat.clone().setY(1.42), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(1.15));
+      this.aim(seat.clone().setY(1.5), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(1.05));
       return true;
     }
     if (tt < TOUR.movie) this.aim(seat.clone().setY(1.3), tv.clone().setY(1.5));
@@ -413,7 +414,7 @@ export class DirectorSystem extends createSystem({
     else if (phase === RitualPhase.Waking) text = 'Every dream leaves a memory';
     else if (phase === RitualPhase.Awake && roof) text = this.tourScript(d);
     if (!roof && phase === RitualPhase.Asleep) text = '';
-    if (text !== this.featureText) {
+    if (text !== this.featureText && !Director.debug) {
       this.featureText = text;
       if (text) {
         this.feature.draw([{ text, size: 62, style: 'italic', color: '#ffd38a' }], 'right');
@@ -597,6 +598,16 @@ export class DirectorSystem extends createSystem({
 
   /** The feature caption sits lower right of the shot and fades between captions. */
   private updateFeature(dt: number): void {
+    // Test renders: the diagnostics instead of the caption (refreshed a few times a second).
+    if (Director.debug && ++this.debugEvery % 8 === 0) {
+      const dq = this.queries.director.entities.values().next().value;
+      const txt = dq?.getValue(Session, 'debug') ?? '';
+      if (txt) {
+        this.featureText = txt;
+        const parts = txt.split(' | ');
+        this.feature.draw(parts.map((p: string) => ({ text: p, size: 22, color: '#ffffff' })), 'right');
+      }
+    }
     const want = this.featureText && this.cardMat.opacity < 0.2 ? 1 : 0;
     this.featureOpacity += (want - this.featureOpacity) * Math.min(1, dt * 3);
     const m = this.feature.mesh;
@@ -708,6 +719,11 @@ export class DirectorSystem extends createSystem({
       const c = canvas!;
       c.getContext('2d')?.putImageData(img, 0, 0);
       const name = `frame-${String(n++).padStart(5, '0')}.jpg`;
+      // Test renders: the diagnostics as text beside the frames (every 5th frame).
+      if (Director.debug && n % 5 === 0) {
+        const dq = this.queries.director.entities.values().next().value;
+        void fetch(`/__director-save?name=debug-${String(n).padStart(5, '0')}.txt`, { method: 'POST', body: dq?.getValue(Session, 'debug') ?? '' });
+      }
       // At most two frames in flight: the render waits for the saves (no dropped frames).
       DirectorFrame.busy++;
       void c

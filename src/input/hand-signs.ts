@@ -1,4 +1,5 @@
 import { Matrix4, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
+import { FilmHands } from '../systems/lib/film-hands.js';
 import { EmulatedHand, jointOffset, JOINTS } from '../systems/real-hands.js';
 
 /** Joint indices in JOINTS order (WebXR hand joint order). */
@@ -143,7 +144,10 @@ export class HandSigns {
       const h = hands[name];
       const s = this[name];
       if (!h?.connected || !h.inputSource?.hand) continue;
-      this.base.compose(this.v.set(h.position.x, h.position.y, h.position.z), this.q.set(h.quaternion.x, h.quaternion.y, h.quaternion.z, h.quaternion.w), this.a.set(1, 1, 1));
+      // (In Director films the hand is placed later in the frame: use where the Director put it.)
+      const fh = FilmHands.on ? FilmHands[name] : undefined;
+      if (fh) this.base.compose(fh.p, fh.q, this.a.set(1, 1, 1));
+      else this.base.compose(this.v.set(h.position.x, h.position.y, h.position.z), this.q.set(h.quaternion.x, h.quaternion.y, h.quaternion.z, h.quaternion.w), this.a.set(1, 1, 1));
       let ok = true;
       for (let i = 0; i < JOINTS.length; i++) {
         const js = h.inputSource.hand.get(JOINTS[i]);
@@ -235,6 +239,8 @@ export class HandSigns {
       s.swingSign = dir;
     }
     while (s.swingTimes.length && this.clock - s.swingTimes[0] > 1.6) s.swingTimes.shift();
-    s.waving = s.sign === 'open' && s.swingTimes.length >= 3;
+    // (Still swinging now: a hand that has stopped is no longer waving, however it got there.)
+    if (s.speed < 0.2) s.swingTimes.length = 0;
+    s.waving = s.sign === 'open' && s.swingTimes.length >= 3 && s.speed > 0.3;
   }
 }

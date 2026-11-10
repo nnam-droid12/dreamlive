@@ -6,6 +6,7 @@ import {
   Sprite,
   SpriteMaterial,
   SRGBColorSpace,
+  Quaternion,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -48,6 +49,8 @@ interface Fx {
 export class FriendSystem extends createSystem({
   director: { required: [Ritual, Session, Caption] },
 }) {
+  /** The head's orientation in the world (the rig may be turned, e.g. by the Director). */
+  private headQ = new Quaternion();
   private signs = new HandSigns();
   private active = false;
   private spot = new Vector3();
@@ -111,24 +114,34 @@ export class FriendSystem extends createSystem({
       if (want) this.enter(d);
     }
     BigfootControl.active = this.active;
+    BigfootControl.quietFor += dt;
     this.tickFx(dt);
     if (!this.active) {
       this.hint.mesh.visible = false;
       return;
     }
     this.player.head.getWorldPosition(this.head);
-    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.quaternion).setY(0);
+    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.headQ)).setY(0);
     if (this.fwd.lengthSq() < 1e-4) this.fwd.set(0, 0, -1);
     this.fwd.normalize();
     this.rightV.set(-this.fwd.z, 0, this.fwd.x);
     // Hands: the emulator's joints in Director films, the headset's tracked joints otherwise.
-    if (Director.enabled) {
-      const dev = (window as unknown as { IWER_DEVICE?: { hands?: { left?: EmulatedHand; right?: EmulatedHand } } }).IWER_DEVICE;
-      this.signs.readEmulator(dev?.hands, this.player);
-    } else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
+    // (The browser emulator's fillPoses reports one frozen hand, so with the emulator present its
+    // joints are read directly; a real headset's hand tracking goes through the XR frame.)
+    const dev = (window as unknown as { IWER_DEVICE?: { hands?: { left?: EmulatedHand; right?: EmulatedHand } } }).IWER_DEVICE;
+    if (dev?.hands) this.signs.readEmulator(dev.hands, this.player);
+    else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.stand(dt);
     this.react(d, dt);
+    if (import.meta.env.DEV) {
+      const L = this.signs.left;
+      const R = this.signs.right;
+      const f = (h: typeof L) => `${h.tracked ? h.sign : '-'}:${h.held.toFixed(1)} d${h.palm.distanceTo(this.chest).toFixed(2)} n${h.normal.dot(this.tmp.subVectors(this.chest, h.palm).normalize()).toFixed(2)} y${(h.palm.y - this.head.y).toFixed(2)} e${h.ext.map((e) => e.toFixed(1)).join('')}`;
+      const rawR = (window as unknown as { IWER_DEVICE?: { hands?: { right?: { poseId: string; position: { x: number; y: number; z: number } } } } }).IWER_DEVICE?.hands?.right;
+      const tipR = this.signs.right.joints[9];
+      d.setValue(Session, 'debug', `raw:${rawR?.poseId} rp(${rawR?.position.x.toFixed(2)},${rawR?.position.y.toFixed(2)},${rawR?.position.z.toFixed(2)}) tip(${tipR.x.toFixed(2)},${tipR.y.toFixed(2)},${tipR.z.toFixed(2)}) trk${this.signs.right.tracked} ${this.moment || 'none'} ${this.momentFor.toFixed(1)} cd${this.cooldown.toFixed(1)} anim:${BigfootControl.anim} rig:${BigfootControl.info} | L ${f(L)} | R ${f(R)}`);
+    }
     this.showHint(dt);
   }
 
@@ -147,14 +160,16 @@ export class FriendSystem extends createSystem({
 
   /** He stands about a metre in front of you, facing you; he follows if you move away. */
   private stand(dt: number): void {
-    this.target.copy(this.head).addScaledVector(this.fwd, cfg.distance).setY(0);
+    // (The Director's camera stands him a little further off, so both his hands are in the shot.)
+    this.target.copy(this.head).addScaledVector(this.fwd, Director.enabled ? cfg.filmDistance : cfg.distance).setY(0);
     if (!this.placed) {
       this.spot.copy(this.target);
       this.placed = true;
     }
     const far = this.spot.distanceTo(this.target);
-    const moving = far > 0.6;
-    if (moving) this.spot.addScaledVector(this.tmp.subVectors(this.target, this.spot).normalize(), Math.min(far, cfg.walkSpeed * dt));
+    // He keeps his place in front of you: small drifts he takes in a step, bigger ones he walks.
+    const moving = far > 0.35;
+    if (far > 0.02) this.spot.addScaledVector(this.tmp.subVectors(this.target, this.spot).normalize(), Math.min(far, (moving ? cfg.walkSpeed : 0.5) * dt));
     BigfootControl.spot.copy(this.spot);
     BigfootControl.yaw = Math.atan2(this.head.x - this.spot.x, this.head.z - this.spot.z);
     BigfootControl.looking = true;
@@ -175,6 +190,9 @@ export class FriendSystem extends createSystem({
     const R = this.signs.right;
     if (this.moment) {
       this.momentFor += dt;
+      // Dev only: hold a moment at a given time to inspect it (window.__friendHold = seconds).
+      const hold = import.meta.env.DEV ? (window as unknown as { __friendHold?: number }).__friendHold : undefined;
+      if (hold !== undefined && this.momentFor > hold) this.momentFor = hold;
       this.playMoment(d, dt, L, R);
       return;
     }
@@ -194,7 +212,7 @@ export class FriendSystem extends createSystem({
       const toward = this.tmp.subVectors(this.chest, h.palm);
       const dist = toward.length();
       const facing = h.normal.dot(toward.normalize());
-      if (h.sign === 'open' && h.held > 0.25 && facing > 0.45 && dist < cfg.reach && h.palm.y > this.head.y - 0.55 && h.speed < 1.2) return this.start('highFive', which);
+      if (h.sign === 'open' && h.held > 0.5 && facing > 0.45 && dist < cfg.reach && h.palm.y > this.head.y - 0.55 && h.speed < 0.35 && !h.waving) return this.start('highFive', which);
       if (h.sign === 'fist' && h.held > 0.25 && dist < cfg.reach && h.palm.y > this.head.y - 0.75) return this.start('fistBump', which);
       if (h.sign === 'thumbsUp' && h.held > 0.35) return this.start('thumbs', which);
       if (h.sign === 'rock' && h.held > 0.35) return this.start('rock', which);
@@ -212,6 +230,7 @@ export class FriendSystem extends createSystem({
     this.moment = m;
     this.momentFor = 0;
     this.side = which;
+    BigfootControl.quietFor = 0;
     this.idleFor = 0;
     this.hintFor = Math.min(this.hintFor, 0.6);
   }
@@ -224,6 +243,7 @@ export class FriendSystem extends createSystem({
     const t = this.momentFor;
     const done = (cool: number = cfg.cooldown) => {
       this.moment = '';
+      BigfootControl.hop = 0;
       this.cooldown = cool;
       BigfootControl.reach.left = BigfootControl.reach.right = false;
     };
@@ -241,25 +261,27 @@ export class FriendSystem extends createSystem({
         BigfootControl.shape[his] = five ? 'palm' : 'fist';
         BigfootControl.reachAt[his].copy(h.palm).addScaledVector(this.toMe, five ? 0.05 : 0.07);
         const his3 = this.hand.copy(BigfootControl.hand[his]);
-        const touching = t > 0.35 && his3.distanceTo(h.palm) < cfg.contact;
-        if (touching || t > 1.4) {
+        // His hand rises (about half a second) and meets yours: contact when it arrives.
+        const touching = t < 10 && t > 0.5 && his3.distanceTo(BigfootControl.reachAt[his]) < cfg.contact;
+        if (t < 10 && (touching || t > 1.6)) {
           this.burst(this.tmp.lerpVectors(his3, h.palm, 0.5), five ? 14 : 10, false);
           Sound.play(five ? 'clap' : 'bump', h.palm, 1);
           if (five) this.say(d, 'friend-highfive', 'Up top! Yeah!');
           else this.say(d, 'friend-fist', 'Boom! Fist bump!');
-          BigfootControl.anim = 'cheer';
-          this.moment = five ? 'highFive' : 'fistBump';
-          this.momentFor = 10; // jump to the follow-through below
+          this.momentFor = 10; // on to the follow-through below
         }
-        if (t >= 10) {
-          BigfootControl.reach[his] = false;
-          BigfootControl.anim = 'cheer';
-          if (t > 11.4) done();
+        if (this.momentFor >= 10) {
+          // Contact made: his hand lingers a beat, then drops; a happy little hop.
+          BigfootControl.reach[his] = this.momentFor < 10.6;
+          BigfootControl.anim = 'idle';
+          BigfootControl.hop = this.momentFor < 10.6 ? 0 : Math.min(1, (this.momentFor - 10.6) / 0.5);
+          if (this.momentFor > 11.6) done();
         } else if (t > 1.6) done(0.6);
         break;
       }
       case 'thumbs':
-        BigfootControl.anim = 'cheer';
+        BigfootControl.anim = t < 0.6 ? 'idle' : 'wave';
+        BigfootControl.hop = t < 0.6 ? t / 0.6 : 0;
         if (t < dt * 1.5) this.burst(this.top, 8, false);
         this.say(d, 'friend-thumbs', "Aww, you're the best!");
         if (t > 2.2) done();
@@ -272,7 +294,7 @@ export class FriendSystem extends createSystem({
         break;
       case 'pat':
         BigfootControl.anim = 'idle';
-        BigfootControl.looking = false; // eyes down, leaning into it
+        // He keeps his eyes on you, smiling, while you pat him.
         if (Math.floor(t * 3) !== Math.floor((t - dt) * 3)) {
           this.burst(this.top, 1, true);
           Sound.play('giggle', this.top, 0.5);
@@ -281,7 +303,7 @@ export class FriendSystem extends createSystem({
         if (t > 2.4 || h.palm.distanceTo(this.top) > cfg.patReach * 1.8) done();
         break;
       case 'tickle':
-        BigfootControl.anim = 'cheer';
+        BigfootControl.anim = 'idle';
         BigfootControl.shake = 1;
         if (t < dt * 1.5) Sound.play('giggle', this.belly, 0.8);
         this.say(d, 'friend-tickle', 'Hahaha! Stop, stop, that tickles!');

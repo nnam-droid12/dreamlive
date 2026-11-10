@@ -1,3 +1,4 @@
+import { BigfootControl } from './lib/bigfoot-control.js';
 import { Director } from '../config/director.js';
 import { createSystem, VisibilityState } from '@iwsdk/core';
 import { DreamDirector } from '../components/dream.js';
@@ -34,7 +35,7 @@ export class BedtimeSystem extends createSystem({
     }
     const awake = phase === RitualPhase.Awake;
     // Not during Movie Night: bedtime can wait for the credits.
-    if (awake && !this.autoDone && !d.getValue(Session, 'movie') && !d.getValue(Session, 'world') && !Director.enabled && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.autoAfterSec) {
+    if (awake && !this.autoDone && !d.getValue(Session, 'movie') && !d.getValue(Session, 'world') && !Director.enabled && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.autoAfterSec && BigfootControl.quietFor > cfg.autoAfterSec) {
       this.autoDone = true;
       d.setValue(Session, 'bedtime', true);
     }

@@ -10,6 +10,7 @@ import {
   PlaneGeometry,
   Sprite,
   SpriteMaterial,
+  Quaternion,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -56,6 +57,8 @@ interface Star {
 export class CloudWorldSystem extends createSystem({
   director: { required: [Ritual, Session, RoomSlots] },
 }) {
+  /** The head's orientation in the world (the rig may be turned, e.g. by the Director). */
+  private headQ = new Quaternion();
   private kit = new WorldKit('clouds');
   private root!: Group;
   private sea!: CloudSea;
@@ -263,7 +266,7 @@ export class CloudWorldSystem extends createSystem({
   }
 
   private fallingStars(d: import('@iwsdk/core').Entity, dt: number, k: number): void {
-    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.quaternion).setY(0);
+    this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.headQ)).setY(0);
     if (this.fwd.lengthSq() < 1e-4) this.fwd.set(0, 0, -1);
     this.fwd.normalize();
     for (const s of this.stars) {

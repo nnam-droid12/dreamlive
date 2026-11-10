@@ -46,6 +46,8 @@ export const Session = createComponent('Session', {
   worldSpot: { type: Types.Vec3, default: [0, 0, 0] },
   worldYaw: { type: Types.Float32, default: 0 },
   worldAnim: { type: Types.String, default: '' },
+  /** Dev diagnostics (what the friend system sees), readable from the CLI. */
+  debug: { type: Types.String, default: '' },
   movieTime: { type: Types.Float32, default: 0 },
   movieLaugh: { type: Types.Float32, default: 0 },
   movieScreen: { type: Types.Vec3, default: [0, 0, 0] },
