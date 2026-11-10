@@ -1,3 +1,4 @@
+import { Journal } from '../memory/journal.js';
 import {
   AdditiveBlending,
   Color,
@@ -197,7 +198,8 @@ export class MovieNightSystem extends createSystem({
     this.bunny.setSeated(false);
     if (!this.video) {
       const v = document.createElement('video');
-      v.src = MovieChoice.url || `${import.meta.env.BASE_URL}video/big-buck-bunny.mp4`;
+      // (Offline renders use an all-keyframe copy, so each frame's exact seek is quick.)
+      v.src = MovieChoice.url || `${import.meta.env.BASE_URL}video/${Director.offline ? 'intra/' : ''}big-buck-bunny.mp4`;
       v.crossOrigin = 'anonymous';
       v.playsInline = true;
       v.preload = 'auto';
@@ -215,6 +217,7 @@ export class MovieNightSystem extends createSystem({
     this.video.currentTime = 0;
     this.filmClock = 0;
     Timeline.log('movie', MovieChoice.url ? 'own' : 'big-buck-bunny', 1);
+    Journal.add('movies');
     if (Director.offline) this.video.muted = true;
     else void this.video.play().catch(() => undefined);
     this.say(d, 'movie-start', 'Movie night! I brought popcorn. Pinch the screen to pause.');
@@ -282,6 +285,7 @@ export class MovieNightSystem extends createSystem({
     } else {
       if (!MovieSpots.bunnySeated) {
         MovieSpots.bunnySeated = true;
+        Journal.metBunny();
         this.say(d, 'movie-bunny', 'Whoa! He came right out of the movie! Sit with us, little buddy.');
       }
       // Seated beside Bigfoot, munching its carrot now and then.

@@ -22,6 +22,11 @@ export const Director = {
   tour: on && params.has('tour'),
   /** `&debug`: print the systems' diagnostics (Session.debug) on the frames, for checking test renders. */
   debug: on && params.has('debug'),
+  /** `&only=4-14,76-94`: test renders save only frames in these tour-time windows (s); the story still plays through. */
+  only: (params.get('only') ?? '')
+    .split(',')
+    .map((r) => r.split('-').map(Number))
+    .filter((r) => r.length === 2 && r.every((x) => Number.isFinite(x))) as [number, number][],
   fps: 30,
   width: Number(params.get('w') ?? 0),
   height: Number(params.get('h') ?? 0),

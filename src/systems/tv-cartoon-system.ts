@@ -67,7 +67,7 @@ export class TvCartoonSystem extends createSystem({
     this.normal.fromArray(d.getVectorView(RoomSlots, 'anchorNormal'));
     const w = d.getValue(RoomSlots, 'anchorWidth') ?? 2.18;
     const v = document.createElement('video');
-    v.src = `${import.meta.env.BASE_URL}video/caminandes.mp4`;
+    v.src = `${import.meta.env.BASE_URL}video/${Director.offline ? 'intra/' : ''}caminandes.mp4`;
     v.crossOrigin = 'anonymous';
     v.muted = true;
     v.loop = true;

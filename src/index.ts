@@ -42,6 +42,7 @@ import { CloudWorldSystem } from './systems/cloud-world-system.js';
 import { SeaWorldSystem } from './systems/sea-world-system.js';
 import { StreetWalkSystem } from './systems/street-walk-system.js';
 import { FriendSystem } from './systems/friend-system.js';
+import { JournalSystem } from './systems/journal-system.js';
 import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
@@ -98,6 +99,7 @@ World.create(
     .registerSystem(SeaWorldSystem)
     .registerSystem(StreetWalkSystem)
     .registerSystem(FriendSystem)
+    .registerSystem(JournalSystem)
     .registerSystem(MovieNightSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)

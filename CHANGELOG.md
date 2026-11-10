@@ -2,6 +2,43 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-10 — Bigfoot remembers you; a real New York street
+
+- **It remembers you:**
+  - Bigfoot keeps a journal of your visits, on your device only. It records the high-fives, fist bumps, waves, movies, photos and stars you shared, the song you picked, and whether you met the bunny.
+  - When you come back, he greets you by your last visit: "You came back! I knew you would." Then he mentions the song you picked last time, your photo or the bunny.
+  - A chalkboard on his wall, "Bigfoot & You", keeps the tally.
+  - The film plays as a returning visitor's night.
+- **New York street:**
+  - The coloured stand-in figures are gone from the street.
+  - The street is now a canyon of real skyscrapers, packed shoulder to shoulder on both sides, with a taller rank behind.
+- **Readable type:** title and credit cards get a soft dark scrim and outline, so they stay readable over a bright sky, sea or city (Meta's contrast guidance).
+- **Talk to Bigfoot removed:** the experimental voice chat (a live AI model) is deleted from the project. The competition rules ask for an original experience, not a chat wrapper; everything Bigfoot says is written and voiced for Dreamlive.
+- Test renders can save only chosen moments of the film (`&only=4-16,76-95`).
+
+## 2026-11-10 — Bigfoot, a living friend (hands-first)
+
+- **Hand signs:** Dreamlive reads your tracked hand joints and recognises open hand, fist, thumbs up, point, peace, rock-on and a wave.
+- **Bigfoot answers each one:**
+  - Wave and he waves back. Raise a palm for a high-five, or a fist for a fist bump: his hand reaches to meet yours, with a clap and sparkles.
+  - Thumbs up and he grins back. Rock-on and he dances: "Let's rock!"
+  - Pat his head for a heart, tickle his belly and he giggles, or point and he looks where you point.
+  - He stands tall, looks at you and hops for joy.
+- **A hint card** shows the signs to try. Bedtime waits while you are playing together.
+- **The film** opens on this hangout, so a judge sees hands-first play in the first 30 seconds.
+
+## 2026-11-10 — Owner review 2
+
+- **Movie Night:**
+  - The film shows on the big screen in every frame of the render.
+  - The bunny walks out of the movie and sits beside Bigfoot.
+  - Bigfoot sits upright on the loveseat holding his popcorn the right way up, eating, with new camera shots.
+- **Each world has its own music.**
+- **The rooftop party:** guests and Bigfoot dance and jump to the beat.
+- **Winter Night removed** (scene, models, music and voices).
+- **Storm at Sea:** Bigfoot surfs close to you, fast at first and then slowing, with spray.
+- **New: Bigfoot walks the streets of New York.** The street has road, sidewalks, street lamps, a hydrant, steam, yellow cabs and walking New Yorkers. He waves: "Hey! Welcome to my street!"
+
 ## 2026-11-09 — Owner review of the first full film: fixes
 
 - **Rooftop party:** guests and Bigfoot no longer sink into the roof. The new towers had a solid 1.2 m block on the roof; it is now a real roof with a parapet round the edge.

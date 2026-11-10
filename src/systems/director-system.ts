@@ -1,3 +1,4 @@
+import { Journal } from '../memory/journal.js';
 import {
   CanvasTexture,
   createSystem,
@@ -125,6 +126,8 @@ export class DirectorSystem extends createSystem({
   private recording = false;
 
   init(): void {
+    // The film is a returning visitor's night (so Bigfoot remembers, and the board has a story).
+    Journal.seedDemo();
     this.cardCanvas = document.createElement('canvas');
     this.cardCanvas.width = 1280;
     this.cardCanvas.height = 720;
@@ -702,6 +705,10 @@ export class DirectorSystem extends createSystem({
     let pixels: Uint8Array | undefined;
     let canvas: OffscreenCanvas | undefined;
     DirectorFrame.onFrame = () => {
+      if (Director.only.length) {
+        const tt = this.tourTime();
+        if (!Director.only.some(([a, b]) => tt >= a && tt <= b)) return;
+      }
       const gl = this.renderer.getContext();
       const layer = this.renderer.xr.getSession()?.renderState.baseLayer;
       const w = layer?.framebufferWidth ?? gl.drawingBufferWidth;

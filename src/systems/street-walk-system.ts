@@ -23,7 +23,9 @@ import { Tuning } from '../config/tuning.js';
 import { bevelBox } from '../scene-assets/lib/hardsurface.js';
 import { buildStreetLamp } from '../scene-assets/street-lamp.scene-asset.js';
 import { buildTaxi } from '../scene-assets/taxi.scene-asset.js';
+import { buildModernTower } from '../scene-assets/lib/modern-tower.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
+import { TowerShared } from '../showcase/tower-shared.js';
 import { cloudTexture } from '../visuals/soft-sprites.js';
 import { WorldKit, WorldSpots } from './lib/world-kit.js';
 
@@ -56,6 +58,7 @@ export class StreetWalkSystem extends createSystem({
   private at = new Vector3();
   private local = new Vector3();
   private yaw = 0;
+  private canyonBuilt = false;
 
   init(): void {
     this.root = new Group();
@@ -129,6 +132,7 @@ export class StreetWalkSystem extends createSystem({
     this.root.visible = k > 0.02 && this.kit.on;
     if (!this.root.visible) return;
     if (!this.people && !this.loadingPeople) void this.loadPeople();
+    if (!this.canyonBuilt && TowerShared.mats) this.buildCanyon();
     this.time += dt;
     for (const t of this.taxis) {
       t.z += t.dir * t.speed * dt;
@@ -194,6 +198,44 @@ export class StreetWalkSystem extends createSystem({
     });
     (this.root.children[0] as Group).add(people.root);
     this.people = people;
+  }
+
+  /**
+   * A Manhattan canyon: rows of modern towers packed along both sides of the
+   * street (2-4 m apart, 60-200 m tall), with a taller second rank behind, so
+   * looking up from the sidewalk there is only a strip of sky. Built once, from
+   * the city's own dressed tower materials.
+   */
+  private buildCanyon(): void {
+    this.canyonBuilt = true;
+    const mats = TowerShared.mats!;
+    const set = this.root.children[0] as Group;
+    let seed = 11;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const styles = ['blue', 'dark', 'stone'] as const;
+    const row = (xNear: number, side: -1 | 1, z0: number, z1: number, depth: number, hMin: number, hMax: number) => {
+      let z = z0;
+      while (z < z1) {
+        const w = 13 + rand() * 9;
+        const h = hMin + rand() * (hMax - hMin);
+        const d = depth * (0.85 + rand() * 0.3);
+        const t = buildModernTower({ w: d, d: w, h, style: styles[Math.floor(rand() * 3)], setbacks: h > 90, seed: Math.floor(rand() * 1000) }, mats);
+        t.position.set(xNear + (side * d) / 2, 0, z + w / 2);
+        set.add(t);
+        z += w + 2 + rand() * 2;
+      }
+    };
+    // Front rank, both sides, outside his building (z within ±20) and the party tower (z -7..8).
+    row(-0.6, -1, -95, -21, 16, 70, 170);
+    row(-0.6, -1, 21, 95, 16, 70, 170);
+    row(7.6, 1, -95, -9, 16, 60, 200);
+    row(7.6, 1, 10, 95, 16, 60, 200);
+    // A taller second rank behind, filling the sky above the street.
+    row(-24, -1, -90, 90, 18, 110, 230);
+    row(28, 1, -90, 90, 18, 110, 230);
   }
 
   /** The street sits in the window frame, at the foot of his tower. */

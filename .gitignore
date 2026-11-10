@@ -48,3 +48,7 @@ pids/
 # Raw downloads awaiting optimization
 incoming/
 artifacts/
+
+
+# Render-only all-keyframe video copies (fast exact seeking in offline Director renders; never deployed)
+public/video/intra/

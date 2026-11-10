@@ -1,3 +1,4 @@
+import { Journal } from '../memory/journal.js';
 import {
   AdditiveBlending,
   Color,
@@ -307,6 +308,7 @@ export class CloudWorldSystem extends createSystem({
         s.active = false;
         s.caught = 0.8;
         this.caught++;
+        Journal.add('stars');
         this.cheer = 2.5;
         Sound.play('catch', s.sprite.position, 0.9);
         if (this.caught === 1) this.kit.say(d, 'clouds-star', 'You caught a star! Make a wish.', this.balloon.position);

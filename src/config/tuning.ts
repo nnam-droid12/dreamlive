@@ -295,6 +295,13 @@ export const Tuning = {
     streakEvery: 5,
   },
 
+  memory: {
+    /** The friendship board on the wall (showcase room): position (m) and facing (yaw, rad). */
+    board: { x: 2.35, y: 1.62, z: -4.17, yaw: 0 },
+    /** Seconds between Bigfoot's two greeting lines when you come back. */
+    greetGap: 3.6,
+  },
+
   friend: {
     /** The hangout starts this long after he wakes; he stands this far in front of you and walks at this speed. */
     startAfter: 6,

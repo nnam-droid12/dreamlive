@@ -48,7 +48,6 @@ const H = Rooftop.home;
 const CROWD = 40;
 /** Real facades for the towers around (picked per tower position): stone, brick, glass, lit offices. */
 const TOWER_STYLES: readonly TowerStyle[] = ['blue', 'dark', 'stone', 'blue', 'dark', 'blue', 'stone'];
-const STREET_CROWD = 60;
 const BULB_COLORS = [0xffd27a, 0xff5fb8, 0x35e0ff, 0xb38bff];
 
 export interface RooftopWorld {
@@ -197,7 +196,7 @@ export function buildRooftop(): RooftopWorld {
     root.add(t);
   }
 
-  // The street ("ground floor") far below: asphalt, lamps, and a crowd looking up.
+  // The street ("ground floor") far below: asphalt and lamps.
   const street = new Mesh(new PlaneGeometry(200, 200), new MeshStandardMaterial({ color: 0x1c1c22, roughness: 0.95 }));
   street.rotation.x = -Math.PI / 2;
   street.position.set(10, H.baseY, 0);
@@ -214,14 +213,6 @@ export function buildRooftop(): RooftopWorld {
   const dress = (mesh: InstancedMesh, offset: number) => {
     for (let i = 0; i < mesh.count; i++) mesh.setColorAt(i, outfit.setHex(PaletteSets.crowdOutfits[(i + offset) % PaletteSets.crowdOutfits.length]));
   };
-  const streetCrowd = new InstancedMesh(personGeometry(true), crowdMat, STREET_CROWD);
-  for (let i = 0; i < STREET_CROWD; i++) {
-    const x = Rooftop.street.x0 + ((i * 0.618) % 1) * (Rooftop.street.x1 - Rooftop.street.x0);
-    m.makeTranslation(x, H.baseY, -10 + ((i * 0.377) % 1) * 20);
-    streetCrowd.setMatrixAt(i, m);
-  }
-  dress(streetCrowd, 0);
-  root.add(streetCrowd);
 
   // The party: a low stage at the near edge with the booth facing the crowd (+z).
   const S = Rooftop.stage;

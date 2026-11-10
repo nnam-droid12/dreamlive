@@ -1,3 +1,4 @@
+import { Journal } from '../memory/journal.js';
 import {
   CanvasTexture,
   createSystem,
@@ -334,6 +335,7 @@ export class PhotoSystem extends createSystem({
         small.height = Math.round((240 * card.height) / card.width);
         small.getContext('2d')?.drawImage(card, 0, 0, small.width, small.height);
         MemoryStore.addPhoto(small.toDataURL('image/jpeg', 0.8));
+    Journal.add('photos');
       } catch {
         // Not saved; it still shows this session.
       }

@@ -1,3 +1,4 @@
+import { Journal, Tally } from '../memory/journal.js';
 import {
   AdditiveBlending,
   CanvasTexture,
@@ -75,6 +76,8 @@ export class FriendSystem extends createSystem({
   private idleFor = 0;
   private placed = false;
   private side: 'left' | 'right' = 'right';
+  private greetAt = 0;
+  private greeted = 0;
 
   init(): void {
     const star = starTexture();
@@ -133,6 +136,7 @@ export class FriendSystem extends createSystem({
     else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.stand(dt);
+    this.greet(d, dt);
     this.react(d, dt);
     if (import.meta.env.DEV) {
       const L = this.signs.left;
@@ -151,6 +155,8 @@ export class FriendSystem extends createSystem({
   }
 
   private enter(d: Entity): void {
+    this.greetAt = Tuning.memory.greetGap;
+    this.greeted = 0;
     this.hintFor = cfg.hintSec;
     this.idleFor = 0;
     this.moment = '';
@@ -227,6 +233,9 @@ export class FriendSystem extends createSystem({
   }
 
   private start(m: Moment, which: 'left' | 'right'): void {
+    const tally: Partial<Record<Moment, Tally>> = { wave: 'wave', highFive: 'highFive', fistBump: 'fistBump', thumbs: 'thumbs', rock: 'rock', pat: 'pat', tickle: 'tickle' };
+    const t = tally[m];
+    if (t) Journal.add(t);
     this.moment = m;
     this.momentFor = 0;
     this.side = which;
@@ -322,6 +331,40 @@ export class FriendSystem extends createSystem({
         break;
       }
     }
+  }
+
+  /**
+   * He remembers you: on a first visit a warm hello; coming back, "You came back!"
+   * and then one thing from last time (your song, your photo, the bunny, high-fives).
+   */
+  private greet(d: Entity, dt: number): void {
+    if (this.greeted >= 2 || this.moment) return;
+    this.greetAt -= dt;
+    if (this.greetAt > 0) return;
+    const b = Journal.before();
+    if (this.greeted === 0) {
+      if (b.visits === 0) {
+        this.say(d, 'mem-first', "So this is your room. I think we're going to be good friends.");
+        this.greeted = 2;
+        return;
+      }
+      this.say(d, 'mem-back', 'You came back! I knew you would.');
+      this.greeted = 1;
+      this.greetAt = Tuning.memory.greetGap;
+      return;
+    }
+    this.greeted = 2;
+    const songs: Record<string, [string, string]> = {
+      afro: ['mem-song-afro', "Last time you picked the afrobeat. I've been dancing to it all week!"],
+      disco: ['mem-song-disco', "Last time you picked the disco. I've been grooving to it all week!"],
+      house: ['mem-song-house', "Last time you picked the house music. It's still stuck in my head!"],
+    };
+    const song = songs[b.lastSong];
+    if (song) this.say(d, song[0], song[1]);
+    else if (b.counts.photos > 0) this.say(d, 'mem-photo', 'I put our photo up on the wall. See?');
+    else if (b.bunny) this.say(d, 'mem-bunny', 'Oh, and Buck the bunny says hi.');
+    else if (b.counts.highFive > 0) this.say(d, 'mem-highfive', 'Our high-five count keeps growing. Up top!');
+    else if (b.counts.movies > 0) this.say(d, 'mem-movie', 'Movie night again soon? I saved you some popcorn.');
   }
 
   private say(d: Entity, id: string, text: string): void {

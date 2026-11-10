@@ -84,6 +84,8 @@ export const Palette = {
   steamStack: 0xf06a1f,
   lampSteel: 0x5f646b,
   lampGlow: 0xffe2b0,
+  /** The friendship chalkboard's wooden frame. */
+  boardFrame: 0x6b4a2f,
   /** Friend moments: sparkles and hearts. */
   sparkGold: 0xffe3a0,
   heartPink: 0xff6f9c,
@@ -131,6 +133,9 @@ export const Palette = {
   lockedGrey: 0x8a8f99,
   /** Memory Shelf ledge (walnut). */
   shelfWood: 0x5b3b24,
+  /** Title and credit cards: warm type, a dark outline and a soft scrim behind it (readable over bright sky or sea). */
+  cardText: 0xffe2a8,
+  cardScrim: 0x140a05,
 } as const;
 
 export type PaletteKey = keyof typeof Palette;

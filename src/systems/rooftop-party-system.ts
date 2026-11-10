@@ -1,3 +1,4 @@
+import { Journal } from '../memory/journal.js';
 import {
   AssetManager,
   BackSide,
@@ -37,6 +38,7 @@ import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js'
 import { SONG_PALETTE, songOf } from '../dreams/chapter_rooftop.js';
 import { FacadeKey, FacadeSet, loadFacades } from '../showcase/facades.js';
 import { dressTowerMaterials, towerNight } from '../showcase/tower-materials.js';
+import { TowerShared } from '../showcase/tower-shared.js';
 import { makeEqualizer } from '../visuals/equalizer.js';
 import { PartyGuests } from '../characters/party-guests.js';
 import { MemoryStore } from '../memory/store.js';
@@ -117,6 +119,7 @@ export class RooftopPartySystem extends createSystem({
     this.energy += ((live ? 1 : cfg.idleEnergy) - this.energy) * Math.min(1, realDelta * 1.5);
     if (song !== this.song) {
       this.song = song;
+      if (scene.startsWith('party-') && scene !== 'party-wait') Journal.setSong(song);
       this.party!.setPalette(SONG_PALETTE[song] ?? SONG_PALETTE.afro);
     }
     // Another dream world is showing: New York steps aside.
@@ -221,6 +224,7 @@ export class RooftopPartySystem extends createSystem({
       for (const mat of set.materials.values()) makeEqualizer(mat, undefined, party.equalizer);
       // The modern towers: sky reflections, lit offices, concrete and metal; the visualizer plays on their glass too.
       await dressTowerMaterials(party.towerMats, sky);
+      TowerShared.mats = party.towerMats;
       for (const mat of [party.towerMats.glass.blue, party.towerMats.glass.dark]) makeEqualizer(mat, undefined, party.equalizer);
       party.root.traverse((o) => {
         const key = o.userData.facade as FacadeKey | undefined;
