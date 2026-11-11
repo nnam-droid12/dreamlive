@@ -67,7 +67,8 @@ export class MovieBunny {
     body.position.y -= foot2;
     this.root.add(body);
     for (const n of ['Hips', 'UpperLeg.L', 'LowerLeg.L', 'LowerLeg.L_end', 'UpperLeg.R', 'LowerLeg.R', 'LowerLeg.R_end', 'UpperArm.R', 'LowerArm.R', 'Middle1.R', 'Head']) {
-      this.bones[n] = body.getObjectByName(n) ?? undefined;
+      // The glTF loader strips dots from node names ('UpperLeg.L' loads as 'UpperLegL').
+      this.bones[n] = body.getObjectByName(n) ?? body.getObjectByName(n.replace(/\./g, '')) ?? undefined;
     }
     this.mixer = new AnimationMixer(body);
     for (const c of gltf.animations) this.actions.set(c.name.split('|').pop() ?? c.name, this.mixer.clipAction(c));

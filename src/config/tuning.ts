@@ -252,6 +252,9 @@ export const Tuning = {
     sofaBigfoot: 1.75,
     sofaBunny: 1.05,
     sofaAhead: -0.3,
+    /** Seated on the loveseat: how far each one's hip bone sits above the cushion top (m), so thighs rest on it, not in it. */
+    bigfootSitPad: 0.14,
+    bunnySitPad: 0.06,
     /** The bunny steps out of the film at this film time (s); its size (m), walking speed (m/s). */
     bunnyAt: 5,
     bunnyHeight: 0.8,

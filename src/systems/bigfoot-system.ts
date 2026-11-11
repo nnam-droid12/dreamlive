@@ -300,7 +300,9 @@ export class BigfootSystem extends createSystem({
     this.player.head.getWorldPosition(this.head);
     if (MovieSpots.ready) {
       // On the loveseat beside you, seated, facing the screen, eating popcorn now and then.
-      r.position.copy(MovieSpots.bigfoot).setY(0);
+      r.position.copy(MovieSpots.bigfoot);
+      // His hips on top of the cushion (his feet may hang a little: it's a small sofa for a Bigfoot).
+      r.position.y = Math.max(0, MovieSpots.seatTop + Tuning.movie.bigfootSitPad - this.rig!.hipHeight());
       r.quaternion.setFromAxisAngle(UP, MovieSpots.yaw);
       const laugh = (d.getValue(Session, 'movieLaugh') ?? 0) > 0;
       const bite = (t % Tuning.movie.biteEvery) / Tuning.movie.biteSec;

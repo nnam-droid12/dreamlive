@@ -303,7 +303,7 @@ export class MovieNightSystem extends createSystem({
       b.play(eat > 0.5 ? 'Yes' : 'Idle');
       b.root.rotation.set(0, MovieSpots.yaw, 0);
       b.root.position.copy(MovieSpots.bunny);
-      b.root.position.y = MovieSpots.seatTop + 0.04 - b.hipHeight();
+      b.root.position.y = MovieSpots.seatTop + cfg.bunnySitPad - b.hipHeight();
     }
     b.update(dt);
     MovieSpots.bunnyNow.copy(b.root.position);
