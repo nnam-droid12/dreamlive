@@ -426,7 +426,7 @@ Upload to YouTube, **Public**.
 
 ---
 
-## 10. Submission form drafts (Phase 8 → `SUBMISSION.md`)
+## 10. Submission form drafts (Phase 8; written straight into the Devpost form)
 1. **Submission name:** Dreamlive
 2. **Tagline (≤140 chars):** finalize from Section 0; count characters.
 3. **Track:** Entertainment. **Division:** New Experience.
@@ -462,5 +462,5 @@ Special-award angles: **Best First Five Minutes**, **Best Reason to Come Back**,
 - [ ] Zero console errors; no dev overlays in production.
 - [ ] `CREDITS.md` complete with all asset and music licenses.
 - [ ] Video under 3:00, public on YouTube.
-- [ ] `SUBMISSION.md` complete; Devpost form submitted by **Nov 16**.
+- [ ] Devpost form submitted by **Nov 16**.
 - [ ] Code frozen; the deployed URL stays up through judging.
