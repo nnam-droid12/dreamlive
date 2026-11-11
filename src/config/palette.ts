@@ -136,6 +136,30 @@ export const Palette = {
   /** Title and credit cards: warm type, a dark outline and a soft scrim behind it (readable over bright sky or sea). */
   cardText: 0xffe2a8,
   cardScrim: 0x140a05,
+  /** Movie Night's soft warm spot on the loveseat. */
+  cinemaSpot: 0xffd6a8,
+  /** The bedroom's ceiling fan: brushed nickel, walnut blades, frosted glass. */
+  fanNickel: 0xb8b4ac,
+  fanWalnut: 0x5a3a22,
+  fanGlass: 0xf2ece0,
+  /** Sunshine at sea: the sun's disc, its glow, its warm light, and sunlit cloud. */
+  seaSun: 0xffe7b0,
+  seaSunGlow: 0xffc982,
+  seaSunLight: 0xffe2b8,
+  seaCloudSunlit: 0x9c9ca8,
+  /** The rowboat at sea: base tints (photo textures are applied at runtime), varnished trim, bronze fittings. */
+  boatPaint: 0x3f6f8f,
+  boatWood: 0x8a6d50,
+  boatTrim: 0x6b4a2c,
+  boatBronze: 0x9a7642,
+  /** Goodnight console: smoky glass pills, white fill (DreamSpace-style). */
+  consoleGlass: 0x2a2d33,
+  consoleFill: 0xf4f6fa,
+  /** Goodnight, New York: silver moonlight, the moon's halo, starlight, the lullaby's drifting motes of light. */
+  moonLight: 0xcdd9ff,
+  moonGlow: 0xdfe7ff,
+  starLight: 0xf3f6ff,
+  lullabyMote: 0xffe2b0,
 } as const;
 
 export type PaletteKey = keyof typeof Palette;

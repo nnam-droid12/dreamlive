@@ -2,6 +2,27 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-11 — Storm and sunshine at sea; Movie Night as a cinema; hands like Quest's
+
+- **Storm at sea, in your hands (the new finale):**
+  - Bigfoot rides out the storm in a wooden rowboat a few metres out: a new clinker-built model with Poly Haven CC0 painted and weathered planks.
+  - The boat heaves and rolls on the real swells. Bigfoot sits on the thwart facing you, head up, gripping both gunwales.
+  - DreamSpace-style glass sliders float on your left. Drag them with a fingertip, or point a controller and hold the trigger:
+    - **Storm:** heavier rain, bigger swells, more lightning and thunder.
+    - **Sun:** the clouds part, a low golden sun lays a glitter path on the water, sunbeams fan down, the rain stops and the sea calms.
+    - **Whales:** humpbacks come close, breach and sing (an original music-box lullaby, generated in code).
+    - **Goodnight:** settles a sunny calm sea, then home to bed.
+  - Two gestures work anywhere: clench a fist to call a thunderbolt; raise an open palm to the sky to bring the sun on.
+  - At sea there is only the sea: the bedroom, its window frame and the rain on the glass step away. No water shows inside the boat.
+  - The surfing scene is replaced by the boat.
+- **Movie Night is a cinema:**
+  - The ceiling closes over the room, a ceiling fan turns overhead, and the sky outside goes to night.
+  - Every light in the room goes down; the film glows on the room, and a soft warm spot keeps Bigfoot, the bunny and the loveseat in view.
+  - The loveseat is wider, so Bigfoot fits. Both his legs rest on the cushion.
+- **Hands like the Quest's:** see-through smoky grey glass with a crisp white outline, a slimmer forearm that fades toward the elbow, and clearer gestures in the film. The white outline shell had failed to compile, flooding WebGL with errors (which also hid the bunny); fixed.
+- **Head pat:** reach out flat, palm down, and Bigfoot steps in so your hand can reach the top of his head. The pat lands on his real head.
+- **New York street:** the traffic boxes (made for the view from the rooftop) are gone at street level. Bigfoot walks briskly. Four ranks of towers stand shoulder to shoulder, and towers close both ends of the street.
+
 ## 2026-11-10 — Bigfoot remembers you; a real New York street
 
 - **It remembers you:**

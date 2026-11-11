@@ -1,5 +1,14 @@
 import {
+  AdditiveBlending,
+  CanvasTexture,
+  SRGBColorSpace,
+  Color,
+  Euler,
   createSystem,
+  Mesh,
+  MeshBasicMaterial,
+  SphereGeometry,
+  TextureLoader,
   DirectionalLight,
   Entity,
   Group,
@@ -21,6 +30,8 @@ import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { buildLighthouse } from '../scene-assets/lighthouse.scene-asset.js';
 import { buildSurfboard } from '../scene-assets/surfboard.scene-asset.js';
+import { buildRowboat, dressRowboat, ROWBOAT } from '../scene-assets/rowboat.scene-asset.js';
+import { SeaWeather } from './lib/sea-weather.js';
 import { buildWhale } from '../scene-assets/whale.scene-asset.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { buildBeam, FloodWater, Lightning, Ocean, StormClouds, swellHeight, swellSlope } from '../visuals/sea-fx.js';
@@ -72,6 +83,18 @@ export class SeaWorldSystem extends createSystem({
   private beam!: Object3D;
   private beamMats: ShaderMaterial[] = [];
   private board!: Object3D;
+  private boat!: Group;
+  private room?: Object3D;
+  private sunDisc!: Mesh;
+  private sunGlow!: Sprite;
+  private sunLight!: DirectionalLight;
+  private sunBeams: Mesh[] = [];
+  private beamAxis = new Vector3(1, 0, 0);
+  private sunDir = new Vector3();
+  private cloudDark = new Color();
+  private yawQ = new Quaternion();
+  private tiltQ = new Quaternion();
+  private boatYaw = 0;
   private whales: Whale[] = [];
   private splashes: Splash[] = [];
   private light!: DirectionalLight;
@@ -85,6 +108,8 @@ export class SeaWorldSystem extends createSystem({
   private tmp = new Vector3();
   private tmp2 = new Vector3();
   private slope = { x: 0, z: 0 };
+  private tiltE = new Euler();
+  private tmpColor = new Color();
   private time = 0;
   private strikeIn = 0;
   private flash = 0;
@@ -134,7 +159,25 @@ export class SeaWorldSystem extends createSystem({
     // Bigfoot's board, and the whales.
     this.board = buildSurfboard();
     this.board.scale.setScalar(1.15);
+    this.board.visible = false;
     this.root.add(this.board);
+    // Bigfoot's rowboat (he rides out the storm in it), and the sun that breaks through.
+    this.boat = buildRowboat();
+    this.boat.scale.setScalar(cfg.boatScale);
+    dressRowboat(this.boat, new TextureLoader());
+    this.root.add(this.boat);
+    this.sunDisc = new Mesh(new SphereGeometry(6, 24, 16), new MeshBasicMaterial({ color: Palette.seaSun, transparent: true, opacity: 0, toneMapped: false, fog: false }));
+    this.sunGlow = new Sprite(new SpriteMaterial({ map: radialGlow(), color: Palette.seaSunGlow, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending, fog: false }));
+    this.sunGlow.scale.setScalar(120);
+    this.root.add(this.sunDisc, this.sunGlow);
+    // Sunbeams: long soft shafts fanning down from the sun through the parting clouds.
+    for (let i = 0; i < 6; i++) {
+      const beam = buildBeam(190, 9 + i * 2.5, Palette.seaSunGlow);
+      beam.renderOrder = 3;
+      this.sunBeams.push(beam);
+      this.root.add(beam);
+    }
+    this.sunLight = new DirectionalLight(Palette.seaSunLight, 0);
     for (let i = 0; i < cfg.whales; i++) {
       const obj = buildWhale();
       const [r0, r1] = cfg.whaleRadius;
@@ -163,7 +206,8 @@ export class SeaWorldSystem extends createSystem({
     this.light.position.set(60, 80, 0);
     this.fill = new HemisphereLight(Palette.stormFill, Palette.stormGround, 0);
     this.world.createTransformEntity(this.root);
-    for (const l of [this.light, this.light.target, this.fill]) this.world.createTransformEntity(l);
+    for (const l of [this.light, this.light.target, this.fill, this.sunLight, this.sunLight.target]) this.world.createTransformEntity(l);
+    this.cloudDark.copy(this.clouds.uniforms.uDark.value);
   }
 
   update(realDelta: number): void {
@@ -173,11 +217,15 @@ export class SeaWorldSystem extends createSystem({
     const dt = Math.min(realDelta, 0.1);
     if (this.kit.step(d, dt, 0.5)) this.begin(d);
     const k = this.kit.amount;
-    this.root.visible = k > 0 && (this.kit.on || k > 0.3);
-    this.waves?.setGain(k * 0.9);
+    // The sea and the bedroom never show together: arriving, the room steps away at once and the sea fades in;
+    // leaving, the sea stays until the room comes back. (So the boat is never seen inside the room.)
+    this.root.visible = Showcase.enabled ? (this.kit.on ? k > 0.02 : k > 0.5) : k > 0 && (this.kit.on || k > 0.3);
+    this.waves?.setGain(k * 0.9 * (0.3 + 0.7 * SeaWeather.storm) * (1 - 0.5 * SeaWeather.sun));
     if (!this.root.visible) {
       this.light.intensity = 0;
       this.fill.intensity = 0;
+      this.sunLight.intensity = 0;
+      this.hideRoom(false);
       return;
     }
     this.time += dt;
@@ -193,6 +241,8 @@ export class SeaWorldSystem extends createSystem({
     u.uOpacity.value = k;
     u.uFlash.value = this.flash;
     u.uCenter.value.copy(this.center);
+    this.weather(k);
+    this.hideRoom(true);
     this.clouds.uniforms.uTime.value = this.time;
     this.clouds.uniforms.uOpacity.value = k;
     this.clouds.uniforms.uFlash.value = this.flash;
@@ -212,8 +262,8 @@ export class SeaWorldSystem extends createSystem({
       WorldSpots.breachNow = false;
       this.whales[0].wait = 0;
     }
-    this.surf(d, dt);
-    WorldSpots.board.copy(this.board.position);
+    this.rowboat(d, dt);
+    WorldSpots.board.copy(this.boat.position);
     if (this.whales[0]) WorldSpots.whale.copy(this.whales[0].obj.position);
     this.swimWhales(d, dt);
     this.spray(dt, k);
@@ -251,7 +301,12 @@ export class SeaWorldSystem extends createSystem({
 
   /** Lightning: a bolt, the flash on clouds, sea and room, thunder after the light. */
   private lightningTick(d: Entity, dt: number): void {
-    this.strikeIn -= dt;
+    this.strikeIn -= dt * (0.3 + 1.7 * SeaWeather.storm);
+    if (SeaWeather.thunderNow) {
+      SeaWeather.thunderNow = false;
+      this.strikeIn = 0;
+    }
+    if (this.strikeIn <= 0 && (SeaWeather.storm < 0.25 || SeaWeather.sun > 0.6)) this.strikeIn = 1;
     if (this.strikeIn <= 0) {
       const [g0, g1] = cfg.strikeGap;
       this.strikeIn = g0 + Math.random() * (g1 - g0);
@@ -300,34 +355,88 @@ export class SeaWorldSystem extends createSystem({
    * first, spray flying off the board, then gradually easing into a slow,
    * relaxed glide. He leans into each turn.
    */
-  private surf(d: Entity, dt: number): void {
-    const speed = cfg.surfSlow + (cfg.surfFast - cfg.surfSlow) * Math.exp(-this.time / cfg.surfEase);
-    this.surfPhase += speed * dt;
-    const s = Math.sin(this.surfPhase);
-    const c = Math.cos(this.surfPhase);
-    const p = this.tmp.copy(this.windowAt).addScaledVector(this.out, cfg.surfOut + Math.sin(this.surfPhase * 0.5) * 1.2).addScaledVector(this.along, s * cfg.surfSwing);
-    const y = cfg.seaY + swellHeight(cfg.waves, p.x, p.z, this.time) + 0.12;
+  /** At sea there is only the sea: the showcase bedroom (and the floodwater in it) steps away. */
+  private hideRoom(hide: boolean): void {
+    if (!Showcase.enabled) return;
+    this.room ??= this.scene.getObjectByName('NycBedroom') ?? undefined;
+    if (this.room && this.room.visible === hide) this.room.visible = !hide;
+    this.flood.mesh.visible = false;
+  }
+
+  /**
+   * Storm and sunshine (SeaWeather, from the console and your gestures): the
+   * swells' height, the clouds parting, the sun low over the sea with its glitter
+   * path and warm light, the storm light fading.
+   */
+  private weather(k: number): void {
+    const storm = SeaWeather.storm;
+    const sun = SeaWeather.sun;
+    const u = this.ocean.uniforms;
+    u.uAmp.value = cfg.calmAmp + (1 - cfg.calmAmp) * storm * (1 - 0.6 * sun);
+    u.uSun.value = sun;
+    // The sun: low over the sea, a little to one side, rising as it breaks through.
+    const el = (cfg.sunLowDeg + (cfg.sunHighDeg - cfg.sunLowDeg) * sun) * (Math.PI / 180);
+    const az = cfg.sunAzimuthDeg * (Math.PI / 180);
+    this.sunDir.copy(this.out).multiplyScalar(Math.cos(az) * Math.cos(el)).addScaledVector(this.along, Math.sin(az) * Math.cos(el));
+    this.sunDir.y = Math.sin(el);
+    this.sunDir.normalize();
+    u.uSunDir.value.copy(this.sunDir);
+    this.sunDisc.position.copy(this.center).addScaledVector(this.sunDir, 170);
+    this.sunGlow.position.copy(this.sunDisc.position).addScaledVector(this.sunDir, -3);
+    (this.sunDisc.material as MeshBasicMaterial).opacity = k * Math.min(1, sun * 1.6);
+    (this.sunGlow.material as SpriteMaterial).opacity = k * Math.min(1, sun * 1.3);
+    // The shafts fan down toward the sea around the line to us, swaying slowly.
+    this.sunBeams.forEach((b, i) => {
+      b.visible = sun > 0.05;
+      b.position.copy(this.sunDisc.position);
+      const spread = (i - 2.5) * 0.1 + Math.sin(this.time * 0.1 + i) * 0.02;
+      this.tmp2.copy(this.center).addScaledVector(this.along, spread * 150).sub(b.position).normalize();
+      b.quaternion.setFromUnitVectors(this.beamAxis, this.tmp2);
+      (b.material as ShaderMaterial).uniforms.uOpacity.value = k * sun * (0.22 + 0.08 * Math.sin(this.time * 0.4 + i * 1.7));
+    });
+    this.sunDisc.visible = this.sunGlow.visible = sun > 0.01;
+    this.sunLight.position.copy(this.sunDisc.position);
+    this.sunLight.target.position.copy(this.center);
+    this.sunLight.intensity = k * sun * cfg.sunLight;
+    // The clouds thin and lighten as the sun breaks through; the storm's light fades.
+    this.clouds.uniforms.uOpacity.value = k * (1 - 0.92 * sun) * (0.55 + 0.45 * storm);
+    this.clouds.uniforms.uDark.value.copy(this.cloudDark).lerp(this.tmpColor.setHex(Palette.seaCloudSunlit), sun * 0.8);
+    this.fill.intensity = k * (cfg.stormFill * (1 - sun) + this.flash * 1.5 + sun * cfg.sunFill);
+  }
+
+  /**
+   * Bigfoot rides out the storm in his rowboat, a little way out of the window:
+   * the stern toward you, the boat heaving and rolling on the real swells; he
+   * sits on the middle thwart facing you, gripping both gunwales.
+   */
+  private rowboat(d: Entity, dt: number): void {
+    const amp = this.ocean.uniforms.uAmp.value;
+    const p = this.tmp.copy(this.windowAt).addScaledVector(this.out, cfg.boatOut).addScaledVector(this.along, cfg.boatSide);
+    // A slow drift on the swell, so it never sits dead still.
+    p.addScaledVector(this.along, Math.sin(this.time * 0.13) * 0.6);
+    const y = cfg.seaY + swellHeight(cfg.waves, p.x, p.z, this.time) * amp;
     swellSlope(cfg.waves, p.x, p.z, this.time, this.slope);
-    this.board.position.set(p.x, y, p.z);
-    // Board nose (+X in its frame) along the direction of travel, banked into the carve.
-    const heading = c >= 0 ? 1 : -1;
-    const yaw = Math.atan2(-this.along.z * heading, this.along.x * heading);
-    const lateral = Math.abs(c) * speed * cfg.surfSwing; // m/s across the window
-    this.board.rotation.set(0, yaw, 0);
-    this.board.rotateX(-this.slope.z * 0.6 - s * heading * 0.25 * Math.min(1, lateral / 4));
-    this.board.rotateZ(this.slope.x * 0.6);
-    this.tmp2.set(p.x, y + 0.08, p.z);
-    // Spray off the tail while he is going fast.
-    this.sprayIn -= dt * Math.min(1, lateral / 3);
-    if (lateral > 1.5 && this.sprayIn <= 0) {
-      this.sprayIn = 0.12;
-      this.burst(this.tmp2, 1, 0.5);
-    }
-    // He stands across the board (as a surfer does), on whichever side faces the room.
-    const facesRoom = Math.sin(yaw) * (this.head.x - p.x) + Math.cos(yaw) * (this.head.z - p.z) > 0;
-    const anim = this.cheer > 0 ? 'cheer' : lateral > 2.5 ? 'dance' : 'idle';
-    this.kit.placeBigfoot(d, this.tmp2, facesRoom ? yaw : yaw + Math.PI, anim);
-    if (this.time > 3) this.kit.say(d, 'sea-hello', "Whoa, what a storm! Hold on tight, I'm going surfing!", p);
+    // Bow away from the window, quartering, so we see into the boat and Bigfoot's face.
+    this.boatYaw = Math.atan2(this.out.x, this.out.z) + cfg.boatQuarterDeg * (Math.PI / 180);
+    this.yawQ.setFromAxisAngle(this.tmp2.set(0, 1, 0), this.boatYaw);
+    // Pitch and roll from the slope under it (world frame), applied on top of the heading.
+    const pitch = Math.atan(-(this.slope.x * Math.sin(this.boatYaw) + this.slope.z * Math.cos(this.boatYaw)) * amp);
+    const roll = Math.atan((this.slope.x * Math.cos(this.boatYaw) - this.slope.z * Math.sin(this.boatYaw)) * amp);
+    this.tiltQ.setFromEuler(this.tiltE.set(pitch, 0, roll, 'YXZ'));
+    this.boat.quaternion.copy(this.yawQ).multiply(this.tiltQ);
+    this.boat.position.set(p.x, y, p.z);
+    this.boat.updateMatrixWorld(true);
+    this.ocean.uniforms.uBoatInv.value.copy(this.boat.matrixWorld).invert();
+    this.ocean.uniforms.uBoat.value = 1;
+    // Bigfoot on the middle thwart, facing the stern (and you); his hands on the gunwales.
+    WorldSpots.seatQ.copy(this.boat.quaternion).multiply(this.yawQ.invert());
+    this.boat.localToWorld(this.tmp2.set(0, ROWBOAT.seatTop, ROWBOAT.midSeatZ));
+    // (Facing the stern, his left hand is on the boat's -X side.)
+    this.boat.localToWorld(WorldSpots.holdL.set(-0.6, ROWBOAT.seatTop + 0.22, ROWBOAT.midSeatZ - 0.05));
+    this.boat.localToWorld(WorldSpots.holdR.set(0.6, ROWBOAT.seatTop + 0.22, ROWBOAT.midSeatZ - 0.05));
+    WorldSpots.hold = SeaWeather.sun < 0.6;
+    this.kit.placeBigfoot(d, this.tmp2, this.boatYaw + Math.PI, 'sit');
+    void dt;
   }
 
   private swimWhales(d: Entity, dt: number): void {
@@ -335,12 +444,13 @@ export class SeaWorldSystem extends createSystem({
     for (const w of this.whales) {
       w.angle += w.speed * dt;
       const a = base + Math.sin(w.angle) * 0.9;
-      const x = this.windowAt.x + Math.cos(a) * w.radius;
-      const z = this.windowAt.z + Math.sin(a) * w.radius;
+      const near = w.radius * (1 - 0.4 * SeaWeather.whales);
+      const x = this.windowAt.x + Math.cos(a) * near;
+      const z = this.windowAt.z + Math.sin(a) * near;
       const heading = Math.atan2(-Math.sin(a) * Math.cos(w.angle), Math.cos(a) * Math.cos(w.angle)) + Math.PI / 2;
       if (w.breach < 0) {
         // Cruising just under the surface; the back and the flukes show now and then.
-        w.wait -= dt;
+        w.wait -= dt * (1 + 3 * SeaWeather.whales);
         const roll = Math.sin(this.time * 0.6 + w.radius);
         w.obj.position.set(x, cfg.seaY - 1.6 + roll * 0.9, z);
         w.obj.rotation.set(-roll * 0.08, heading, 0);
@@ -430,4 +540,22 @@ export class SeaWorldSystem extends createSystem({
       this.dipped[i] = low;
     }
   }
+}
+
+/** A soft round glow (white; tinted by the sprite's colour): bright core, long falloff. */
+function radialGlow(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d')!;
+  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.08, 'rgba(255,255,255,0.85)');
+  grad.addColorStop(0.25, 'rgba(255,255,255,0.32)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,0.08)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 256, 256);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
 }

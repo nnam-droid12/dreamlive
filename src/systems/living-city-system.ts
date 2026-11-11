@@ -55,7 +55,8 @@ export class LivingCitySystem extends createSystem({
     const live = roof && (scene.startsWith('party-') || scene === 'arrive' || scene === 'leap-back' || scene === 'gifts');
     this.energy += ((live ? 1 : 0.3) - this.energy) * Math.min(1, delta);
     const w = d.getValue(Session, 'world') ?? '';
-    this.city.root.visible = !w || w === 'street';
+    // (Its traffic, helicopter and doves are made for the view from up high: at street level they hide.)
+    this.city.root.visible = !w;
     this.city.update(this.time, delta, this.energy, d.getValue(RoomSlots, 'dawn') ?? 0, d.getValue(RoomSlots, 'dusk') ?? 0);
 
     // The finale: fireworks as he lands home, and again as the last gift lands. Once per dream.

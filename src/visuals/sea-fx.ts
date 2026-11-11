@@ -8,6 +8,7 @@ import {
   DoubleSide,
   Mesh,
   PlaneGeometry,
+  Matrix4,
   ShaderMaterial,
   SphereGeometry,
   Vector3,
@@ -72,6 +73,13 @@ export class Ocean {
     uSky: { value: new Color() },
     uHorizon: { value: new Color() },
     uW: { value: [new Vector4(), new Vector4(), new Vector4(), new Vector4()] },
+    /** Swell height (the Storm dial: 1 = full storm, small = a calm sea), sunshine 0..1, and the sun's direction. */
+    uAmp: { value: 1 },
+    uSun: { value: 0 },
+    uSunDir: { value: new Vector3(1, 0.2, 0).normalize() },
+    /** The rowboat (world to boat-local): no sea is drawn inside its hull. */
+    uBoatInv: { value: new Matrix4() },
+    uBoat: { value: 0 },
   };
 
   constructor(size: number, segments: number, waves: readonly Wave[], colors: { deep: number; scatter: number; foam: number; sky: number; horizon: number }) {
@@ -88,7 +96,7 @@ export class Ocean {
       uniforms: this.uniforms,
       transparent: true,
       vertexShader: /* glsl */ `
-        uniform float uTime;
+        uniform float uTime, uAmp;
         uniform vec4 uW[4];
         varying vec3 vWorld;
         varying vec2 vBase;
@@ -104,12 +112,12 @@ export class Ocean {
             float k = 6.2831853 / uW[i].w;
             float c = sqrt(9.8 / k);
             float f = k * (dot(d, base.xz) - c * uTime);
-            float a = uW[i].z / k;
+            float a = uW[i].z * uAmp / k;
             float s = sin(f), co = cos(f);
             p.x += d.x * a * co;
             p.z += d.y * a * co;
             p.y += a * s;
-            float q = uW[i].z;
+            float q = uW[i].z * uAmp;
             tangent += vec3(-d.x * d.x * q * s, d.x * q * co, -d.x * d.y * q * s);
             binormal += vec3(-d.x * d.y * q * s, d.y * q * co, -d.y * d.y * q * s);
             crest += q * s;
@@ -118,8 +126,10 @@ export class Ocean {
           gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
         }`,
       fragmentShader: /* glsl */ `
-        uniform float uTime, uOpacity, uFlash;
-        uniform vec3 uCenter, uDeep, uScatter, uFoam, uSky, uHorizon;
+        uniform float uTime, uOpacity, uFlash, uAmp, uSun;
+        uniform vec3 uCenter, uDeep, uScatter, uFoam, uSky, uHorizon, uSunDir;
+        uniform mat4 uBoatInv;
+        uniform float uBoat;
         uniform vec4 uW[4];
         varying vec3 vWorld;
         varying vec2 vBase;
@@ -127,6 +137,15 @@ export class Ocean {
         float n(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
           return mix(mix(h(i), h(i + vec2(1, 0)), u.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), u.x), u.y); }
         void main() {
+          // Inside the boat's hull (its planform, in boat-local metres) there is no sea: you see its floor, not water.
+          if (uBoat > 0.5) {
+            vec3 bl = (uBoatInv * vec4(vWorld, 1.0)).xyz;
+            float bt = (bl.z + 1.8) / 3.6;
+            if (bt > 0.0 && bt < 1.0 && bl.y < 0.6) {
+              float hw = 0.675 * pow(max(0.0, sin(3.14159265 * (0.25 + 0.75 * bt))), 0.8);
+              if (abs(bl.x) < hw - 0.03) discard;
+            }
+          }
           // The swell's normal and crest, per pixel (smooth however coarse the mesh is).
           vec3 tangent = vec3(1.0, 0.0, 0.0);
           vec3 binormal = vec3(0.0, 0.0, 1.0);
@@ -136,7 +155,7 @@ export class Ocean {
             float k = 6.2831853 / uW[i].w;
             float c = sqrt(9.8 / k);
             float f = k * (dot(d, vBase) - c * uTime);
-            float q = uW[i].z;
+            float q = uW[i].z * uAmp;
             float s = sin(f), co = cos(f);
             tangent += vec3(-d.x * d.x * q * s, d.x * q * co, -d.x * d.y * q * s);
             binormal += vec3(-d.x * d.y * q * s, d.y * q * co, -d.y * d.y * q * s);
@@ -148,21 +167,29 @@ export class Ocean {
           float near = 1.0 - smoothstep(30.0, 160.0, dist);
           // Fine chop on top of the swell.
           vec2 cp = vWorld.xz * 0.9 + vec2(uTime * 0.7, uTime * 0.4);
-          vec2 chop = vec2(n(cp) - n(cp + vec2(0.31, 0.0)), n(cp) - n(cp + vec2(0.0, 0.31))) * 1.6 * near;
+          // (Sums of sines: smooth ripples, never the blocky facets of value noise.)
+          vec2 chop = vec2(sin(cp.x * 1.7 + cp.y * 0.6) + 0.5 * sin(cp.x * 3.3 - cp.y * 2.1 + 1.3) + 0.25 * sin(cp.x * 6.1 + cp.y * 4.7),
+                           cos(cp.y * 1.9 - cp.x * 0.7) + 0.5 * cos(cp.y * 3.1 + cp.x * 1.9 + 0.7) + 0.25 * cos(cp.y * 5.7 - cp.x * 4.3)) * 0.11 * near * (0.25 + 0.75 * uAmp);
           vec3 nrm = normalize(vNormal + vec3(chop.x, 0.0, chop.y));
           float fres = pow(1.0 - max(dot(nrm, view), 0.0), 4.0);
           fres = 0.04 + 0.96 * fres;
           vec3 sky = mix(uSky, uSky * 3.5 + vec3(0.25, 0.28, 0.35), uFlash);
+          // Sunshine: a bright warm sky in the reflections, and lighter, bluer water.
+          sky = mix(sky, vec3(0.78, 0.74, 0.66), uSun * 0.85);
           // Light through the thin tops of the waves.
           float sss = smoothstep(0.1, 0.55, vCrest) * (0.4 + 0.6 * max(0.0, dot(view.xz, -nrm.xz)));
-          vec3 water = uDeep + uScatter * sss * 0.8;
+          vec3 water = mix(uDeep, vec3(0.03, 0.16, 0.22), uSun * 0.8) + uScatter * sss * 0.8;
           vec3 col = mix(water, sky, fres);
           // Foam on the steepest crests, broken up by noise.
           float foamN = n(vWorld.xz * 0.35 + uTime * 0.1) * 0.6 + n(vWorld.xz * 1.7 - uTime * 0.3) * 0.4;
-          float foam = smoothstep(0.42, 0.62, vCrest + foamN * 0.35 - 0.12) * near;
+          float foam = smoothstep(0.42, 0.62, vCrest + foamN * 0.35 - 0.12) * near * smoothstep(0.2, 0.7, uAmp);
           col = mix(col, uFoam * (0.55 + uFlash * 0.8), foam * 0.85);
           col += vec3(0.7, 0.75, 0.9) * uFlash * 0.12;
-          col = mix(col, uHorizon * (1.0 + uFlash * 1.5), smoothstep(80.0, 250.0, dist));
+          // The sun's glitter path on the water, and its warm sheen.
+          vec3 rv = reflect(-view, nrm);
+          float sd = max(dot(rv, uSunDir), 0.0);
+          col += vec3(1.0, 0.84, 0.58) * uSun * (pow(sd, mix(120.0, 600.0, 1.0 - uAmp)) * 6.0 + pow(sd, 8.0) * 0.45);
+          col = mix(col, mix(uHorizon, vec3(0.95, 0.78, 0.6), uSun) * (1.0 + uFlash * 1.5), smoothstep(80.0, 250.0, dist));
           float edge = 1.0 - smoothstep(220.0, 255.0, dist);
           gl_FragColor = vec4(col, uOpacity * edge);
           #include <colorspace_fragment>

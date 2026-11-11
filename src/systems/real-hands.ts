@@ -232,11 +232,12 @@ function outlineMaterial(skinned: boolean): MeshBasicMaterial {
   m.onBeforeCompile = (shader) => {
     const anchor = skinned ? '#include <skinning_vertex>' : '#include <begin_vertex>';
     const n = skinned ? 'objectNormal' : 'normal';
-    shader.vertexShader = shader.vertexShader.replace(anchor, anchor + ' transformed += normalize(' + n + ') * ' + OUTLINE.toFixed(4) + ';');
+    // (On its own line: the chunk ends with an #endif.)
+    shader.vertexShader = shader.vertexShader.replace(anchor, anchor + String.fromCharCode(10) + 'transformed += normalize(' + n + ') * ' + OUTLINE.toFixed(4) + ';');
     if (!skinned) {
       // The forearm's shell fades out with the arm.
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'varying float vFade;').replace('#include <begin_vertex>', '#include <begin_vertex>' + String.fromCharCode(10) + 'vFade = uv.y;');
-      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'varying float vFade;').replace('#include <dithering_fragment>', '#include <dithering_fragment>' + String.fromCharCode(10) + 'gl_FragColor.a *= smoothstep(0.0, 0.7, vFade);');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'varying float vFade;').replace('#include <dithering_fragment>', '#include <dithering_fragment>' + String.fromCharCode(10) + 'gl_FragColor.a *= smoothstep(0.35, 0.95, vFade);');
     }
   };
   return m;
@@ -266,7 +267,7 @@ function forearmMaterial(): ShaderMaterial {
       void main() {
         float rim = pow(1.0 - clamp(abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.5);
         vec3 c = mix(uBody, uRim, smoothstep(0.35, 0.95, rim) * 0.55);
-        float a = clamp(0.5 + rim * 0.4, 0.0, 0.92) * smoothstep(0.0, 0.75, vFade);
+        float a = clamp(0.5 + rim * 0.4, 0.0, 0.92) * smoothstep(0.35, 0.95, vFade);
         gl_FragColor = vec4(c, a);
       }`,
     transparent: true,

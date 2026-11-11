@@ -6,11 +6,14 @@ import {
   Entity,
   Group,
   LinearFilter,
+  Light,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   PlaneGeometry,
   PointLight,
   RayInteractable,
+  SpotLight,
   SRGBColorSpace,
   Vector3,
   VideoTexture,
@@ -30,6 +33,7 @@ import { onPress } from '../ui/press.js';
 import { seekForRender } from '../visuals/offline-video.js';
 import { MovieBunny } from '../characters/movie-bunny.js';
 import { buildLoveseat, LOVESEAT } from '../scene-assets/loveseat.scene-asset.js';
+import { buildCeilingFan } from '../scene-assets/ceiling-fan.scene-asset.js';
 
 const cfg = Tuning.movie;
 
@@ -62,6 +66,12 @@ export class MovieNightSystem extends createSystem({
   private halo!: Mesh;
   private haloMat!: MeshBasicMaterial;
   private light!: PointLight;
+  private sofaAt = new Vector3();
+  /** The room as a cinema: its lights (with their full intensities), the sofa's soft spot, and the ceiling fan. */
+  private roomLights?: { light?: Light; mat?: MeshBasicMaterial; base: number; written: number; color?: Color }[];
+  private sofaSpot!: SpotLight;
+  private fan?: Object3D;
+  private fanBlades?: Object3D;
   private video?: HTMLVideoElement;
   private texture?: VideoTexture;
   private sampler?: CanvasRenderingContext2D;
@@ -92,6 +102,17 @@ export class MovieNightSystem extends createSystem({
   private filmClock = 0;
 
   init(): void {
+    this.sofaSpot = new SpotLight(Palette.cinemaSpot, 0, 6, cfg.sofaSpotAngle, 0.9, 1.4);
+    this.world.createTransformEntity(this.sofaSpot);
+    this.world.createTransformEntity(this.sofaSpot.target);
+    if (Showcase.enabled) {
+      // The bedroom's ceiling fan, turning slowly overhead (shown whenever the ceiling is there).
+      this.fan = buildCeilingFan();
+      // (Between two of the downlights, over the middle of the floor.)
+      this.fan.position.set((NycLayout.room.minX + NycLayout.room.maxX) / 2, NycLayout.room.height, -0.3);
+      this.fanBlades = this.fan.getObjectByName('Blades') ?? undefined;
+      this.world.createTransformEntity(this.fan);
+    }
     this.root = new Group();
     this.root.name = 'MovieScreen';
     const w = cfg.width;
@@ -131,6 +152,7 @@ export class MovieNightSystem extends createSystem({
     if (!want && this.on) this.endFilm(d);
     this.amount += ((this.on ? 1 : 0) - this.amount) * Math.min(1, realDelta * 1.2);
     d.setValue(RoomSlots, 'movieDim', this.amount);
+    this.cinema(d, realDelta);
     this.root.visible = this.amount > 0.01;
     this.sofa.visible = this.root.visible;
     if (!this.root.visible) {
@@ -170,6 +192,54 @@ export class MovieNightSystem extends createSystem({
     d.setValue(Session, 'movieLaugh', Math.max(0, (d.getValue(Session, 'movieLaugh') ?? 0) - realDelta));
     if (v && v.duration && t > v.duration - cfg.yawnBeforeEnd) this.say(d, 'movie-end', 'Yawn... best movie night ever. Goodnight, friend.');
     if (v?.ended) d.setValue(Session, 'movie', false);
+  }
+
+  /**
+   * Movie Night is a cinema: the room's lights go down (lamps, downlights, the
+   * city's glow), the film lights the room, and one soft warm spot from above
+   * keeps Bigfoot, the bunny and the loveseat in view. The ceiling fan turns.
+   */
+  private cinema(d: Entity, dt: number): void {
+    if (this.fan) {
+      const ceiling = d.getValue(RoomSlots, 'ceilingOpen') ?? 0;
+      this.fan.visible = ceiling < 0.4;
+      if (this.fanBlades) this.fanBlades.rotation.y += dt * cfg.fanTurnsPerSec * Math.PI * 2;
+    }
+    // Every light in the scene goes down with the film (except the film's own light and the sofa's spot).
+    // A light another system drives each frame is re-read whenever it changes, so dimming never compounds.
+    if (this.amount > 0.01 && !this.roomLights) {
+      const list: { light?: Light; mat?: MeshBasicMaterial; base: number; written: number; color?: Color }[] = [];
+      this.scene.traverse((o) => {
+        const l = o as Light;
+        if (l.isLight && l !== this.light && l !== this.sofaSpot) list.push({ light: l, base: l.intensity, written: l.intensity });
+        else if (o.name === 'Downlight') {
+          const mat = (o as Mesh).material as MeshBasicMaterial;
+          list.push({ mat, base: 1, written: 1, color: mat.color.clone() });
+        }
+      });
+      this.roomLights = list;
+    }
+    if (!this.roomLights) return;
+    const f = 1 - (1 - cfg.cinemaLights) * this.amount;
+    for (const r of this.roomLights) {
+      if (r.light) {
+        if (Math.abs(r.light.intensity - r.written) > 1e-5) r.base = r.light.intensity;
+        r.written = r.base * f;
+        r.light.intensity = r.written;
+      } else if (r.mat && r.color) r.mat.color.copy(r.color).multiplyScalar(f);
+    }
+    // Lights up: hand every light back to its own level and forget the list (new lights may appear later).
+    if (this.amount <= 0.01) {
+      for (const r of this.roomLights) if (r.light) r.light.intensity = r.base;
+      this.roomLights = undefined;
+    }
+    this.sofaSpot.visible = this.amount > 0.01 && MovieSpots.ready;
+    if (this.sofaSpot.visible) {
+      const sofa = this.sofaAt.addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5);
+      this.sofaSpot.position.copy(sofa).addScaledVector(this.dir, 0.9).setY(2.7);
+      this.sofaSpot.target.position.copy(sofa).setY(0.6);
+      this.sofaSpot.intensity = this.amount * cfg.sofaSpot;
+    }
   }
 
   /** Dim the room, place the screen in front of the viewer, and roll the film. */

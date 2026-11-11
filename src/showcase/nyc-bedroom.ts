@@ -161,6 +161,7 @@ export async function buildNycBedroom(): Promise<Group> {
   // Recessed downlights (warm, no shadows) plus a soft fill, so walls read as warm plaster.
   for (const z of [-3.0, -1.2, 0.6]) {
     const light = new Mesh(new CircleGeometry(0.06, 24), new MeshBasicMaterial({ color: 0xfff1d6 }));
+    light.name = 'Downlight';
     light.rotation.x = Math.PI / 2;
     light.position.set(0, R.height - 0.002, z);
     const down = new PointLight(0xffe2c0, 1.1, 4.5, 1.6);

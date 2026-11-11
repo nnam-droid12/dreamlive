@@ -290,9 +290,21 @@ def main(frames_path, timeline_path, out_path):
         ramp = np.minimum(1, np.arange(n, dtype=np.float32) / (2 * SR))[:, None]
         fx[total - n:] += hiss * 0.035 * ramp
 
+    # Bigfoot's lullaby (Goodnight, New York): looped from its first rise, at the slider's logged level.
+    lull = np.zeros((total, 2), np.float32)
+    lull_ev = [(e['t'], e.get('value') or 0) for e in events if e['type'] == 'lullaby']
+    first = next((t for t, v in lull_ev if v > 0), None)
+    if first is not None and first - start < dur:
+        t0 = max(first, start) - start
+        seg = looped(load(os.path.join(AUDIO, 'music', 'music-box.mp3')), int((dur - t0 + 1) * SR))
+        add(lull, seg, t0, 1.0)
+        lull *= (env_from(lull_ev, start, total, 0.0) * 0.8)[:, None]
+        # The rain fades out as the moon clears the sky (the lullaby takes over).
+        fx *= (1.0 - 0.8 * np.minimum(1.0, env_from(lull_ev, start, total, 0.0) * 2))[:, None]
+
     beds = world_beds(events, start, total)
     film = movie_sound(events, start, total)
-    mix = (amb + songs + film * 0.9) * duck[:, None] + voice + fx + beds
+    mix = (amb + songs + film * 0.9) * duck[:, None] + voice + fx + beds + lull
     peak = float(np.abs(mix).max())
     mix = np.tanh(mix / max(peak, 1e-6) * 1.4) * 0.9  # gentle limiter
     wav = out_path.replace('.mp4', '-mix.wav')

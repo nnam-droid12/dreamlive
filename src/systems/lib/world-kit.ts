@@ -1,4 +1,4 @@
-import { Entity, Object3D, Vector3 } from '@iwsdk/core';
+import { Entity, Object3D, Quaternion, Vector3 } from '@iwsdk/core';
 import { Sound } from '../../audio/engine.js';
 import { Caption } from '../../components/ritual.js';
 import { Session } from '../../components/session.js';
@@ -22,6 +22,11 @@ export const WorldSpots = {
   walker: new Vector3(),
   breachNow: false,
   strikeNow: false,
+  /** Seated in a boat (worldAnim 'sit'): the seat top (worldSpot), the boat's tilt, and where his hands grip the gunwales. */
+  seatQ: new Quaternion(),
+  holdL: new Vector3(),
+  holdR: new Vector3(),
+  hold: false,
 };
 
 /**

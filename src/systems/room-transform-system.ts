@@ -1,4 +1,5 @@
 import { AssetManager, createSystem, DirectionalLight, SRGBColorSpace, Group, HemisphereLight, Mesh, Object3D, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
+import { SeaWeather } from './lib/sea-weather.js';
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
@@ -92,12 +93,14 @@ export class RoomTransformSystem extends createSystem({
     const autoHole = roof && (open || (scene === 'to-window' && this.beat.time > cfg.autoHoleAt) || scene === 'leap-out') ? 1 : 0;
     this.hole = Math.max(drawn, this.hole + (autoHole - this.hole) * Math.min(1, delta * cfg.holeRate));
     this.wall += ((open ? 1 : 0) - this.wall) * Math.min(1, delta * cfg.wallRate);
-    const ceilingTarget = open && this.wall > cfg.ceilingAfter ? 1 : 0;
+    // (Movie Night is a cinema: the ceiling closes over the room while the film plays.)
+    const cinema = d.getValue(RoomSlots, 'movieDim') ?? 0;
+    const ceilingTarget = open && this.wall > cfg.ceilingAfter && cinema < 0.05 ? 1 : 0;
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
     // Time of day: the story's, unless the palm menu chose one.
     // A dream world sets its own sky: sunrise above the clouds, night for the storm.
-    const worldSky = world === 'clouds' ? 'dawn' : world === 'sea' ? 'night' : '';
-    const sky = worldSky || (d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '');
+    const worldSky = world === 'clouds' ? 'dawn' : world === 'sea' ? (SeaWeather.sun > 0.45 ? 'dawn' : 'night') : '';
+    const sky = worldSky || (cinema > 0.05 ? 'night' : d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '');
     const storyDawn = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
     const dawnTarget = sky === 'dawn' ? 1 : sky ? 0 : storyDawn;
     const storyDusk = !roof ? 1 : after || NIGHT_SCENES.has(scene) ? 0 : scene.startsWith('party-') && scene !== 'party-wait' ? cfg.duskLateParty : 1;
@@ -153,7 +156,7 @@ export class RoomTransformSystem extends createSystem({
     this.sun.target.position.set(o[0], o[1], o[2]);
     this.sun.position.set(o[0] + this.sunDir.x * 40, o[1] + this.sunDir.y * 40 + 4, o[2] + this.sunDir.z * 40);
     // Movie Night turns the house lights down.
-    const lights = 1 - 0.85 * (d.getValue(RoomSlots, 'movieDim') ?? 0);
+    const lights = 1 - 0.95 * (d.getValue(RoomSlots, 'movieDim') ?? 0);
     this.sun.intensity = (cfg.sunIntensity * this.dusk + cfg.dawnLight * cfg.sunIntensity * this.dawn) * lights;
     this.fill.intensity = cfg.fillIntensity * Math.max(this.dusk, this.dawn * cfg.dawnLight) * lights;
   }

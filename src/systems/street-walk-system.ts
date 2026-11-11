@@ -208,17 +208,29 @@ export class StreetWalkSystem extends createSystem({
         const t = buildModernTower({ w: d, d: w, h, style: styles[Math.floor(rand() * 3)], setbacks: h > 90, seed: Math.floor(rand() * 1000) }, mats);
         t.position.set(xNear + (side * d) / 2, 0, z + w / 2);
         set.add(t);
-        z += w + 2 + rand() * 2;
+        // Shoulder to shoulder, like Manhattan: barely a gap between neighbours.
+        z += w + 0.5 + rand() * 0.9;
       }
     };
     // Front rank, both sides, outside his building (z within ±20) and the party tower (z -7..8).
-    row(-0.6, -1, -95, -21, 16, 70, 170);
-    row(-0.6, -1, 21, 95, 16, 70, 170);
-    row(7.6, 1, -95, -9, 16, 60, 200);
-    row(7.6, 1, 10, 95, 16, 60, 200);
-    // A taller second rank behind, filling the sky above the street.
-    row(-24, -1, -90, 90, 18, 110, 230);
-    row(28, 1, -90, 90, 18, 110, 230);
+    row(-0.6, -1, -110, -21, 16, 80, 190);
+    row(-0.6, -1, 21, 110, 16, 80, 190);
+    row(7.6, 1, -110, -9, 16, 70, 220);
+    row(7.6, 1, 10, 110, 16, 70, 220);
+    // Taller ranks behind, filling the sky above the street with towers.
+    row(-18, -1, -110, 110, 17, 120, 250);
+    row(25, 1, -110, 110, 17, 120, 250);
+    row(-36, -1, -110, 110, 18, 150, 290);
+    row(43, 1, -110, 110, 18, 150, 290);
+    // The far ends of the street: towers across it, so looking down the street there are buildings, not open sky.
+    for (const zEnd of [-118, 118]) {
+      for (let x = -52; x <= 60; x += 15) {
+        const h = 100 + rand() * 120;
+        const t = buildModernTower({ w: 14, d: 14, h, style: styles[Math.floor(rand() * 3)], setbacks: h > 150, seed: Math.floor(rand() * 1000) }, mats);
+        t.position.set(x, 0, zEnd);
+        set.add(t);
+      }
+    }
   }
 
   /** The street sits in the window frame, at the foot of his tower. */

@@ -5,6 +5,7 @@
  * analyser feeds the music visualizer.
  */
 import { Timeline } from './timeline.js';
+import { Director } from '../config/director.js';
 
 type Vec = { x: number; y: number; z: number };
 
@@ -105,6 +106,8 @@ class AudioEngine {
   /** Offline renders: each track's pre-analysed bands (public/audio/music/<name>.bands.json) and when it started. */
   private bandData = new Map<string, Uint8Array | null>();
   private trackT0 = new Map<string, number>();
+  private lullabyLevel = 0;
+  private lullabyT0 = 0;
   /** Last caption-worthy sound, consumed by AudioSystem. */
   pendingCaption = '';
 
@@ -463,6 +466,29 @@ class AudioEngine {
     if (this.score && this.score !== name) this.stopTrack(this.score);
     this.score = name;
     if (name && this.ctx && this.musicOn) this.startTrack(name, this.music, 0.8, 1.6, true);
+  }
+
+  /**
+   * Bigfoot's music-box lullaby (public/audio/music/music-box.mp3, written for Dreamlive) at
+   * a level from the Goodnight console's slider, 0 = off. Logged for the film's mix.
+   */
+  setLullaby(level: number): void {
+    const v = Math.max(0, Math.min(1, level));
+    if (Math.abs(v - this.lullabyLevel) < 0.02 && (v > 0) === this.lullabyLevel > 0) return;
+    if (this.lullabyLevel === 0 && v > 0) this.lullabyT0 = Timeline.t;
+    this.lullabyLevel = v;
+    Timeline.log('lullaby', '', v);
+    if (!this.ctx || !this.musicOn) return;
+    if (v > 0) this.startTrack('music-box', this.music, v * 0.9, 0.25, false);
+    else this.stopTrack('music-box');
+  }
+
+  /** Where the lullaby is in its bar (beats since it started, at its fixed 72 BPM): drives the stars' twinkle. */
+  lullabyBeats(): number {
+    if (this.lullabyLevel <= 0) return 0;
+    const el = this.tracks.get('music-box')?.el;
+    const t = el && !el.paused && !Director.offline ? el.currentTime : Timeline.t - this.lullabyT0;
+    return (t * 72) / 60;
   }
 
   /**

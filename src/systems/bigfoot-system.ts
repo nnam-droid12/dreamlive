@@ -1,4 +1,5 @@
 import { BigfootControl } from './lib/bigfoot-control.js';
+import { WorldSpots } from './lib/world-kit.js';
 import { MovieSpots } from './movie-night-system.js';
 import {
   CanvasTexture,
@@ -43,6 +44,9 @@ type State = (typeof BigfootState)[keyof typeof BigfootState];
  * the TV and leaps in. At the finale he pops back out, shuffles to bed and
  * flops down; on waking he stretches, stands and waves.
  */
+/** Bigfoot's hip height when seated (m): the estimate before the first measurement. */
+const SEATED_HIP = 0.5;
+
 export class BigfootSystem extends createSystem({
   director: { required: [Ritual, RoomSlots, DevControls] },
 }) {
@@ -76,6 +80,12 @@ export class BigfootSystem extends createSystem({
   private wantEat = 0;
   /** His seated height on the loveseat (held steady: bites must not bob him up and down). */
   private sitY = -1;
+  /** Holding the boat's gunwales this frame (set by inWorld). */
+  private holding = false;
+  private seated = false;
+  private lookAtYou = new Vector3();
+  /** Seated in the boat: his hip offset, eased (undefined until he first sits). */
+  private boatSitOff?: number;
   private popQ = new Quaternion();
   private popParentQ = new Quaternion();
   // Rooftop Party route (world space), fixed once the window is known.
@@ -138,6 +148,18 @@ export class BigfootSystem extends createSystem({
     this.rig.setUpright(fc ? 0.85 : 0);
     this.rig.setReach('right', fc && BigfootControl.reach.right ? BigfootControl.reachAt.right : null, BigfootControl.shape.right);
     this.rig.setReach('left', fc && BigfootControl.reach.left ? BigfootControl.reachAt.left : null, BigfootControl.shape.left);
+    // In the boat: holding on to both gunwales, sitting tall, head up, looking at you.
+    if (this.holding && !fc) {
+      this.rig.setReach('left', WorldSpots.holdL, 'fist');
+      this.rig.setReach('right', WorldSpots.holdR, 'fist');
+    }
+    if (this.seated && !fc) {
+      this.player.head.getWorldPosition(this.lookAtYou);
+      this.rig.setLook(this.lookAtYou);
+      this.rig.setUpright(0.75);
+    }
+    this.seated = false;
+    this.holding = false;
     const pose = this.entity.getValue(Bigfoot, 'pose') ?? 0;
     if (pose > 0) this.entity.setValue(Bigfoot, 'pose', Math.max(0, pose - realDelta));
     const sleeping = this.state() === BigfootState.Sleeping;
@@ -353,7 +375,23 @@ export class BigfootSystem extends createSystem({
     r.position.fromArray(d.getVectorView(Session, 'worldSpot'));
     r.quaternion.setFromAxisAngle(UP, d.getValue(Session, 'worldYaw') ?? 0);
     this.setState(BigfootState.Awake);
-    this.rig!.play((d.getValue(Session, 'worldAnim') ?? 'idle') as BigfootAnim);
+    const anim = d.getValue(Session, 'worldAnim') ?? 'idle';
+    if (anim === 'sit') {
+      // Seated in the boat: hips on the thwart (worldSpot is the seat top), tilting with the boat, hands on the gunwales.
+      this.wantPose = 'sit';
+      this.wantEat = 0;
+      r.quaternion.premultiply(WorldSpots.seatQ);
+      const target = Tuning.sea.boatSitPad - this.rig!.hipHeight();
+      if (this.boatSitOff === undefined) this.boatSitOff = Tuning.sea.boatSitPad - SEATED_HIP;
+      // Only trust the measurement once he is seated (the first frames still carry the standing pose).
+      if (this.rig!.hipHeight() < SEATED_HIP * 1.4) this.boatSitOff += (target - this.boatSitOff) * 0.15;
+      r.position.y += this.boatSitOff;
+      this.holding = WorldSpots.hold;
+      this.seated = true;
+      this.rig!.play('idle');
+      return;
+    }
+    this.rig!.play(anim as BigfootAnim, { rate: anim === 'walk' && d.getValue(Session, 'world') === 'street' ? Tuning.street.walkRate : 1 });
   }
 
   /** The last stretch of the film: Bigfoot has had enough and goes to bed. */

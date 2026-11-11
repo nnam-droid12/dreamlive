@@ -29,6 +29,8 @@ import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { WorldSpots } from './lib/world-kit.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { FriendCue } from './friend-system.js';
+import { SeaConsoleSpots } from './sea-console-system.js';
+import { SeaCue, SeaWeather } from './lib/sea-weather.js';
 import { MovieSpots } from './movie-night-system.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 
@@ -58,7 +60,18 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, sea: 113, whale: 127, flood: 135, bed: 143, end: 169 };
+const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, sea: 113, whale: 138, flood: 143, bed: 143, end: 169 };
+/**
+ * Storm and sunshine at sea (seconds after the sea begins): the console shows,
+ * each dial the left hand drags [index, from, to, start, end], the right hand's
+ * fist (thunder) and raised palm (sunshine), and the Goodnight button.
+ */
+const SEA = { console: 5, fist: 10.5, palm: 18.5, palmEnd: 22, press: 28 };
+const SEA_DIALS: [number, number, number, number, number][] = [
+  [0, 0.85, 1, 6.5, 9.5],
+  [0, 1, 0.2, 14, 18],
+  [2, 0, 0.9, 23.5, 26.5],
+];
 /** Thumb pointing up for a right-hand thumbs-up (palm turned inward). */
 const Q_THUMB_R = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2);
 /** The hangout's hand moments, in seconds after it starts. */
@@ -345,7 +358,8 @@ export class DirectorSystem extends createSystem({
       const p = WorldSpots.puff;
       this.aim(p.clone().addScaledVector(this.toward(p, seat), 0.6).setY(p.y + 0.12), p);
     } else if (tt < TOUR.sea) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
-    else if (tt < TOUR.whale) this.aim(at(-0.3, 1.5, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.0));
+    // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
+    else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.25, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.6));
     else if (tt < TOUR.flood) this.aim(at(-0.6, 1.6, 0.3), WorldSpots.whale);
     else this.aim(at(-2.6, 1.35, 0.9), at(-1.8, 0, 0.8));
     return true;
@@ -464,7 +478,19 @@ export class DirectorSystem extends createSystem({
     if (tt > TOUR.sea && this.cue('sea')) world('sea');
     if (tt > TOUR.sea + 7 && this.cue('strike-1')) WorldSpots.strikeNow = true;
     if (tt > TOUR.whale && this.cue('breach')) WorldSpots.breachNow = true;
-    if (tt > TOUR.flood + 2 && this.cue('strike-2')) WorldSpots.strikeNow = true;
+    // Storm and sunshine at sea: the left hand works the console, the right hand calls thunder and the sun.
+    const g = tt - TOUR.sea;
+    SeaCue.show = tt >= TOUR.sea + SEA.console && tt < TOUR.bed;
+    SeaCue.drive = -1;
+    for (const [i, from, to, a, b] of SEA_DIALS) {
+      if (g < a || g > b + 0.7) continue;
+      const e = Math.min(1, (g - a) / (b - a));
+      SeaCue.drive = i;
+      SeaCue.value = from + (to - from) * e * e * (3 - 2 * e);
+    }
+    SeaCue.palmUp = g >= SEA.palm + 0.6 && g < SEA.palmEnd;
+    if (g > SEA.fist + 0.5 && this.cue('sea-fist')) SeaWeather.thunderNow = true;
+    if (g > SEA.press && this.cue('sea-goodnight')) SeaCue.press = true;
     if (tt > TOUR.bed && this.cue('bedtime')) {
       world('');
       d.setValue(Session, 'bedtime', true);
@@ -490,10 +516,16 @@ export class DirectorSystem extends createSystem({
     if (tt < TOUR.puff) return 'Fly above the clouds';
     if (tt < TOUR.star) return 'Wave the little clouds away';
     if (tt < TOUR.sea) return 'Catch a falling star';
-    if (tt < TOUR.whale) return 'Surf the storm with Bigfoot';
-    if (tt < TOUR.flood) return 'Whales breach beside you';
-    if (tt < TOUR.bed) return 'The storm floods in: touch the water';
-    return tt < TOUR.bed + 8 ? 'Bedtime: rain on the glass' : 'The end credits roll';
+    const gs = tt - TOUR.sea;
+    if (gs < SEA.console) return 'Storm at sea: Bigfoot rides it out in his rowboat';
+    if (gs < SEA.fist) return 'The storm is in your hands';
+    if (gs < 14) return 'Clench your fist: thunder';
+    if (gs < SEA.palm) return 'Calm the sea';
+    if (gs < 23.5) return 'Raise your palm to the sky: sunshine';
+    if (gs < SEA.press) return 'Call the whales';
+    if (tt < TOUR.bed) return 'Goodnight, sea';
+    if (tt < TOUR.bed + 8) return 'Bedtime: rain on the glass';
+    return 'The end credits roll';
   }
 
   /** A soft dark band behind the feature caption, so it reads over bright and busy shots. */
@@ -608,11 +640,18 @@ export class DirectorSystem extends createSystem({
       head.updateMatrixWorld(true);
       const p = head.worldToLocal(H_TMP.aim.copy(WorldSpots.star));
       if (p.length() < 1.0) right = { at: H_TMP.r.copy(p).add(H_TMP.off.set(0.02, -0.06, 0.06)), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
-    } else if (tt >= TOUR.flood + 1 && tt < TOUR.flood + 6.5) {
-      // A hand dipped into the floodwater, bobbing in and out.
+    } else if (tt >= TOUR.sea + SEA.console + 0.8 && tt < TOUR.sea + SEA.press + 1.2 && SeaConsoleSpots.ready) {
       head.updateMatrixWorld(true);
-      const dip = frameToWorld(f, { x: -1.8, y: 0.12 + Math.max(0, Math.sin(this.clock * 2.4)) * 0.18, z: 0.8 }, H_TMP.aim);
-      right = { at: H_TMP.r.copy(head.worldToLocal(dip)), rot: Q_ID, pose: 'open', pinch: 0 };
+      const g = tt - TOUR.sea;
+      // The left fingertip on the knob it drags (or the next one), then on Goodnight.
+      const i = SeaCue.drive;
+      const next = g < SEA_DIALS[0][3] ? 0 : g < SEA_DIALS[1][3] ? 0 : g < SEA.palmEnd ? 1 : 2;
+      const target = g > SEA.press - 1.2 ? SeaConsoleSpots.button : SeaConsoleSpots.knob[i >= 0 ? i : next];
+      const p = head.worldToLocal(H_TMP.aim.copy(target));
+      // (The emulator's hand sits at its wrist: the fingertip reaches a hand's length ahead.)
+      left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.11)), rot: Q_ID, pose: 'point', pinch: 0 };
+      if (g >= SEA.fist - 0.6 && g < SEA.fist + 2.4) right = { at: H_TMP.r.set(0.16, -0.02, -0.4), rot: Q_ID, pose: 'fist', pinch: 0 };
+      else if (g >= SEA.palm && g < SEA.palmEnd + 0.5) right = { at: H_TMP.r.set(0.2, 0.16, -0.42), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
     }
     this.hands.apply(this.player, left, right, ease);
     this.realHands?.updateFromEmulator(this.hands.deviceHands() as never, this.player);

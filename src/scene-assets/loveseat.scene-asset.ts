@@ -9,7 +9,7 @@ import { Color, CylinderGeometry, Group, Mesh, MeshPhysicalMaterial, MeshStandar
 import { Palette } from '../config/palette.js';
 import { bevelBox } from './lib/hardsurface.js';
 
-export const LOVESEAT = { width: 1.9, depth: 0.9, seatTop: 0.45 };
+export const LOVESEAT = { width: 2.6, depth: 0.95, seatTop: 0.45 };
 
 export function buildLoveseat(): Group {
   const root = new Group();

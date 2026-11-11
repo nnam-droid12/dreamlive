@@ -1,4 +1,5 @@
 import { createSystem, Entity, FogExp2, Group, Mesh, Quaternion, ShaderMaterial, Vector3, VisibilityState } from '@iwsdk/core';
+import { SeaWeather } from './lib/sea-weather.js';
 import { LoopHandle, Sound } from '../audio/engine.js';
 import { RoomSlots } from '../components/stage.js';
 import { Session } from '../components/session.js';
@@ -102,11 +103,14 @@ export class SkyFxSystem extends createSystem({
 
     // A dream world brings its own weather: clear above the clouds, rain in the storm.
     const world = d.getValue(Session, 'world') ?? '';
-    const worldWeather = world === 'clouds' ? 'clear' : world === 'sea' ? 'rain' : '';
+    // At sea the rain follows the storm, and stops when the sun breaks through.
+    const seaRain = SeaWeather.storm > 0.3 && SeaWeather.sun < 0.5;
+    const worldWeather = world === 'clouds' ? 'clear' : world === 'sea' ? (seaRain ? 'rain' : 'clear') : '';
     const kind = (worldWeather || (d.getValue(Session, 'weather') ?? 'clear')) as WeatherKind;
     this.weather.update(kind, delta, this.time, cfg.weatherRate, cfg.rainSpeed, cfg.snowSpeed);
     this.rain(this.weather.rainLevel);
-    this.rainGlass.visible = this.weather.rainLevel > 0.01;
+    // (At sea there is no window: the rain falls on the sea, not on glass.)
+    this.rainGlass.visible = this.weather.rainLevel > 0.01 && world !== 'sea';
     this.rainGlassMat.uniforms.uAmount.value = this.weather.rainLevel;
     this.rainGlassMat.uniforms.uTime.value = this.time;
     this.fogAmount += ((kind === 'fog' ? 1 : kind === 'rain' ? 0.35 : 0) - this.fogAmount) * Math.min(1, delta * cfg.weatherRate);

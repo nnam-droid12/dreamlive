@@ -238,8 +238,8 @@ export const Tuning = {
     distance: 3.4,
     height: 1.7,
     /** The film's light on the room: strength, reach, how far in front of the screen it sits. */
-    lightIntensity: 6,
-    lightRange: 9,
+    lightIntensity: 2.2,
+    lightRange: 5.5,
     lightAhead: 1.2,
     volume: 1,
     /** Bigfoot cheers at these film times (s); he yawns and turns in this long before the end. */
@@ -249,11 +249,16 @@ export const Tuning = {
     beside: 1.3,
     ahead: 0.4,
     /** The loveseat beside you: Bigfoot's seat and the bunny's seat (m to the side), and how far forward. */
-    sofaBigfoot: 1.75,
-    sofaBunny: 1.05,
+    sofaBigfoot: 2.05,
+    sofaBunny: 0.95,
     sofaAhead: -0.3,
+    /** The cinema: the room's lights during the film (fraction of normal), the soft spot on the loveseat (intensity, cone half-angle rad), and the ceiling fan (turns per second). */
+    cinemaLights: 0.1,
+    sofaSpot: 6,
+    sofaSpotAngle: 0.5,
+    fanTurnsPerSec: 2.2,
     /** Seated on the loveseat: how far each one's hip bone sits above the cushion top (m), so thighs rest on it, not in it. */
-    bigfootSitPad: 0.14,
+    bigfootSitPad: 0.24,
     bunnySitPad: 0.09,
     /** The bunny steps out of the film at this film time (s); its size (m), walking speed (m/s). */
     bunnyAt: 5,
@@ -330,8 +335,10 @@ export const Tuning = {
 
   street: {
     /** Bigfoot's stroll: walking speed (m/s), and when he stops to wave (s). */
-    walkSpeed: 1.35,
-    waveAt: 7,
+    walkSpeed: 2.3,
+    waveAt: 6,
+    /** His walk clip plays this much faster, to match the brisk stride. */
+    walkRate: 1.6,
     /** Yellow cabs on the street and their speed (m/s). */
     taxis: 4,
     taxiSpeed: 7,
@@ -340,6 +347,21 @@ export const Tuning = {
   sea: {
     /** Still-water level below the floor (m); the ocean mesh size and detail. */
     seaY: -2.6,
+    /** Storm and sunshine: the calmest swell (fraction of the storm's), the sun's height over the sea (deg, from Sun 0 to 1) and bearing from straight out (deg), its light and sky fill. */
+    calmAmp: 0.07,
+    sunLowDeg: 3,
+    sunHighDeg: 15,
+    sunAzimuthDeg: -8,
+    sunLight: 3,
+    sunFill: 0.9,
+    /** Bigfoot's rowboat: this far out of the window and along it (m), turned this far from bow-straight-out (deg). */
+    boatOut: 4.6,
+    boatSide: 0.5,
+    boatQuarterDeg: 30,
+    /** Bigfoot's hip above the thwart when seated in the boat (m). */
+    boatSitPad: 0.16,
+    /** The boat's size (1 = 3.6 m long). */
+    boatScale: 1.3,
     oceanSize: 520,
     oceanSegments: 200,
     /** Gerstner swells: direction (x, z), steepness (sum under 1), wavelength (m). */
@@ -586,6 +608,33 @@ export const Tuning = {
     drop: 0.12,
     /** A pinched orb replays its act on the TV for this long. */
     replaySec: 12,
+  },
+
+  /** Storm and sunshine at sea: the console on your left and the hand gestures. */
+  seaConsole: {
+    /** The console appears this long after the storm begins (headset). */
+    appearAfter: 6,
+    /** Where it floats: ahead, to your LEFT, and below your eyes (m); the film's camera sees it a little further off. */
+    forward: 0.36,
+    left: 0.26,
+    below: 0.16,
+    filmForward: 0.48,
+    filmLeft: 0.24,
+    filmBelow: 0.2,
+    /** Pill size and spacing (m). */
+    pillW: 0.042,
+    pillH: 0.2,
+    pillGap: 0.064,
+    /** A fingertip within this depth of the console (m) drags the pill it is over. */
+    touchDepth: 0.035,
+    /** How fast the sea follows a slider (1/s). */
+    ease: 2.5,
+    /** A raised palm brings the sun on at this rate (per second); seconds between fist thunderbolts. */
+    palmSunRate: 0.35,
+    thunderCooldown: 1.6,
+    /** Goodnight settles the sea over this long, then home to bed this much later (s). */
+    settleSec: 4,
+    homeAfter: 3,
   },
 
   performance: {

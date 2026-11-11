@@ -6,6 +6,8 @@ import lighthouse from './scene-assets/lighthouse.scene-asset.js';
 import streetLamp from './scene-assets/street-lamp.scene-asset.js';
 import taxi from './scene-assets/taxi.scene-asset.js';
 import whale from './scene-assets/whale.scene-asset.js';
+import rowboat from './scene-assets/rowboat.scene-asset.js';
+import ceilingFan from './scene-assets/ceiling-fan.scene-asset.js';
 import popcorn from './scene-assets/popcorn.scene-asset.js';
 import landmarkDeco from './scene-assets/landmark-deco.scene-asset.js';
 import landmarkGlass from './scene-assets/landmark-glass.scene-asset.js';
@@ -36,6 +38,8 @@ export default defineAssets({
   streetLamp,
   taxi,
   whale,
+  rowboat,
+  'ceiling-fan': ceilingFan,
   popcorn,
   'landmark-deco': landmarkDeco,
   'landmark-glass': landmarkGlass,

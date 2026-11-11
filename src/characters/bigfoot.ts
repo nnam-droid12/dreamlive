@@ -59,7 +59,7 @@ export interface BigfootRig {
   root: Object3D;
   /** True when this is the real model (false = stand-in). */
   real: boolean;
-  play(anim: BigfootAnim, opts?: { once?: boolean; fade?: number }): void;
+  play(anim: BigfootAnim, opts?: { once?: boolean; fade?: number; rate?: number }): void;
   /** Whether the model has its own clip for this animation. */
   has(anim: BigfootAnim): boolean;
   /** World position of his head (for "z"s and gaze). */
@@ -253,8 +253,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     fwd.set(0, 0, 1).applyQuaternion(AIM.rootQ);
     side.set(1, 0, 0).applyQuaternion(AIM.rootQ);
     model.updateWorldMatrix(true, true);
-    aim(limb.lUp, limb.lLeg, dir.copy(fwd).addScaledVector(side, 0.2).addScaledVector(DOWN, 0.15).normalize());
-    aim(limb.rUp, limb.rLeg, dir.copy(fwd).addScaledVector(side, -0.2).addScaledVector(DOWN, 0.15).normalize());
+    // Thighs level (a touch up) along the seat, both on top of the cushion; knees a little apart.
+    aim(limb.lUp, limb.lLeg, dir.copy(fwd).addScaledVector(side, 0.12).addScaledVector(DOWN, -0.16).normalize());
+    aim(limb.rUp, limb.rLeg, dir.copy(fwd).addScaledVector(side, -0.12).addScaledVector(DOWN, -0.16).normalize());
     aim(limb.lLeg, limb.lFoot, dir.copy(DOWN).addScaledVector(fwd, 0.18).normalize());
     aim(limb.rLeg, limb.rFoot, dir.copy(DOWN).addScaledVector(fwd, 0.18).normalize());
     aim(limb.lFoot, limb.lToe, fwd);
@@ -317,6 +318,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       }
       const next = actions.get(anim) ?? fallback;
       rig.current = anim;
+      if (next) next.timeScale = opts.rate ?? 1;
       if (!next || next === active) return;
       next.reset();
       next.setLoop(opts.once ? LoopOnce : LoopRepeat, Infinity);
