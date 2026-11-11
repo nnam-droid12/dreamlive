@@ -23,6 +23,8 @@ import { RoomSlots } from '../components/stage.js';
 import { Palette } from '../config/palette.js';
 import { Timeline } from '../audio/timeline.js';
 import { Director } from '../config/director.js';
+import { Showcase } from '../config/showcase.js';
+import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { Tuning } from '../config/tuning.js';
 import { onPress } from '../ui/press.js';
 import { seekForRender } from '../visuals/offline-video.js';
@@ -177,6 +179,12 @@ export class MovieNightSystem extends createSystem({
     this.spoke.clear();
     this.player.head.getWorldPosition(this.head);
     this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.root.quaternion)).setY(0).normalize();
+    if (Director.enabled && Showcase.enabled) {
+      // The film: from the viewer's seat facing the TV, wherever the camera is
+      // at that moment (so the screen stands in front of the TV, never in a wall).
+      this.head.set(NycLayout.seat.position.x, 1.25, NycLayout.seat.position.z);
+      this.fwd.set(NycLayout.tv.center.x - this.head.x, 0, NycLayout.tv.center.z - this.head.z).normalize();
+    }
     this.center.copy(this.head).addScaledVector(this.fwd, cfg.distance);
     this.center.y = cfg.height;
     this.root.position.copy(this.center);

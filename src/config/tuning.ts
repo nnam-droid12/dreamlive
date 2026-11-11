@@ -251,7 +251,7 @@ export const Tuning = {
     /** The loveseat beside you: Bigfoot's seat and the bunny's seat (m to the side), and how far forward. */
     sofaBigfoot: 1.75,
     sofaBunny: 1.05,
-    sofaAhead: 0.15,
+    sofaAhead: -0.3,
     /** The bunny steps out of the film at this film time (s); its size (m), walking speed (m/s). */
     bunnyAt: 5,
     bunnyHeight: 0.8,
