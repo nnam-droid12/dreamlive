@@ -30,6 +30,14 @@ def load(path):
     return np.frombuffer(raw, np.float32).reshape(-1, 2).copy()
 
 
+def load_band(path, band):
+    """A party song's band ('low' beat and bass, 'mid' chords and voices, 'high' hats and shimmer), cut with ffmpeg filters."""
+    af = {'low': 'lowpass=f=220,lowpass=f=220', 'mid': 'highpass=f=220,lowpass=f=3200', 'high': 'highpass=f=3200,highpass=f=3200'}[band]
+    raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-af', af, '-f', 'f32le', '-ac', '2', '-ar', str(SR), '-'],
+                         capture_output=True, check=True).stdout
+    return np.frombuffer(raw, np.float32).reshape(-1, 2).copy()
+
+
 def add(mix, clip, at, gain=1.0):
     i = int(at * SR)
     if i >= len(mix) or i + len(clip) <= 0:
@@ -266,12 +274,29 @@ def main(frames_path, timeline_path, out_path):
         t1 = (acts[k + 1]['t'] - start) if k + 1 < len(acts) else dur
         if t1 <= max(t0, 0):
             continue
-        seg = looped(load(os.path.join(AUDIO, 'music', e['name'] + '.mp3')), int((t1 - t0) * SR))
+        path = os.path.join(AUDIO, 'music', e['name'] + '.mp3')
+        n = int((t1 - t0) * SR)
+        # The party console's Band slider: the beat and bass always, then the chords and voices, then the hats.
+        band_ev = [(x['t'], x.get('value') if x.get('value') is not None else 1.0) for x in events if x['type'] == 'band']
+        if band_ev:
+            inst = env_from(band_ev, start, total, 1.0)
+            i0 = max(0, int(t0 * SR))
+            win = inst[i0:i0 + n]
+            win = np.pad(win, (0, n - len(win)), mode='edge') if len(win) < n else win
+            seg = looped(load_band(path, 'low'), n)
+            seg += looped(load_band(path, 'mid'), n) * np.clip(win * 2, 0, 1)[:, None]
+            seg += looped(load_band(path, 'high'), n) * np.clip(win * 2 - 1, 0, 1)[:, None]
+        else:
+            seg = looped(load(path), n)
         fade = min(len(seg), int(0.6 * SR))
         seg[-fade:] *= np.linspace(1, 0, fade, dtype=np.float32)[:, None]
         add(songs, seg, t0, 0.9)
     open_ev = [(e['t'], 0.35 + 0.65 * (e.get('value') or 0)) for e in events if e['type'] == 'open']
     songs *= env_from(open_ev, start, total, 1.0)[:, None]
+    # The party console's Volume slider.
+    vol_ev = [(e['t'], e.get('value') if e.get('value') is not None else 1.0) for e in events if e['type'] == 'volume']
+    if vol_ev:
+        songs *= (env_from(vol_ev, start, total, 1.0) / 0.85)[:, None]
 
     # Sound effects, and rain after bedtime.
     fx = np.zeros((total, 2), np.float32)
