@@ -17,6 +17,7 @@ All notable changes to Dreamlive, newest first.
   - It is a one-way side street: the cabs run in the far lane, under a dashed lane line, so the film's sidewalk shots stay clear of them.
 - **The film** shows the friendship board after the hangout: "He remembers every night with you".
 - **Movie Night in the film:** the screen always stands in front of the TV (it is set up from your seat, wherever the camera is), so the bunny steps out of the picture rather than a wall. The loveseat sits further back, so the camera frames Bigfoot and the bunny together.
+- **Film cameras stay indoors:** Movie Night's shots are held inside the bedroom walls, so the film never shows the room's open back from outside.
 - **Seated properly:** Bigfoot and the bunny sit on the loveseat cushion, not sunk into it. The bunny's seated pose (legs forward, carrot to its mouth) never ran before: the model loader strips the dots from its bone names, so the code could not find its legs.
 - **Distance interactions:** a memory orb on the shelf swells when your ray is on it, so you can see what a pinch will pick.
 - **Readable type:** title and credit cards get a soft dark scrim and outline, so they stay readable over a bright sky, sea or city (Meta's contrast guidance).

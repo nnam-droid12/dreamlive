@@ -319,15 +319,15 @@ export class DirectorSystem extends createSystem({
       const side = new Vector3(toScreen.z, 0, -toScreen.x);
       if (tt < TOUR.bunny) {
         // Behind the loveseat: Bigfoot and the viewer's seat in the foreground, the big screen beyond.
-        this.aim(sofa.clone().addScaledVector(toScreen, -1.9).addScaledVector(side, -0.6).setY(1.75), screen.clone().setY(screen.y - 0.2));
+        this.aim(this.inRoom(sofa.clone().addScaledVector(toScreen, -1.9).addScaledVector(side, -0.6).setY(1.75)), screen.clone().setY(screen.y - 0.2));
       } else if (tt < TOUR.sofa) {
         // The bunny steps out of the picture, hops down and walks over: watch it from the side.
         const b = MovieSpots.bunnyNow;
         const mid = new Vector3().addVectors(screen, sofa).multiplyScalar(0.5).setY(0);
-        this.aim(mid.addScaledVector(side, -2.4).setY(1.35), b.clone().setY(b.y + 0.45));
+        this.aim(this.inRoom(mid.addScaledVector(side, -2.4).setY(1.35)), b.clone().setY(b.y + 0.45));
       } else {
         // On the loveseat together, lit by the film: from just in front of them.
-        this.aim(sofa.clone().addScaledVector(toScreen, 1.9).addScaledVector(side, 0.35).setY(1.1), sofa.clone().setY(0.85));
+        this.aim(this.inRoom(sofa.clone().addScaledVector(toScreen, 1.9).addScaledVector(side, 0.35).setY(1.1)), sofa.clone().setY(0.85));
       }
     } else if (tt < TOUR.street) {
       if (head) this.aim(head.clone().addScaledVector(this.toward(head, seat), 2.2).setY(1.45), head);
@@ -346,6 +346,15 @@ export class DirectorSystem extends createSystem({
     else if (tt < TOUR.flood) this.aim(at(-0.6, 1.6, 0.3), WorldSpots.whale);
     else this.aim(at(-2.6, 1.35, 0.9), at(-1.8, 0, 0.8));
     return true;
+  }
+
+  /** Keeps an indoor camera inside the bedroom (never behind a wall, where the room shows its open back). */
+  private inRoom(p: Vector3): Vector3 {
+    const r = NycLayout.room;
+    const m = 0.35;
+    p.x = Math.min(r.maxX - m, Math.max(r.minX + m, p.x));
+    p.z = Math.min(r.maxZ - m, Math.max(r.minZ + m, p.z));
+    return p;
   }
 
   private aim(pos: Vector3, look: Vector3): void {
