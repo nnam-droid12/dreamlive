@@ -771,6 +771,11 @@ export class DirectorSystem extends createSystem({
     let pixels: Uint8Array | undefined;
     let canvas: OffscreenCanvas | undefined;
     DirectorFrame.onFrame = () => {
+      // Resuming a stopped render: these frames are already on disk.
+      if (n < Director.skip) {
+        n++;
+        return;
+      }
       if (Director.only.length) {
         const tt = this.tourTime();
         if (!Director.only.some(([a, b]) => tt >= a && tt <= b)) return;

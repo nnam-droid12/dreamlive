@@ -22,6 +22,11 @@ export const Director = {
   tour: on && params.has('tour'),
   /** `&debug`: print the systems' diagnostics (Session.debug) on the frames, for checking test renders. */
   debug: on && params.has('debug'),
+  /**
+   * `&skip=2520`: resume a stopped render. The story plays from the start as always (the render is
+   * deterministic, one fixed step per frame), but the first N frames are not saved again; numbering continues.
+   */
+  skip: Number(params.get('skip') ?? 0),
   /** `&only=4-14,76-94`: test renders save only frames in these tour-time windows (s); the story still plays through. */
   only: (params.get('only') ?? '')
     .split(',')
