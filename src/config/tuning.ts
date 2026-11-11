@@ -254,7 +254,7 @@ export const Tuning = {
     sofaAhead: -0.3,
     /** Seated on the loveseat: how far each one's hip bone sits above the cushion top (m), so thighs rest on it, not in it. */
     bigfootSitPad: 0.14,
-    bunnySitPad: 0.06,
+    bunnySitPad: 0.09,
     /** The bunny steps out of the film at this film time (s); its size (m), walking speed (m/s). */
     bunnyAt: 5,
     bunnyHeight: 0.8,
@@ -310,10 +310,14 @@ export const Tuning = {
     startAfter: 6,
     distance: 1.05,
     filmDistance: 1.45,
+    /** Reach out flat, palm down (to pat his head), and he steps in to this distance (m). */
+    closeDistance: 0.7,
     walkSpeed: 0.9,
     /** How close your hand must be: a high-five / fist bump held out to him, his head (pat), his belly (tickle), and a touch. */
     reach: 0.95,
     patReach: 0.28,
+    /** The top of his head is this far above his head bone (m): where a pat lands. */
+    headTop: 0.2,
     tickleReach: 0.36,
     contact: 0.16,
     /** Seconds between moments; the hint card shows this long, and again after this long with nothing happening. */

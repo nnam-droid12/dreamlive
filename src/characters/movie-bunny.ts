@@ -106,7 +106,7 @@ export class MovieBunny {
     if (this.seated) this.sit();
   }
 
-  /** Legs forward over the seat, shins hanging; right arm (with the carrot) lifted to the mouth to eat. */
+  /** Legs straight out along the seat; right arm (with the carrot) lifted to the mouth to eat. */
   private sit(): void {
     this.root.updateWorldMatrix(true, true);
     this.root.getWorldQuaternion(this.qr);
@@ -114,8 +114,9 @@ export class MovieBunny {
     const B = this.bones;
     this.aim(B['UpperLeg.L'], B['LowerLeg.L'], this.dir.copy(this.fwd).setY(-0.05).normalize());
     this.aim(B['UpperLeg.R'], B['LowerLeg.R'], this.dir.copy(this.fwd).setY(-0.05).normalize());
-    this.aim(B['LowerLeg.L'], B['LowerLeg.L_end'], this.dir.set(0, -1, 0).addScaledVector(this.fwd, 0.25).normalize());
-    this.aim(B['LowerLeg.R'], B['LowerLeg.R_end'], this.dir.set(0, -1, 0).addScaledVector(this.fwd, 0.25).normalize());
+    // Short legs: straight out along the cushion (feet showing at the front), not bent down into it.
+    this.aim(B['LowerLeg.L'], B['LowerLeg.L_end'], this.dir.copy(this.fwd).setY(-0.12).normalize());
+    this.aim(B['LowerLeg.R'], B['LowerLeg.R_end'], this.dir.copy(this.fwd).setY(-0.12).normalize());
     if (this.eat > 0 && B['LowerArm.R'] && B.Head) {
       B.Head.getWorldPosition(this.tmpB).addScaledVector(this.fwd, 0.08);
       B['LowerArm.R'].getWorldPosition(this.tmpA);

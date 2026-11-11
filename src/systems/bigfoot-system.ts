@@ -74,6 +74,8 @@ export class BigfootSystem extends createSystem({
   /** A pose on top of his animation this frame (seated for Movie Night) and how far he lifts his popcorn. */
   private wantPose: '' | 'sit' = '';
   private wantEat = 0;
+  /** His seated height on the loveseat (held steady: bites must not bob him up and down). */
+  private sitY = -1;
   private popQ = new Quaternion();
   private popParentQ = new Quaternion();
   // Rooftop Party route (world space), fixed once the window is known.
@@ -147,6 +149,7 @@ export class BigfootSystem extends createSystem({
     if (import.meta.env.DEV) BigfootControl.info = `${this.rig.current} head${(this.rig.headPosition(this.tmp).y - this.rig.root.position.y).toFixed(2)}`;
     this.rig.handPosition('left', BigfootControl.hand.left);
     this.rig.handPosition('right', BigfootControl.hand.right);
+    this.rig.headPosition(BigfootControl.head);
     if (this.target?.object3D) this.rig.headPosition(this.target.object3D.position);
   }
 
@@ -293,6 +296,7 @@ export class BigfootSystem extends createSystem({
     const screen = this.tmp2.fromArray(d.getVectorView(Session, 'movieScreen'));
     this.showPopcorn(true);
     if (t > 0 && this.movieEnding(t)) {
+      this.sitY = -1;
       this.showPopcorn(false);
       this.lieDown();
       return;
@@ -300,18 +304,24 @@ export class BigfootSystem extends createSystem({
     this.player.head.getWorldPosition(this.head);
     if (MovieSpots.ready) {
       // On the loveseat beside you, seated, facing the screen, eating popcorn now and then.
-      r.position.copy(MovieSpots.bigfoot);
-      // His hips on top of the cushion (his feet may hang a little: it's a small sofa for a Bigfoot).
-      r.position.y = Math.max(0, MovieSpots.seatTop + Tuning.movie.bigfootSitPad - this.rig!.hipHeight());
-      r.quaternion.setFromAxisAngle(UP, MovieSpots.yaw);
       const laugh = (d.getValue(Session, 'movieLaugh') ?? 0) > 0;
       const bite = (t % Tuning.movie.biteEvery) / Tuning.movie.biteSec;
       this.wantPose = 'sit';
       this.wantEat = laugh ? 0 : bite < 1 ? Math.sin(Math.PI * bite) : 0;
+      r.position.copy(MovieSpots.bigfoot);
+      // His hips on top of the cushion (his feet may hang a little: it's a small sofa for a
+      // Bigfoot). Measured only while he sits still, then held: a bite moves his hips, and
+      // following that would bounce him on the seat.
+      const want = Math.max(0, MovieSpots.seatTop + Tuning.movie.bigfootSitPad - this.rig!.hipHeight());
+      if (this.sitY <= 0.001) this.sitY = want; // first seated frames: take it straight away
+      else if (this.wantEat < 0.02 && !laugh) this.sitY += (want - this.sitY) * 0.05;
+      r.position.y = this.sitY;
+      r.quaternion.setFromAxisAngle(UP, MovieSpots.yaw);
       this.setState(BigfootState.Awake);
       this.rig!.play('idle');
       return;
     }
+    this.sitY = -1;
     // Beside the viewer, a little ahead, turned toward the screen.
     this.tmp.subVectors(screen, this.head).setY(0).normalize();
     const side = this.tmp2.set(this.tmp.z, 0, -this.tmp.x);

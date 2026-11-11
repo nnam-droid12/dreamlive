@@ -17,6 +17,8 @@ export const BigfootControl = {
   shape: { left: 'palm' as 'palm' | 'fist', right: 'palm' as 'palm' | 'fist' },
   /** Where his hands really are (BigfootSystem writes these every frame), for contact checks. */
   hand: { left: new Vector3(), right: new Vector3() },
+  /** Where his head bone really is (BigfootSystem writes it every frame): a pat goes just above it. */
+  head: new Vector3(),
   /** A happy little hop, 0..1 (procedural lift, so he stays upright; the jump clip crouches). */
   hop: 0,
   /** Dev: what his rig is actually doing (clip, head height above his feet). */
