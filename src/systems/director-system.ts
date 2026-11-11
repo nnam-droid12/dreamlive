@@ -311,7 +311,7 @@ export class DirectorSystem extends createSystem({
       // He remembers you: the friendship board on his wall, the tally of your visits.
       const b = Tuning.memory.board;
       const face = new Vector3(Math.sin(b.yaw), 0, Math.cos(b.yaw));
-      this.aim(new Vector3(b.x, b.y - 0.05, b.z).addScaledVector(face, 1.5), new Vector3(b.x, b.y - 0.05, b.z));
+      this.aim(new Vector3(b.x, b.y - 0.05, b.z).addScaledVector(face, 1.15), new Vector3(b.x, b.y - 0.05, b.z));
     }
     else if (tt < TOUR.movieEnd && MovieSpots.ready) {
       const sofa = new Vector3().addVectors(MovieSpots.bigfoot, MovieSpots.bunny).multiplyScalar(0.5);
@@ -334,8 +334,9 @@ export class DirectorSystem extends createSystem({
     } else if (tt < TOUR.clouds) {
       // Walking the street: a tracking shot ahead of him, then low, looking up at the towers.
       const w = WorldSpots.walker;
-      if (tt < TOUR.streetLow) this.aim(w.clone().addScaledVector(f.along, 3.4).addScaledVector(f.out, 1.5).setY(w.y + 1.55), w.clone().setY(w.y + 1.15));
-      else this.aim(w.clone().addScaledVector(f.along, 4.5).addScaledVector(f.out, 2.6).setY(w.y + 0.45), w.clone().setY(w.y + 2.6));
+      // Both shots stay over the sidewalk, clear of the cabs.
+      if (tt < TOUR.streetLow) this.aim(w.clone().addScaledVector(f.along, 3.4).addScaledVector(f.out, 0.5).setY(w.y + 1.55), w.clone().setY(w.y + 1.15));
+      else this.aim(w.clone().addScaledVector(f.along, 4.5).addScaledVector(f.out, 0.6).setY(w.y + 0.45), w.clone().setY(w.y + 2.6));
     } else if (tt < TOUR.puff) this.aim(at(-1.0, 1.5, 0.3), WorldSpots.balloon.clone().setY(WorldSpots.balloon.y + 1.9));
     else if (tt < TOUR.star) {
       const p = WorldSpots.puff;
@@ -466,6 +467,7 @@ export class DirectorSystem extends createSystem({
       if (f < FRIEND.pat) return 'Tickle him';
       return 'Pat his head';
     }
+    if (tt < TOUR.movie) return 'He remembers every night with you';
     if (tt < TOUR.bunny) return 'Movie night with Bigfoot';
     if (tt < TOUR.sofa) return 'A movie star walks out to join you';
     if (tt < TOUR.movieEnd) return 'Popcorn on the sofa, lit by the film';

@@ -14,7 +14,6 @@ import {
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
-import { PartyGuests } from '../characters/party-guests.js';
 import { Ritual } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
@@ -37,10 +36,11 @@ const WALK = { x: 1.3, z0: -16, z1: 14 };
 
 /**
  * "Bigfoot walks the streets of New York": the side street at the foot of his
- * tower, at street level. Concrete sidewalks with curbs, asphalt with a double
- * yellow line and a zebra crossing, cobra-head street lights, a hydrant, a
- * steaming orange-and-white vent stack, yellow cabs rolling by and people
- * walking the sidewalks. Bigfoot strolls along, waves, and is stared at.
+ * tower, at street level. Concrete sidewalks with curbs, asphalt with a
+ * dashed lane line and a zebra crossing (a one-way side street), cobra-head street lights, a hydrant, a
+ * steaming orange-and-white vent stack, lit shopfronts and yellow cabs
+ * rolling by, between towers packed shoulder to shoulder. Bigfoot strolls
+ * along and waves.
  * Session.world = 'street' (New York stays: the towers rise all around).
  */
 export class StreetWalkSystem extends createSystem({
@@ -50,9 +50,6 @@ export class StreetWalkSystem extends createSystem({
   private root!: Group;
   private taxis: { obj: Object3D; x: number; dir: number; speed: number; z: number }[] = [];
   private steam: { s: Sprite; age: number }[] = [];
-  private people?: PartyGuests;
-  private loadingPeople = false;
-  private walkers: { x: number; dir: number; z: number; speed: number }[] = [];
   private time = 0;
   private placedVersion = -1;
   private at = new Vector3();
@@ -93,12 +90,27 @@ export class StreetWalkSystem extends createSystem({
       l.position.set(ROAD.x0 - 0.35, 0.15, z);
       set.add(l);
     }
-    // A hydrant and a litter bin on the walk.
+    // A hydrant on the walk.
     const hydrant = new Mesh(bevelBox(0.26, 0.7, 0.26, 0.1), new MeshStandardMaterial({ color: Palette.hydrant, roughness: 0.5, metalness: 0.3 }));
     hydrant.position.set(ROAD.x0 - 0.5, 0.5, 4.5);
-    const bin = new Mesh(bevelBox(0.55, 0.9, 0.55, 0.12), new MeshStandardMaterial({ color: 0x2f4a3a, roughness: 0.7 }));
-    bin.position.set(0.5, 0.6, -6);
-    set.add(hydrant, bin);
+    set.add(hydrant);
+    // Lit shopfronts along the street level of the tower opposite (its near face, x = 7).
+    const shopTex = shopfrontTexture();
+    // ...and on along the block, at the foot of the canyon towers (x = 7.6).
+    const shopGeo = new PlaneGeometry(15, 4.6);
+    const shopMat = new MeshStandardMaterial({ map: shopTex, emissiveMap: shopTex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.6 });
+    for (const [x, z] of [
+      [6.98, 0.5],
+      [7.58, 17.5],
+      [7.58, 32.5],
+      [7.58, -16.5],
+      [7.58, -31.5],
+    ]) {
+      const shops = new Mesh(shopGeo, shopMat);
+      shops.rotation.y = -Math.PI / 2;
+      shops.position.set(x, 2.45, z);
+      set.add(shops);
+    }
     // The orange-and-white steam stack over a manhole, and its steam.
     const stack = new Mesh(bevelBox(0.5, 1.4, 0.5, 0.2), new MeshStandardMaterial({ color: Palette.steamStack, roughness: 0.6 }));
     stack.position.set(3.7, 0.7, 9);
@@ -111,12 +123,11 @@ export class StreetWalkSystem extends createSystem({
       set.add(s);
       this.steam.push({ s, age: (i / 14) * 4 });
     }
-    // Yellow cabs on both lanes.
+    // Yellow cabs: a one-way side street, the cabs in the far lane (clear of the sidewalk).
     for (let i = 0; i < cfg.taxis; i++) {
       const t = buildTaxi();
-      const dir = i % 2 ? -1 : 1;
       set.add(t);
-      this.taxis.push({ obj: t, x: dir > 0 ? ROAD.x0 + 0.65 : ROAD.x1 - 0.65, dir, speed: cfg.taxiSpeed * (0.8 + (i % 3) * 0.15), z: -50 + i * 33 });
+      this.taxis.push({ obj: t, x: ROAD.x1 - 0.65, dir: 1, speed: cfg.taxiSpeed * (0.8 + (i % 3) * 0.15), z: -50 + i * 33 });
     }
     this.world.createTransformEntity(this.root);
   }
@@ -131,7 +142,6 @@ export class StreetWalkSystem extends createSystem({
     const k = this.kit.amount;
     this.root.visible = k > 0.02 && this.kit.on;
     if (!this.root.visible) return;
-    if (!this.people && !this.loadingPeople) void this.loadPeople();
     if (!this.canyonBuilt && TowerShared.mats) this.buildCanyon();
     this.time += dt;
     for (const t of this.taxis) {
@@ -147,17 +157,6 @@ export class StreetWalkSystem extends createSystem({
       p.s.position.set(3.7 + Math.sin(p.age * 2 + a * 6) * 0.2 + a * 0.8, 1.5 + a * 4.5, 9 + a * 0.5);
       p.s.scale.setScalar(0.6 + a * 3);
       p.s.material.opacity = Math.sin(Math.PI * a) * 0.55;
-    }
-    if (this.people) {
-      this.people.update(dt, 0, 0, 0);
-      this.people.guests.forEach((g, i) => {
-        const w = this.walkers[i];
-        w.z += w.dir * w.speed * dt;
-        if (w.z > 40) w.z = -40;
-        if (w.z < -40) w.z = 40;
-        g.root.position.set(w.x, 0.15, w.z);
-        g.root.rotation.set(0, w.dir > 0 ? 0 : Math.PI, 0);
-      });
     }
     this.walk(d);
   }
@@ -182,22 +181,6 @@ export class StreetWalkSystem extends createSystem({
     this.time = 0;
     this.kit.preload(['street-hello']);
     this.kit.caption(d, 'New York, at street level');
-  }
-
-  private async loadPeople(): Promise<void> {
-    this.loadingPeople = true;
-    const people = new PartyGuests();
-    try {
-      await people.load(cfg.walkers, PaletteSets.guestOutfits, PaletteSets.guestSkin, ['Walk_Loop', 'Walk_Formal_Loop']);
-    } catch {
-      return;
-    }
-    people.guests.forEach((_, i) => {
-      const far = i % 2 === 0;
-      this.walkers.push({ x: far ? 6.0 : 0.7, dir: far ? 1 : -1, z: -30 + i * 11, speed: 1.2 + (i % 3) * 0.15 });
-    });
-    (this.root.children[0] as Group).add(people.root);
-    this.people = people;
   }
 
   /**
@@ -252,7 +235,7 @@ export class StreetWalkSystem extends createSystem({
   }
 }
 
-/** Asphalt with a double yellow centre line and a zebra crossing (canvas, tiled along the road). */
+/** Asphalt with a dashed white lane line and a zebra crossing (canvas, tiled along the road). */
 function roadTexture(): CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 256;
@@ -266,11 +249,9 @@ function roadTexture(): CanvasTexture {
     g.fillStyle = `rgb(${v},${v},${v + 4})`;
     g.fillRect(Math.random() * 256, Math.random() * 2048, 2, 2);
   }
-  g.fillStyle = '#e8b931';
-  g.fillRect(122, 0, 4, 2048);
-  g.fillRect(131, 0, 4, 2048);
-  // Zebra crossing in the middle.
+  // A one-way street: white dashed lane line, and a zebra crossing in the middle.
   g.fillStyle = '#e9e9e4';
+  for (let y = 0; y < 2048; y += 160) g.fillRect(126, y, 5, 90);
   for (let i = 0; i < 6; i++) g.fillRect(14 + i * 40, 980, 24, 90);
   const t = new CanvasTexture(c);
   t.colorSpace = SRGBColorSpace;
@@ -296,5 +277,72 @@ function sidewalkTexture(): CanvasTexture {
   const t = new CanvasTexture(c);
   t.colorSpace = SRGBColorSpace;
   t.wrapS = t.wrapT = RepeatWrapping;
+  return t;
+}
+
+/**
+ * A row of shopfronts (canvas): a stone fascia, warm-lit display windows with
+ * mullions, doors, awnings in deep colours and a dark base. Unbranded.
+ */
+function shopfrontTexture(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 628;
+  const g = c.getContext('2d')!;
+  const W = c.width;
+  const H = c.height;
+  g.fillStyle = '#6d6259';
+  g.fillRect(0, 0, W, H);
+  // Upper fascia band.
+  g.fillStyle = '#857a6f';
+  g.fillRect(0, 0, W, 120);
+  g.fillStyle = '#4a423b';
+  g.fillRect(0, 118, W, 8);
+  const awnings = PaletteSets.shopAwnings;
+  const shops = 6;
+  const sw = W / shops;
+  for (let i = 0; i < shops; i++) {
+    const x0 = i * sw + 14;
+    const w = sw - 28;
+    // Warm interior light, brighter near the top.
+    const glow = g.createLinearGradient(0, 200, 0, H - 40);
+    glow.addColorStop(0, '#ffe2a6');
+    glow.addColorStop(1, '#b8743a');
+    g.fillStyle = glow;
+    g.fillRect(x0, 200, w, H - 250);
+    // Shelves and shapes inside.
+    g.fillStyle = 'rgba(70, 40, 20, 0.35)';
+    for (let k = 0; k < 4; k++) g.fillRect(x0 + 10, 270 + k * 80, w - 20, 10);
+    // Mullions and the door.
+    g.fillStyle = '#2b2622';
+    for (let k = 0; k <= 4; k++) g.fillRect(x0 + (k * w) / 4 - 4, 200, 8, H - 250);
+    g.fillRect(x0, 196, w, 8);
+    const door = x0 + (i % 2 ? w * 0.72 : w * 0.06);
+    g.fillStyle = '#3a2f27';
+    g.fillRect(door, 230, w * 0.2, H - 280);
+    g.fillStyle = 'rgba(255, 226, 166, 0.6)';
+    g.fillRect(door + 10, 250, w * 0.2 - 20, H - 330);
+    // Awning, striped edge.
+    const col = `#${awnings[i % awnings.length].toString(16).padStart(6, '0')}`;
+    g.fillStyle = col;
+    g.beginPath();
+    g.moveTo(x0 - 6, 132);
+    g.lineTo(x0 + w + 6, 132);
+    g.lineTo(x0 + w + 14, 196);
+    g.lineTo(x0 - 14, 196);
+    g.closePath();
+    g.fill();
+    g.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    for (let k = 0; k < 10; k++) g.fillRect(x0 + (k * w) / 10, 132, w / 20, 64);
+    // Lamp over the shop sign band.
+    g.fillStyle = 'rgba(255, 240, 200, 0.9)';
+    g.fillRect(x0 + w / 2 - 60, 40, 120, 40);
+  }
+  // Dark base course.
+  g.fillStyle = '#2f2a26';
+  g.fillRect(0, H - 50, W, 50);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  t.anisotropy = 8;
   return t;
 }

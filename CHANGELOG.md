@@ -12,6 +12,11 @@ All notable changes to Dreamlive, newest first.
 - **New York street:**
   - The coloured stand-in figures are gone from the street.
   - The street is now a canyon of real skyscrapers, packed shoulder to shoulder on both sides, with a taller rank behind.
+  - The walking figures and the litter bin are gone too. Only Bigfoot walks the street.
+  - Warm, lit shopfronts with awnings line the street level opposite.
+  - It is a one-way side street: the cabs run in the far lane, under a dashed lane line, so the film's sidewalk shots stay clear of them.
+- **The film** shows the friendship board after the hangout: "He remembers every night with you".
+- **Distance interactions:** a memory orb on the shelf swells when your ray is on it, so you can see what a pinch will pick.
 - **Readable type:** title and credit cards get a soft dark scrim and outline, so they stay readable over a bright sky, sea or city (Meta's contrast guidance).
 - **Talk to Bigfoot removed:** the experimental voice chat (a live AI model) is deleted from the project. The competition rules ask for an original experience, not a chat wrapper; everything Bigfoot says is written and voiced for Dreamlive.
 - Test renders can save only chosen moments of the film (`&only=4-16,76-95`).

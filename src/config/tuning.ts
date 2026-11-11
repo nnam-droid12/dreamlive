@@ -323,10 +323,9 @@ export const Tuning = {
     /** Bigfoot's stroll: walking speed (m/s), and when he stops to wave (s). */
     walkSpeed: 1.35,
     waveAt: 7,
-    /** Yellow cabs on the street and their speed (m/s); people walking the sidewalks. */
+    /** Yellow cabs on the street and their speed (m/s). */
     taxis: 4,
     taxiSpeed: 7,
-    walkers: 6,
   },
 
   sea: {
