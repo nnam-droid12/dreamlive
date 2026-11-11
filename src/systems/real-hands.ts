@@ -191,10 +191,15 @@ export class RealHands {
   }
 }
 
-/** Dark smoky glass with a bright white edge (the DreamSpace look). */
+/**
+ * See-through smoky grey glass with a white outline (the DreamSpace / Quest
+ * system-hand look). Unlit: the room's lights do not darken it, so it reads the
+ * same against a bright wall or the night sky.
+ */
 function handMaterial(): MeshStandardMaterial {
   const mat = new MeshStandardMaterial({
-    color: new Color(Palette.handGlass),
+    color: new Color(0x000000),
+    emissive: new Color(Palette.handGlass),
     roughness: 0.9,
     envMapIntensity: 0,
     metalness: 0,
@@ -210,20 +215,20 @@ function handMaterial(): MeshStandardMaterial {
       .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
-        // Only a thin band right at the silhouette lights up white; the body stays dark smoky glass.
-        float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 5.0);
-        totalEmissiveRadiance += uRimColor * smoothstep(0.3, 0.85, rim) * 1.4;`,
+        // A soft lighter band toward each finger's edge (so fingers read over the palm); the white line is the outline shell.
+        float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 2.5);
+        totalEmissiveRadiance = mix(totalEmissiveRadiance, uRimColor, smoothstep(0.35, 0.95, rim) * 0.55);`,
       )
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.62 + rim * 0.35, 0.0, 0.97);');
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.5 + rim * 0.4, 0.0, 0.92);');
   };
   return mat;
 }
 
-const OUTLINE = 0.0022;
+const OUTLINE = 0.0032;
 
 /** The outline shell: back faces only, pushed out along the normals, plain white (skinned or not). */
 function outlineMaterial(skinned: boolean): MeshBasicMaterial {
-  const m = new MeshBasicMaterial({ color: new Color(Palette.handRim), side: BackSide, transparent: true, opacity: 0.95, depthWrite: false });
+  const m = new MeshBasicMaterial({ color: new Color(Palette.handRim), side: BackSide, transparent: true, opacity: 1, depthWrite: false });
   m.onBeforeCompile = (shader) => {
     const anchor = skinned ? '#include <skinning_vertex>' : '#include <begin_vertex>';
     const n = skinned ? 'objectNormal' : 'normal';
@@ -259,9 +264,9 @@ function forearmMaterial(): ShaderMaterial {
       varying vec3 vV;
       varying float vFade;
       void main() {
-        float rim = pow(1.0 - clamp(abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 5.0);
-        vec3 c = mix(uBody, uRim, smoothstep(0.3, 0.85, rim));
-        float a = clamp(0.62 + rim * 0.35, 0.0, 0.97) * smoothstep(0.0, 0.75, vFade);
+        float rim = pow(1.0 - clamp(abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 2.5);
+        vec3 c = mix(uBody, uRim, smoothstep(0.35, 0.95, rim) * 0.55);
+        float a = clamp(0.5 + rim * 0.4, 0.0, 0.92) * smoothstep(0.0, 0.75, vFade);
         gl_FragColor = vec4(c, a);
       }`,
     transparent: true,
@@ -277,16 +282,16 @@ function forearmMaterial(): ShaderMaterial {
 function buildForearm(body: ShaderMaterial, line: MeshBasicMaterial): Group {
   const g = new Group();
   g.name = 'Forearm';
-  const len = 0.26;
+  const len = 0.22;
   // CylinderGeometry runs along Y with uv.y = 1 at the top: the top is the wrist end.
-  const geo = new CylinderGeometry(0.024, 0.031, len, 24, 1, true);
+  const geo = new CylinderGeometry(0.022, 0.028, len, 28, 1, true);
   geo.translate(0, -len / 2 + 0.01, 0);
   geo.rotateX(-Math.PI / 2);
   const arm = new Mesh(geo, body);
   arm.renderOrder = 4;
   arm.frustumCulled = false;
   // Flatter like a real wrist: wider across than deep.
-  arm.scale.set(1.25, 0.85, 1);
+  arm.scale.set(1.12, 0.9, 1);
   const shell = new Mesh(geo, line);
   shell.renderOrder = 5;
   shell.frustumCulled = false;

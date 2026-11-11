@@ -305,7 +305,8 @@ export class DirectorSystem extends createSystem({
     if (tt >= TOUR.friend && tt < TOUR.friendEnd) {
       // The hangout: from your seat, across the open floor toward the window; he comes to you.
       // For the pat he stands close, so the shot tilts up to keep his head in frame.
-      const up = FriendCue.close ? 1.6 : 1.05;
+      const fr = tt - TOUR.friend;
+      const up = !FriendCue.close ? 1.05 : fr < FRIEND.pat - 0.5 ? 0.85 : 1.6;
       this.aim(seat.clone().setY(1.5), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(up));
       return true;
     }
@@ -453,8 +454,8 @@ export class DirectorSystem extends createSystem({
       Timeline.log('world', name);
     };
     FriendCue.on = tt >= TOUR.friend && tt < TOUR.friendEnd;
-    // He steps in close just before the pat, so a real arm's reach finds his head.
-    FriendCue.close = FriendCue.on && tt - TOUR.friend >= FRIEND.pat - 1.5;
+    // He steps in close for the tickle and the pat, so a real arm's reach finds him (and your hand is big in the shot).
+    FriendCue.close = FriendCue.on && tt - TOUR.friend >= FRIEND.tickle - 1.2;
     if (tt > TOUR.movie && this.cue('movie')) d.setValue(Session, 'movie', true);
     if (tt > TOUR.movieEnd && this.cue('movie-end')) d.setValue(Session, 'movie', false);
     if (tt > TOUR.snap && this.cue('snap')) d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1);
