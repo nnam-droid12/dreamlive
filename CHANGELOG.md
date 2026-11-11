@@ -22,6 +22,7 @@ All notable changes to Dreamlive, newest first.
   - The pat is detected at the top of his real head, wherever he stands and however tall.
   - In the film, the hand lands on the front of his crown, in clear view.
 - **No bouncing:** Bigfoot's seat height on the loveseat holds steady while he eats his popcorn.
+- **New hand look (DreamSpace-style):** dark smoky glass with a crisp white outline. The film's hands continue into a forearm that fades toward the elbow. Headset hands get the same dark body and white edge.
 - **Clearer hands in the film:** the glass hands are less see-through and brighter at the rim. The fist bump and thumbs up come closer to the camera.
 - **Film cameras stay indoors:** Movie Night's shots are held inside the bedroom walls, so the film never shows the room's open back from outside.
 - **Seated properly:** Bigfoot and the bunny sit on the loveseat cushion, not sunk into it. The bunny's seated pose (legs forward, carrot to its mouth) never ran before: the model loader strips the dots from its bone names, so the code could not find its legs.

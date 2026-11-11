@@ -115,9 +115,9 @@ export const Palette = {
   towerCrown: 0x3a3f47,
   /** The dream cinema screen's bezel. */
   cinemaBezel: 0x0d0c10,
-  /** Tracked hands: frosted-glass body and glowing outline (Meta system-hand look). */
-  handGlass: 0xf2f6ff,
-  handRim: 0x6f7f9c,
+  /** Tracked hands: a dark, smoky glass body with a bright white edge (the DreamSpace look). */
+  handGlass: 0x16191f,
+  handRim: 0xffffff,
   handOutline: 0xa9bcdc,
   paper: 0xf3ecdf,
   paperShade: 0xc9c0b3,

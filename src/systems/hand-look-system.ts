@@ -3,9 +3,8 @@ import { Palette } from '../config/palette.js';
 
 /**
  * Hands like the headset's own: IWSDK draws tracked hands as an invisible
- * body with a white outline. This gives that body a frosted-glass fill (faint
- * in the middle, brighter at the rim, fading towards the wrist) and a soft glow
- * colour on the outline, so hands read clearly over the dream and over passthrough.
+ * body with a white outline. This gives that body a dark smoky-glass fill with
+ * a bright white edge (fading towards the wrist), so hands read clearly over the dream and over passthrough.
  */
 export class HandLookSystem extends createSystem({}) {
   private fill!: ShaderMaterial;
@@ -43,9 +42,10 @@ export class HandLookSystem extends createSystem({}) {
         varying vec3 vView;
         void main() {
           float rim = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
-          // Frosted glass that reads on bright walls and dark skies alike: a light body shading to a cool slate rim.
-          float a = (0.28 + 0.55 * pow(rim, 2.0)) * smoothstep(0.03, 0.08, vWrist);
-          vec3 c = mix(uColor, uRim, smoothstep(0.2, 0.9, rim));
+          // Dark smoky glass with a bright white edge: reads on bright walls and night skies alike.
+          float edge = smoothstep(0.55, 0.95, rim);
+          float a = (0.55 + 0.4 * edge) * smoothstep(0.03, 0.08, vWrist);
+          vec3 c = mix(uColor, uRim, edge);
           gl_FragColor = vec4(c, a);
         }`,
       transparent: true,

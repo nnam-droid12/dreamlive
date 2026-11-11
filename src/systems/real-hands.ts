@@ -1,4 +1,5 @@
-import { AssetManager, Color, FrontSide, Group, Matrix4, MeshStandardMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from '@iwsdk/core';
+import { Palette } from '../config/palette.js';
+import { AssetManager, BackSide, Color, CylinderGeometry, FrontSide, Group, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Quaternion, ShaderMaterial, SkinnedMesh, Vector3 } from '@iwsdk/core';
 
 export const JOINTS: XRHandJoint[] = [
   'wrist',
@@ -87,6 +88,10 @@ export class RealHands {
   async load(): Promise<void> {
     const base = `${import.meta.env.BASE_URL}models/hands/`;
     const mat = handMaterial();
+    const line = outlineMaterial(true);
+    const arm = forearmMaterial();
+    const armLine = outlineMaterial(false);
+    const outlines: SkinnedMesh[] = [];
     for (const side of ['left', 'right'] as const) {
       const gltf = await AssetManager.loadGLTF(`${base}${side}.glb`);
       const s = this.sides[side];
@@ -96,10 +101,24 @@ export class RealHands {
         if (mesh.isSkinnedMesh) {
           mesh.material = mat;
           mesh.frustumCulled = false;
-          mesh.renderOrder = 5;
+          // The body draws first and writes depth, so the outline shell only shows past its silhouette.
+          mesh.renderOrder = 4;
+          outlines.push(mesh);
         }
       });
+      // A crisp white outline: a slightly fattened copy on the same skeleton, drawn back faces only.
+      for (const mesh of outlines) {
+        const o = new SkinnedMesh(mesh.geometry, line);
+        o.bind(mesh.skeleton, mesh.bindMatrix);
+        o.frustumCulled = false;
+        o.renderOrder = 5;
+        mesh.parent?.add(o);
+      }
+      outlines.length = 0;
       s.bones = JOINTS.map((j) => scene.getObjectByName(j) ?? undefined);
+      // The forearm: the hand continues into the arm (fading out toward the elbow).
+      const wrist = s.bones[0];
+      if (wrist) wrist.add(buildForearm(arm, armLine));
       s.root.add(scene);
     }
     this.ready = true;
@@ -172,11 +191,12 @@ export class RealHands {
   }
 }
 
-/** Light, see-through glass with a bright, slightly blue rim (the look of Meta's hands). */
+/** Dark smoky glass with a bright white edge (the DreamSpace look). */
 function handMaterial(): MeshStandardMaterial {
   const mat = new MeshStandardMaterial({
-    color: new Color(0xf2f4f8),
-    roughness: 0.35,
+    color: new Color(Palette.handGlass),
+    roughness: 0.9,
+    envMapIntensity: 0,
     metalness: 0,
     transparent: true,
     opacity: 0.35,
@@ -184,14 +204,93 @@ function handMaterial(): MeshStandardMaterial {
     side: FrontSide,
   });
   mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uRimColor = { value: new Color(Palette.handRim) };
+    shader.fragmentShader = 'uniform vec3 uRimColor;' + String.fromCharCode(10) + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
-        float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 2.2);
-        totalEmissiveRadiance += vec3(0.85, 0.92, 1.0) * rim * 1.8 + vec3(0.2);`,
+        // Only a thin band right at the silhouette lights up white; the body stays dark smoky glass.
+        float rim = pow(1.0 - clamp(abs(dot(normalize(vNormal), normalize(vViewPosition))), 0.0, 1.0), 5.0);
+        totalEmissiveRadiance += uRimColor * smoothstep(0.3, 0.85, rim) * 1.4;`,
       )
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.42 + rim * 0.58, 0.0, 0.95);');
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n gl_FragColor.a = clamp(0.62 + rim * 0.35, 0.0, 0.97);');
   };
   return mat;
+}
+
+const OUTLINE = 0.0022;
+
+/** The outline shell: back faces only, pushed out along the normals, plain white (skinned or not). */
+function outlineMaterial(skinned: boolean): MeshBasicMaterial {
+  const m = new MeshBasicMaterial({ color: new Color(Palette.handRim), side: BackSide, transparent: true, opacity: 0.95, depthWrite: false });
+  m.onBeforeCompile = (shader) => {
+    const anchor = skinned ? '#include <skinning_vertex>' : '#include <begin_vertex>';
+    const n = skinned ? 'objectNormal' : 'normal';
+    shader.vertexShader = shader.vertexShader.replace(anchor, anchor + ' transformed += normalize(' + n + ') * ' + OUTLINE.toFixed(4) + ';');
+    if (!skinned) {
+      // The forearm's shell fades out with the arm.
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'varying float vFade;').replace('#include <begin_vertex>', '#include <begin_vertex>' + String.fromCharCode(10) + 'vFade = uv.y;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>' + String.fromCharCode(10) + 'varying float vFade;').replace('#include <dithering_fragment>', '#include <dithering_fragment>' + String.fromCharCode(10) + 'gl_FragColor.a *= smoothstep(0.0, 0.7, vFade);');
+    }
+  };
+  return m;
+}
+
+/** The forearm's body: the hands' dark glass with a white edge, fading toward the elbow. */
+function forearmMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    uniforms: { uBody: { value: new Color(Palette.handGlass) }, uRim: { value: new Color(Palette.handRim) } },
+    vertexShader: /* glsl */ `
+      varying vec3 vN;
+      varying vec3 vV;
+      varying float vFade;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vN = normalize(normalMatrix * normal);
+        vV = normalize(-mv.xyz);
+        vFade = uv.y;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uBody;
+      uniform vec3 uRim;
+      varying vec3 vN;
+      varying vec3 vV;
+      varying float vFade;
+      void main() {
+        float rim = pow(1.0 - clamp(abs(dot(normalize(vN), normalize(vV))), 0.0, 1.0), 5.0);
+        vec3 c = mix(uBody, uRim, smoothstep(0.3, 0.85, rim));
+        float a = clamp(0.62 + rim * 0.35, 0.0, 0.97) * smoothstep(0.0, 0.75, vFade);
+        gl_FragColor = vec4(c, a);
+      }`,
+    transparent: true,
+    depthWrite: true,
+  });
+}
+
+/**
+ * A tapered forearm from the wrist joint back toward the elbow (+Z in the
+ * joint's frame: a hand joint's -Z points along the bones to the fingers).
+ * uv.y runs 1 at the wrist to 0 at the far end, for the fade.
+ */
+function buildForearm(body: ShaderMaterial, line: MeshBasicMaterial): Group {
+  const g = new Group();
+  g.name = 'Forearm';
+  const len = 0.26;
+  // CylinderGeometry runs along Y with uv.y = 1 at the top: the top is the wrist end.
+  const geo = new CylinderGeometry(0.024, 0.031, len, 24, 1, true);
+  geo.translate(0, -len / 2 + 0.01, 0);
+  geo.rotateX(-Math.PI / 2);
+  const arm = new Mesh(geo, body);
+  arm.renderOrder = 4;
+  arm.frustumCulled = false;
+  // Flatter like a real wrist: wider across than deep.
+  arm.scale.set(1.25, 0.85, 1);
+  const shell = new Mesh(geo, line);
+  shell.renderOrder = 5;
+  shell.frustumCulled = false;
+  shell.scale.copy(arm.scale);
+  g.add(shell, arm);
+  return g;
 }
