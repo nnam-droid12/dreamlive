@@ -312,6 +312,8 @@ export const Tuning = {
     filmDistance: 1.45,
     /** Reach out flat, palm down (to pat his head), and he steps in to this distance (m). */
     closeDistance: 0.7,
+    /** ...and in the film, a little further, so his whole head and your hand are in the shot. */
+    filmCloseDistance: 0.95,
     walkSpeed: 0.9,
     /** How close your hand must be: a high-five / fist bump held out to him, his head (pat), his belly (tickle), and a touch. */
     reach: 0.95,

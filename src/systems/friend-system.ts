@@ -169,7 +169,7 @@ export class FriendSystem extends createSystem({
     // (The Director's camera stands him a little further off, so both his hands are in the shot.)
     // Reach out flat, palm down, and he steps in so you can pat his head.
     const close = FriendCue.close || this.moment === 'pat' || (!Director.enabled && this.reachingToPat());
-    const dist = close ? cfg.closeDistance : Director.enabled ? cfg.filmDistance : cfg.distance;
+    const dist = close ? (Director.enabled ? cfg.filmCloseDistance : cfg.closeDistance) : Director.enabled ? cfg.filmDistance : cfg.distance;
     this.target.copy(this.head).addScaledVector(this.fwd, dist).setY(0);
     if (!this.placed) {
       this.spot.copy(this.target);

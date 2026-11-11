@@ -17,6 +17,12 @@ All notable changes to Dreamlive, newest first.
   - It is a one-way side street: the cabs run in the far lane, under a dashed lane line, so the film's sidewalk shots stay clear of them.
 - **The film** shows the friendship board after the hangout: "He remembers every night with you".
 - **Movie Night in the film:** the screen always stands in front of the TV (it is set up from your seat, wherever the camera is), so the bunny steps out of the picture rather than a wall. The loveseat sits further back, so the camera frames Bigfoot and the bunny together.
+- **Pat his head:**
+  - Reach out with your hand flat, palm down, and Bigfoot steps in close enough for you to reach his head. He stays close while you pat him.
+  - The pat is detected at the top of his real head, wherever he stands and however tall.
+  - In the film, the hand lands on the front of his crown, in clear view.
+- **No bouncing:** Bigfoot's seat height on the loveseat holds steady while he eats his popcorn.
+- **Clearer hands in the film:** the glass hands are less see-through and brighter at the rim. The fist bump and thumbs up come closer to the camera.
 - **Film cameras stay indoors:** Movie Night's shots are held inside the bedroom walls, so the film never shows the room's open back from outside.
 - **Seated properly:** Bigfoot and the bunny sit on the loveseat cushion, not sunk into it. The bunny's seated pose (legs forward, carrot to its mouth) never ran before: the model loader strips the dots from its bone names, so the code could not find its legs.
 - **Distance interactions:** a memory orb on the shelf swells when your ray is on it, so you can see what a pinch will pick.

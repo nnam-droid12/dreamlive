@@ -305,7 +305,7 @@ export class DirectorSystem extends createSystem({
     if (tt >= TOUR.friend && tt < TOUR.friendEnd) {
       // The hangout: from your seat, across the open floor toward the window; he comes to you.
       // For the pat he stands close, so the shot tilts up to keep his head in frame.
-      const up = FriendCue.close ? 1.75 : 1.05;
+      const up = FriendCue.close ? 1.6 : 1.05;
       this.aim(seat.clone().setY(1.5), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(up));
       return true;
     }
@@ -574,9 +574,9 @@ export class DirectorSystem extends createSystem({
         // A high-five held up to him.
         right = { at: H_TMP.r.set(0.08, 0.02, -0.5), rot: Q_UP_FINGERS, pose: 'open', pinch: 0 };
       } else if (f >= FRIEND.bump && f < FRIEND.bump + 3) {
-        right = { at: H_TMP.r.set(0.06, -0.12, -0.52), rot: Q_ID, pose: 'fist', pinch: 0 };
+        right = { at: H_TMP.r.set(0.05, -0.08, -0.46), rot: Q_ID, pose: 'fist', pinch: 0 };
       } else if (f >= FRIEND.thumbs && f < FRIEND.thumbs + 2.5) {
-        right = { at: H_TMP.r.set(0.16, -0.1, -0.4), rot: Q_THUMB_R, pose: 'thumbs-up', pinch: 0 };
+        right = { at: H_TMP.r.set(0.1, -0.04, -0.34), rot: Q_THUMB_R, pose: 'thumbs-up', pinch: 0 };
       } else if (f >= FRIEND.rock && f < FRIEND.rock + 4) {
         right = { at: H_TMP.r.set(0.16, 0.04, -0.42), rot: Q_UP_FINGERS, pose: 'rock', pinch: 0 };
       } else if (f >= FRIEND.tickle && f < FRIEND.tickle + 3.5) {
@@ -588,7 +588,9 @@ export class DirectorSystem extends createSystem({
         // Patting the top of his real head (wherever he is standing, however tall).
         const hd = BigfootControl.head;
         const bob = Math.abs(Math.sin(f * Math.PI * 2.5)) * 0.06;
-        const p = hd.lengthSq() > 0 ? local(hd.x, hd.y + Tuning.friend.headTop + 0.03 + bob, hd.z) : local(sp.x, 1.66 + bob, sp.z);
+        // On the front of the crown, toward the camera (he bows his head to you, so the very top is hidden).
+        const tc = H_TMP.off.subVectors(this.camPos, hd).setY(0).normalize();
+        const p = hd.lengthSq() > 0 ? local(hd.x + tc.x * 0.14, hd.y + Tuning.friend.headTop * 0.85 + bob, hd.z + tc.z * 0.14) : local(sp.x, 1.66 + bob, sp.z);
         right = { at: H_TMP.r.copy(p), rot: Q_ID, pose: 'flat', pinch: 0 };
       }
     } else if (tt >= TOUR.photo && tt < TOUR.photo + 5.5) {
