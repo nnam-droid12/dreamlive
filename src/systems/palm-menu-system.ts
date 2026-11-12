@@ -47,7 +47,8 @@ export class PalmMenuSystem extends createSystem({
       if (h.getValue(HandGestureState, 'hand') === Handedness.Left) left = h;
       else if (h.getValue(HandGestureState, 'palmUp')) rightUp = true;
     }
-    const palmUp = !!left && !!left.getValue(HandGestureState, 'palmUp') && !rightUp;
+    // (In the garden your open left palm is for a butterfly: the menu waits for the X button there.)
+    const palmUp = !!left && !!left.getValue(HandGestureState, 'palmUp') && !rightUp && d.getValue(Session, 'world') !== 'garden';
     this.upFor = palmUp ? this.upFor + realDelta : 0;
     this.downFor = palmUp ? 0 : this.downFor + realDelta;
 

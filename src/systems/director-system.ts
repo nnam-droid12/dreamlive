@@ -31,6 +31,7 @@ import { BigfootControl } from './lib/bigfoot-control.js';
 import { FriendCue } from './friend-system.js';
 import { SeaConsoleSpots } from './sea-console-system.js';
 import { GardenSpots } from './garden-world-system.js';
+import { GiftHold } from './catch-system.js';
 import { PartyConsoleSpots } from './party-console-system.js';
 import { PartyCue } from './lib/party-mix.js';
 import { SeaCue, SeaWeather } from './lib/sea-weather.js';
@@ -65,7 +66,7 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  */
 const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, garden: 113, sea: 129, whale: 154, flood: 159, bed: 159, end: 185 };
 /** The garden (seconds into it): the right palm opens for a butterfly, the left finger points for the ladybug. */
-const GARDEN = { palm: 3, palmEnd: 12, point: 8, pointEnd: 13.5 };
+const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10 };
 /**
  * Storm and sunshine at sea (seconds after the sea begins): the console shows,
  * each dial the left hand drags [index, from, to, start, end], the right hand's
@@ -294,8 +295,8 @@ export class DirectorSystem extends createSystem({
       else if (t < 12) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
       // The palm menu in hand, the party and skyline beyond; then the fireworks it launches.
       else if (t < 17) this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 9, -1));
-      else if (t < 21) this.aim(at(deck.x, deck.y + 1.6, deck.z), at(24, 17, 0));
-      else this.aim(at(Rooftop.djSpot.x + 2.6, Rooftop.djSpot.y + 1.6, Rooftop.djSpot.z + 3.0), dj);
+      // Mixing the party by hand: a level shot over the party, the glass console by your left hand.
+      else this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 8, -1));
     } else if (scene === 'leap-back') {
       // From the party roof's edge: the street far below, his tower and window across.
       // From inside his room as he flies home toward the window.
@@ -372,13 +373,13 @@ export class DirectorSystem extends createSystem({
       this.aim(p.clone().addScaledVector(this.toward(p, seat), 0.6).setY(p.y + 0.12), p);
     } else if (tt < TOUR.garden) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
     else if (tt < TOUR.sea) {
-      // The garden: Bigfoot in the grass; then your open palm (and the butterfly on it) with him beyond.
+      // The garden: the flower beds ahead; then your open left palm and the butterfly on it.
       const gg = tt - TOUR.garden;
       const c = GardenSpots.center;
-      const b = GardenSpots.bigfoot;
-      const dir = H_TMP.off.subVectors(b, c).setY(0).normalize();
-      if (gg < GARDEN.palm || gg > GARDEN.pointEnd) this.aim(c.clone().addScaledVector(dir, -0.5).setY(1.3), b.clone().setY(0.9));
-      else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 0.75).setY(0.62));
+      const dir = H_TMP.off.subVectors(GardenSpots.bigfoot, c).setY(0).normalize();
+      const leftV = H_TMP.a.set(dir.z, 0, -dir.x);
+      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4).setY(1.3), c.clone().addScaledVector(dir, 3).setY(0.6));
+      else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 0.55).addScaledVector(leftV, 0.12).setY(0.68));
     }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
     else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.25, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.6));
@@ -542,8 +543,8 @@ export class DirectorSystem extends createSystem({
     if (tt < TOUR.sea) {
       const gg = tt - TOUR.garden;
       if (gg < GARDEN.palm) return 'A garden grows in your room';
-      if (gg < GARDEN.point) return 'Open your palm: a butterfly lands on it';
-      if (gg < GARDEN.pointEnd) return 'Point, and a ladybug walks your finger';
+      if (gg < GARDEN.touch) return 'Open your palm: a butterfly lands on it';
+      if (gg < GARDEN.palmEnd + 1) return 'Touch it gently, and it flies away';
       return 'Fireflies at dusk';
     }
     const gs = tt - TOUR.sea;
@@ -632,8 +633,9 @@ export class DirectorSystem extends createSystem({
       const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.knob[k]));
       left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.11)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (scene === 'gifts') {
-      left = CUP_L;
-      right = CUP_R;
+      // One gift at a time: the right palm held up for it; once it rests there a moment, the hand lowers to set it on the floor.
+      const lower = GiftHold.holding && GiftHold.holdFor > 1.4;
+      right = { at: H_TMP.r.set(0.12, lower ? -0.8 : -0.2, lower ? -0.3 : -0.4), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
     }
     let ease = Math.min(1, dt * 6);
     const tt = phase === RitualPhase.Awake ? this.tourTime() : -1;
@@ -683,10 +685,18 @@ export class DirectorSystem extends createSystem({
       const s = k < 1 ? k : 2 - k;
       right = { ...DANCE_R, at: H_TMP.r.set(0.35 - 0.65 * s, -0.1, -0.55) };
     } else if (tt >= TOUR.garden && tt < TOUR.sea) {
-      // The garden: the right palm open and up for a butterfly; the left finger pointing for the ladybug.
+      // The garden: the left palm open and up for a butterfly; then the right index finger touches it.
       const gg = tt - TOUR.garden;
-      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd) right = { at: H_TMP.r.set(0.1, -0.2, -0.36), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
-      if (gg >= GARDEN.point && gg < GARDEN.pointEnd) left = { at: H_TMP.l.set(-0.14, -0.14, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
+      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd) left = { at: H_TMP.l.set(-0.1, -0.22, -0.38), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+      if (gg >= GARDEN.touch && gg < GARDEN.touchEnd) {
+        const p = GardenSpots.perched;
+        if (p) {
+          head.updateMatrixWorld(true);
+          const local = head.worldToLocal(H_TMP.aim.copy(p));
+          // The fingertip reaches the butterfly (the emulator's hand sits at its wrist).
+          right = { ...POINT_R, at: H_TMP.r.copy(local).add(H_TMP.off.set(-0.03, -0.04, 0.12)) };
+        } else right = { ...POINT_R, at: H_TMP.r.set(0.02, -0.18, -0.3) };
+      }
     } else if (tt >= TOUR.star && tt < TOUR.garden && WorldSpots.starOn) {
       // Reach for the falling star once it is within reach.
       head.updateMatrixWorld(true);

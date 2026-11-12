@@ -587,6 +587,10 @@ export const Tuning = {
     giftScale: 0.7,
     /** Now and then a goodie flies across into the room to be caught: cadence, flight time, arc. */
     viewerThrowEvery: 3.6,
+    /** A gift waits this long (s) for your palm before floating down by itself; lower your hand this far below your eyes (m) to set it down; the next comes this long (s) after. */
+    giftWaitSec: 6,
+    giftSetDown: 0.62,
+    giftAfterPlaced: 1.2,
     viewerFlightSec: 2.8,
     viewerArc: 2.2,
     /** Gifts that fly to the viewer: size (vs. Bigfoot's), how far ahead and how far below the eyes they land. */
@@ -615,8 +619,6 @@ export const Tuning = {
     /** Lawn radius (m) and grass tiling; plants from this near to this far (m). */
     radius: 24,
     groundRepeat: 22,
-    /** The tree stump Bigfoot sits on (scale of the Poly Haven model). */
-    stumpScale: 0.75,
     /** Bigfoot sits this far in front of you (m). */
     bigfootAhead: 2.1,
     /** Golden-hour light: the sun and the sky fill. */
@@ -627,12 +629,8 @@ export const Tuning = {
     palmHold: 0.6,
     approachSec: 2.2,
     leaveAfter: 0.5,
-    /** One settles on Bigfoot's head after this long (s), and stays this long. */
-    bigfootButterflyAt: 4,
-    bigfootPerchSec: 9,
-    /** The ladybug: its size (x real) and seconds to walk the finger. */
-    ladybugScale: 2,
-    ladybugSec: 2.6,
+    /** A right fingertip this close (m) to the butterfly on your palm sends it away. */
+    touchReach: 0.04,
     /** Fireflies, and when they come out (s into the garden). */
     fireflies: 70,
     firefliesAfter: 6,

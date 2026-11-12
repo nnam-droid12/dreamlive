@@ -119,6 +119,8 @@ export class BigfootSystem extends createSystem({
     const phase = d.getValue(Ritual, 'phase');
     const phaseTime = d.getValue(Ritual, 'phaseTime') ?? 0;
     this.wantPose = '';
+    // (A world may send him away; everywhere else he is here.)
+    this.rig.root.visible = true;
 
     if (phase === RitualPhase.Arrival || phase === RitualPhase.Idle) {
       this.lieDown();
@@ -378,6 +380,9 @@ export class BigfootSystem extends createSystem({
     r.quaternion.setFromAxisAngle(UP, d.getValue(Session, 'worldYaw') ?? 0);
     this.setState(BigfootState.Awake);
     const anim = d.getValue(Session, 'worldAnim') ?? 'idle';
+    // Away: this world is yours alone.
+    r.visible = anim !== 'away';
+    if (anim === 'away') return;
     if (anim === 'sit') {
       // Seated in the boat: hips on the thwart (worldSpot is the seat top), tilting with the boat, hands on the gunwales.
       this.wantPose = 'sit';

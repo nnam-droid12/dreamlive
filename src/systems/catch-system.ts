@@ -1,4 +1,5 @@
 import {
+  Box3,
   Color,
   createSystem,
   Entity,
@@ -32,6 +33,9 @@ const FLIGHT_SEC = 2.2;
 const HOVER_SEC = 1.4;
 const FADE_SEC = 0.8;
 const POOL = 6;
+
+/** The gift you are holding (for the film's hand: hold it a moment, then lower it to the floor). */
+export const GiftHold = { holding: false, holdFor: 0, inFlight: false };
 const TOUCH_RADIUS = 0.13;
 const CUP_RADIUS = 0.2;
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -43,7 +47,11 @@ interface Flyer {
   age: number;
   from: Vector3;
   to: Vector3;
-  state: 'idle' | 'flying' | 'caught' | 'missed';
+  state: 'idle' | 'flying' | 'caught' | 'missed' | 'held' | 'placing' | 'placed';
+  /** A gift on your palm: which hand holds it; where it settles on the floor; its fall speed. */
+  holder?: Entity;
+  floorY: number;
+  fall: number;
   spin: Vector3;
   /** Its own cloned materials, faded together. */
   mats: MeshStandardMaterial[];
@@ -99,7 +107,13 @@ export class CatchSystem extends createSystem({
     // Back home after the party, now and then the Yeti DJ throws a gift to the viewer too.
     const party = scene === 'gifts' && this.beat.time > 2;
     const kind: Kind | undefined = !dreaming ? undefined : tvAct ? (scene as Kind) : party ? 'gift' : undefined;
-    if (kind && this.beat.progress > 0.08 && this.beat.progress < 0.9) {
+    // One gift at a time: none in the air or in your hand, and a moment after the last one was set down.
+    const giftBusy = kind === 'gift' && this.flyers.some((x) => x.kind === 'gift' && (x.state === 'flying' || x.state === 'held' || x.state === 'placing'));
+    GiftHold.inFlight = this.flyers.some((x) => x.kind === 'gift' && x.state === 'flying');
+    const held = this.flyers.find((x) => x.kind === 'gift' && x.state === 'held');
+    GiftHold.holding = !!held;
+    GiftHold.holdFor = held ? held.age : 0;
+    if (kind && !giftBusy && this.beat.progress > 0.08 && this.beat.progress < 0.95) {
       this.timer -= delta;
       if (this.timer <= 0) {
         // From the rooftop only now and then: most of his goodies go down to the street.
@@ -113,9 +127,12 @@ export class CatchSystem extends createSystem({
   }
 
   private step(d: Entity, f: Flyer, delta: number, cupped: boolean): void {
-    if (f.state === 'idle') return;
+    if (f.state === 'idle' || f.state === 'placed') return;
     f.age += delta;
     const o = f.obj;
+    if (f.kind === 'gift' && (f.state === 'held' || f.state === 'placing' || f.state === 'flying')) {
+      if (this.giftStep(d, f, delta, cupped)) return;
+    }
     if (f.state === 'flying') {
       const k = Math.min(1, f.age / (f.flight * this.slow));
       o.position.lerpVectors(f.from, f.to, ease(k)).addScaledVector(this.up, Math.sin(Math.PI * k) * f.arc);
@@ -152,6 +169,95 @@ export class CatchSystem extends createSystem({
     }
   }
 
+  /**
+   * A gift for you: it flies to your open palm and stays there; lower your hand
+   * (or tip your palm) and it drops to the floor, where it stays. Returns true
+   * when it handled this frame.
+   */
+  private giftStep(d: Entity, f: Flyer, delta: number, cupped: boolean): boolean {
+    const o = f.obj;
+    const g = Tuning.rooftop;
+    if (f.state === 'flying') {
+      // Steer the landing toward an open palm, if one is held out.
+      const palm = this.openPalm();
+      if (palm) {
+        this.hand.fromArray(palm.getVectorView(HandGestureState, 'palmCenter'));
+        this.hand.y += 0.08;
+        f.to.lerp(this.hand, Math.min(1, delta * 3));
+      }
+      if (this.touched(o.position, cupped)) {
+        f.state = 'held';
+        f.age = 0;
+        f.holder = this.nearestHand(o.position);
+        const caught = (d.getValue(DreamDirector, 'catches') ?? 0) + 1;
+        d.setValue(DreamDirector, 'catches', caught);
+        const gold = caught === dreamNight(d.getValue(Session, 'night') ?? 1).goldGoal;
+        if (gold) Sound.play('bloom', o.position, 0.8);
+        d.setValue(Caption, 'text', gold ? 'Golden memory earned! Set it down, and he throws another.' : 'Lower your hand to set the gift on the floor.');
+        d.setValue(Caption, 'ttl', 3);
+        Sound.play('catch', o.position, 0.6);
+        return true;
+      }
+      // Never caught: after a while it floats down to the floor by itself.
+      if (f.age > f.flight * this.slow + g.giftWaitSec) this.place(f);
+      return false;
+    }
+    if (f.state === 'held') {
+      const h = f.holder;
+      const lost = !h || !h.getValue(HandGestureState, 'tracked');
+      if (h && !lost) {
+        this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
+        this.cup.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
+        o.position.copy(this.hand).addScaledVector(this.cup, 0.06);
+        o.rotation.y += delta * 0.6;
+      }
+      this.player.head.getWorldPosition(this.head);
+      const low = !lost && this.hand.y < this.head.y - g.giftSetDown;
+      const tipped = !lost && this.cup.y < -0.2;
+      if ((lost || low || tipped) && f.age > 0.6) this.place(f);
+      return true;
+    }
+    // Placing: it drops (a little gravity) and settles on the floor.
+    f.fall += 9.8 * delta * 0.5;
+    o.position.y = Math.max(f.floorY, o.position.y - f.fall * delta);
+    if (o.position.y <= f.floorY) {
+      f.state = 'placed';
+      Sound.play('catch', o.position, 0.25);
+      this.timer = g.giftAfterPlaced;
+    }
+    return true;
+  }
+
+  private place(f: Flyer): void {
+    f.state = 'placing';
+    f.age = 0;
+    f.fall = 0;
+    const box = new Box3().setFromObject(f.obj);
+    f.floorY = f.obj.position.y - box.min.y + 0.002;
+  }
+
+  /** A tracked hand held open, palm up. */
+  private openPalm(): Entity | undefined {
+    for (const h of this.queries.hands.entities) {
+      if (h.getValue(HandGestureState, 'tracked') && h.getValue(HandGestureState, 'palmUp')) return h;
+    }
+    return undefined;
+  }
+
+  private nearestHand(p: Vector3): Entity | undefined {
+    let best: Entity | undefined;
+    let bestD = Infinity;
+    for (const h of this.queries.hands.entities) {
+      if (!h.getValue(HandGestureState, 'tracked')) continue;
+      const dd = this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter')).distanceTo(p);
+      if (dd < bestD) {
+        bestD = dd;
+        best = h;
+      }
+    }
+    return best;
+  }
+
   private touched(p: Vector3, cupped: boolean): boolean {
     if (cupped && this.cup.distanceTo(p) < CUP_RADIUS) return true;
     for (const h of this.queries.hands.entities) {
@@ -174,7 +280,13 @@ export class CatchSystem extends createSystem({
     }
     let f = this.flyers.find((x) => x.state === 'idle' && x.kind === kind);
     if (!f) {
-      if (this.flyers.filter((x) => x.kind === kind).length >= POOL) return;
+      if (this.flyers.filter((x) => x.kind === kind).length >= POOL) {
+        // A full pool: the oldest gift on the floor makes way.
+        const oldest = this.flyers.find((x) => x.kind === kind && x.state === 'placed');
+        if (!oldest) return;
+        this.retire(oldest);
+        return this.launch(d, kind);
+      }
       const obj = this.models.get(kind)!.clone(true);
       const mats: MeshStandardMaterial[] = [];
       obj.traverse((m) => {
@@ -185,7 +297,7 @@ export class CatchSystem extends createSystem({
         mats.push(mat);
       });
       this.world.createTransformEntity(obj);
-      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3(), mats, flight: FLIGHT_SEC, arc: 0.35 };
+      f = { obj, kind, age: 0, from: new Vector3(), to: new Vector3(), state: 'idle', spin: new Vector3(), mats, flight: FLIGHT_SEC, arc: 0.35, floorY: 0, fall: 0 };
       this.flyers.push(f);
     }
     this.anchor.fromArray(d.getVectorView(RoomSlots, 'anchorPoint'));

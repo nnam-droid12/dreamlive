@@ -25,7 +25,7 @@ import { Palette } from '../config/palette.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { HandSigns, HandReading } from '../input/hand-signs.js';
-import { Butterfly, buildLadybug, Fireflies, WingPattern } from '../visuals/garden-life.js';
+import { Butterfly, Fireflies, WingPattern } from '../visuals/garden-life.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { WorldKit, WorldSpots } from './lib/world-kit.js';
 import type { EmulatedHand } from './real-hands.js';
@@ -46,12 +46,11 @@ const PLANTS: [string, number, number, number, number, number, boolean][] = [
   ['shrub_02', 22, 2.6, 3.4, 8, 8.8, true],
   ['shrub_03', 22, 2.8, 3.6, 8.6, 9.6, true],
 ];
-/** Indices into the 25 hand joints (WebXR order): the index finger's first knuckle and its tip. */
-const INDEX_PROX = 6;
+/** Index into the 25 hand joints (WebXR order): the index fingertip. */
 const INDEX_TIP = 9;
 
 /** Where Bigfoot sits and the garden's centre (world), for the film's camera. */
-export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3() };
+export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3(), /** Times a butterfly was touched away. */ touched: 0, /** Where the perched butterfly is (world), for the film's fingertip; null when none. */ perched: null as Vector3 | null };
 
 interface Fly {
   b: Butterfly;
@@ -69,11 +68,11 @@ interface Fly {
 /**
  * A garden grows in your room: the room steps away to a lawn at golden hour,
  * real flowers and shrubs all around (Poly Haven, CC0), Bigfoot sitting in the
- * grass. Monarchs and blue morphos flutter between the flowers. Hold out an
- * open hand, palm up and still, and one flies to you and settles on your palm,
- * slowly opening and closing its wings; move away and it lifts off. Point a
- * finger and a ladybug walks along it. At dusk fireflies drift around you and
- * gather near an open hand. Session.world = 'garden'.
+ * lawn. Monarchs and blue morphos flutter between the flowers. Hold out your
+ * left hand, palm up and still, and one flies to you and settles on your palm,
+ * slowly opening and closing its wings; touch it with your right index finger
+ * and it flies away. At dusk fireflies drift around you and gather near an
+ * open hand. Session.world = 'garden'.
  */
 export class GardenWorldSystem extends createSystem({
   director: { required: [Ritual, Session, RoomSlots] },
@@ -81,8 +80,6 @@ export class GardenWorldSystem extends createSystem({
   private kit = new WorldKit('garden');
   private root!: Group;
   private flies: Fly[] = [];
-  private ladybug!: Group;
-  private bugT = 0;
   private fireflies!: Fireflies;
   private fireVel!: Float32Array;
   private hidRoom = false;
@@ -93,8 +90,6 @@ export class GardenWorldSystem extends createSystem({
   private sky!: HemisphereLight;
   private room?: Object3D;
   private plantsLoaded = false;
-  /** The stump's top (Bigfoot's seat height). */
-  private seatY = 0.5;
   private time = 0;
   private head = new Vector3();
   private fwd = new Vector3();
@@ -132,10 +127,6 @@ export class GardenWorldSystem extends createSystem({
       this.root.add(b.root);
       this.flies.push({ b, home: new Vector3(), pos: new Vector3(), last: new Vector3(), phase: i * 1.7, state: 'wander', t: 0, from: new Vector3(), on: '' });
     }
-    this.ladybug = buildLadybug();
-    this.ladybug.scale.setScalar(cfg.ladybugScale);
-    this.ladybug.visible = false;
-    this.root.add(this.ladybug);
     this.fireflies = new Fireflies(cfg.fireflies);
     this.root.add(this.fireflies.points);
     this.sun = new DirectionalLight(Palette.gardenSun, 0);
@@ -173,11 +164,9 @@ export class GardenWorldSystem extends createSystem({
     else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.butterflies(dt);
-    this.ladybugTick(dt);
     this.firefliesTick(dt);
-    // Bigfoot sits on an old tree stump in front of you, looking at you.
-    this.kit.placeBigfoot(d, this.tmp.copy(GardenSpots.bigfoot).setY(this.seatY), Math.atan2(this.center.x - GardenSpots.bigfoot.x, this.center.z - GardenSpots.bigfoot.z), 'sit');
-    WorldSpots.seatQ.identity();
+    // The garden is yours alone: Bigfoot is away.
+    this.kit.placeBigfoot(d, GardenSpots.bigfoot, 0, 'away');
     WorldSpots.hold = false;
   }
 
@@ -212,17 +201,6 @@ export class GardenWorldSystem extends createSystem({
   /** The plants, once: scattered all around you (none right at your feet, none where Bigfoot sits). */
   private async plant(): Promise<void> {
     this.plantsLoaded = true;
-    // An old tree stump for Bigfoot to sit on (Poly Haven, CC0); its top is his seat.
-    try {
-      const stump = (await AssetManager.loadGLTF(`${import.meta.env.BASE_URL}models/garden/tree_stump_01/tree_stump_01.gltf`)).scene.clone(true);
-      stump.position.set(GardenSpots.bigfoot.x, 0, GardenSpots.bigfoot.z);
-      stump.scale.setScalar(cfg.stumpScale);
-      this.root.add(stump);
-      stump.updateMatrixWorld(true);
-      this.seatY = new Box3().setFromObject(stump).max.y - 0.03;
-    } catch {
-      // No stump: he sits lower.
-    }
     let seed = 5;
     const rand = () => {
       seed = (seed * 16807) % 2147483647;
@@ -275,7 +253,7 @@ export class GardenWorldSystem extends createSystem({
   }
 
   private butterflies(dt: number): void {
-    for (const side of ['left', 'right'] as const) {
+    for (const side of ['left'] as const) {
       const h = this.signs[side];
       const ready = this.palmReady(h);
       this.upFor[side] = ready ? this.upFor[side] + dt : 0;
@@ -287,12 +265,6 @@ export class GardenWorldSystem extends createSystem({
         for (const f of this.flies) if (f.state === 'wander' && (!best || f.pos.distanceTo(h.palm) < best.pos.distanceTo(h.palm))) best = f;
         if (best) this.approach(best, side);
       }
-    }
-    // One likes Bigfoot's head.
-    const head = BigfootControl.head;
-    if (this.time > cfg.bigfootButterflyAt && !this.flies.some((f) => f.on === 'bigfoot') && head.lengthSq() > 0) {
-      const f = this.flies.find((x) => x.state === 'wander');
-      if (f) this.approach(f, 'bigfoot');
     }
     for (const f of this.flies) {
       f.t += dt;
@@ -318,8 +290,10 @@ export class GardenWorldSystem extends createSystem({
         f.pos.copy(target);
         // Resting: the wings open and close slowly.
         flap = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin(f.t * 2.2 + f.phase));
-        const leave = f.on === 'bigfoot' ? f.t > cfg.bigfootPerchSec : this.downFor[f.on as 'left' | 'right'] > cfg.leaveAfter;
-        if (leave) this.lift(f);
+        // A touch of the right index fingertip (or the palm closing or moving away) sends it off.
+        const r = this.signs.right;
+        const touched = r.tracked && f.t > 0.6 && r.joints[INDEX_TIP].distanceTo(f.pos) < cfg.touchReach;
+        if (touched || this.downFor[f.on as 'left' | 'right'] > cfg.leaveAfter) this.lift(f, touched);
       } else {
         // Leaving: up and away, back home to the flowers.
         const e = Math.min(1, f.t / 1.6);
@@ -340,6 +314,8 @@ export class GardenWorldSystem extends createSystem({
       }
       f.b.flap(flap);
     }
+    const sat = this.flies.find((x) => x.state === 'perch' && x.on === 'left');
+    GardenSpots.perched = sat ? sat.pos : null;
   }
 
   private approach(f: Fly, on: 'left' | 'right' | 'bigfoot'): void {
@@ -349,11 +325,12 @@ export class GardenWorldSystem extends createSystem({
     f.from.copy(f.pos);
   }
 
-  private lift(f: Fly): void {
+  private lift(f: Fly, touched = false): void {
     f.state = 'leave';
     f.on = '';
     f.t = 0;
     f.from.copy(f.pos);
+    if (touched) GardenSpots.touched++;
   }
 
   /** Where a perched butterfly sits: on the palm (just above it), or on top of Bigfoot's head. */
@@ -364,22 +341,6 @@ export class GardenWorldSystem extends createSystem({
       return out.copy(h.palm).addScaledVector(h.normal, 0.015);
     }
     return undefined;
-  }
-
-  /** Point a finger and a ladybug walks along it, from the knuckle to the tip and back. */
-  private ladybugTick(dt: number): void {
-    const h = this.signs.right.tracked && this.signs.right.sign === 'point' ? this.signs.right : this.signs.left.tracked && this.signs.left.sign === 'point' ? this.signs.left : undefined;
-    this.ladybug.visible = !!h;
-    if (!h) return;
-    this.bugT += dt;
-    const e = 0.5 - 0.5 * Math.cos((this.bugT / cfg.ladybugSec) * Math.PI);
-    const a = h.joints[INDEX_PROX];
-    const b = h.joints[INDEX_TIP];
-    this.ladybug.position.lerpVectors(a, b, 0.1 + 0.75 * e).add(this.tmp.set(0, 0.008, 0));
-    // Facing the way it walks.
-    const forward = Math.sin((this.bugT / cfg.ladybugSec) * Math.PI) >= 0;
-    this.tmp.subVectors(forward ? b : a, forward ? a : b).normalize();
-    this.ladybug.lookAt(this.tmp2.copy(this.ladybug.position).add(this.tmp));
   }
 
   /** Fireflies drift and blink at dusk, and gather near an open hand. */
