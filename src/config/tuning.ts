@@ -591,6 +591,9 @@ export const Tuning = {
     giftWaitSec: 6,
     giftSetDown: 0.62,
     giftAfterPlaced: 1.2,
+    /** A palm counts as held out for a gift when it faces up at least this much (palm normal's up part, 0..1); a gift this close (m) late in its flight settles into it. */
+    giftPalmUp: 0.5,
+    giftSettle: 0.3,
     viewerFlightSec: 2.8,
     viewerArc: 2.2,
     /** Gifts that fly to the viewer: size (vs. Bigfoot's), how far ahead and how far below the eyes they land. */
@@ -640,6 +643,8 @@ export const Tuning = {
     touchReach: 0.05,
     /** A butterfly on your palm sits this far above its surface (m). */
     perchAbove: 0.03,
+    /** The hint for the garden's menu (right palm up) shows after a butterfly leaves, or this long (s) in. */
+    menuHintAfter: 25,
   },
 
   /** Storm and sunshine at sea: the console on your left and the hand gestures. */
@@ -670,6 +675,12 @@ export const Tuning = {
   },
 
   performance: {
+    /** On Quest: ask for this refresh rate (Hz) when the headset offers it; fall back to the steady one if quality has already stepped down this far and it still can't keep up. */
+    preferredHz: 90,
+    steadyHz: 72,
+    fallbackAtLevel: 2,
+    /** Fixed foveated rendering strength (0..1): the edges of the view drawn at lower resolution. */
+    foveation: 1,
     targetFps: 72,
     degradeBelowFps: 66,
     /** Seconds below the floor before stepping quality down; seconds of headroom before stepping up. */

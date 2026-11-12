@@ -7,6 +7,7 @@ import { Session } from '../components/session.js';
 import { Director } from '../config/director.js';
 import { Tuning } from '../config/tuning.js';
 import { newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { songOf } from '../dreams/chapter_rooftop.js';
 import { HandSigns } from '../input/hand-signs.js';
 import { ConsoleDial, GlassConsole } from '../visuals/glass-console.js';
 import { PartyCue, PartyMix } from './lib/party-mix.js';
@@ -19,13 +20,17 @@ const DIALS: ConsoleDial[] = [
   { icon: 'instruments', label: 'Band' },
 ];
 const START = [0.85, 0.85, 1];
+/** The party's three songs (real tracks, CC BY; see CREDITS): the chips above the pills. */
+const SONGS = ['disco', 'afro', 'house'];
+const SONG_LABEL = ['Disco', 'Afrobeats', 'House'];
 
 /** Where the console's knobs and button are (world), for the film's hand. */
-export const PartyConsoleSpots = { ready: false, knob: DIALS.map(() => new Vector3()), button: new Vector3() };
+export const PartyConsoleSpots = { ready: false, knob: DIALS.map(() => new Vector3()), button: new Vector3(), songs: SONGS.map(() => new Vector3()) };
 
 /**
  * Mix the rooftop party with your hand. While the party is live, a
- * DreamSpace-style console floats on your LEFT: Volume (the song's level),
+ * DreamSpace-style console floats on your LEFT for the whole party: the song
+ * (Disco, Afrobeats or House: tap one), Volume (the song's level),
  * Lights (stage lights, lasers, the skyline's glow) and Band (how much of the
  * song plays: the beat and bass alone, then the chords and voices, then the
  * hats and shimmer). "Fireworks!" fires a volley over the city.
@@ -33,7 +38,11 @@ export const PartyConsoleSpots = { ready: false, knob: DIALS.map(() => new Vecto
 export class PartyConsoleSystem extends createSystem({
   director: { required: [Session, Ritual, Caption, DreamDirector] },
 }) {
-  private console = new GlassConsole(DIALS, 'Fireworks!', 'PartyConsole');
+  private console = new GlassConsole(DIALS, 'Fireworks!', 'PartyConsole', SONG_LABEL);
+  /** The song this console put on (given back when the party ends); which chip a hand is pressing. */
+  private songByConsole = false;
+  private chipBy: Record<'left' | 'right', boolean> = { left: false, right: false };
+  private chipGlow = SONGS.map(() => 0);
   private signs = new HandSigns();
   private beat = newBeatContext();
   private want = [...START];
@@ -77,7 +86,19 @@ export class PartyConsoleSystem extends createSystem({
       this.readInput(d, dt);
     }
     // Back to the full party when the console is gone (the next dream starts fresh).
-    if (!live) this.want = [...START];
+    if (!live) {
+      this.want = [...START];
+      if (this.songByConsole) {
+        this.songByConsole = false;
+        d.setValue(Session, 'djSong', '');
+      }
+    }
+    // The chosen song's chip is filled white.
+    const playing = (d.getValue(Session, 'djSong') ?? '') || (live ? songOf(this.beat.scene) : '');
+    for (let i = 0; i < SONGS.length; i++) {
+      this.chipGlow[i] = Math.max(0, this.chipGlow[i] - dt * 2);
+      this.console.setChip(i, this.chipGlow[i], SONGS[i] === playing ? 1 : 0);
+    }
     const k = Math.min(1, dt * cfg.ease * 1.6);
     for (let i = 0; i < DIALS.length; i++) {
       this.shown[i] += (this.want[i] - this.shown[i]) * k;
@@ -92,6 +113,7 @@ export class PartyConsoleSystem extends createSystem({
     if (this.console.root.visible) {
       for (let i = 0; i < DIALS.length; i++) this.console.knobWorld(i, PartyConsoleSpots.knob[i]);
       this.console.buttonWorld(PartyConsoleSpots.button);
+      for (let i = 0; i < SONGS.length; i++) this.console.chipWorld(i, PartyConsoleSpots.songs[i]);
       PartyConsoleSpots.ready = true;
     } else PartyConsoleSpots.ready = false;
   }
@@ -112,6 +134,17 @@ export class PartyConsoleSystem extends createSystem({
     c.updateMatrixWorld(true);
   }
 
+  /** Puts a song on the decks (the party's music, lights and dancers follow). */
+  private pickSong(d: Entity, i: number): void {
+    if ((d.getValue(Session, 'djSong') ?? '') === SONGS[i]) return;
+    d.setValue(Session, 'djSong', SONGS[i]);
+    this.songByConsole = true;
+    this.chipGlow[i] = 1;
+    Sound.play('catch', this.console.root.position, 0.4);
+    d.setValue(Caption, 'text', `Now playing: ${SONG_LABEL[i]}`);
+    d.setValue(Caption, 'ttl', 3);
+  }
+
   private fireworks(d: Entity): void {
     // The same volley as the palm menu's Fireworks.
     d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
@@ -128,6 +161,8 @@ export class PartyConsoleSystem extends createSystem({
       if (PartyCue.drive >= 0) this.want[PartyCue.drive] = PartyCue.value;
       if (PartyCue.press) this.fireworks(d);
       PartyCue.press = false;
+      if (PartyCue.song >= 0) this.pickSong(d, PartyCue.song);
+      PartyCue.song = -1;
       for (let i = 0; i < DIALS.length; i++) this.console.setHover(i, i === PartyCue.drive ? 1 : 0);
       return;
     }
@@ -163,6 +198,7 @@ export class PartyConsoleSystem extends createSystem({
       if (!at) {
         this.dragging[side] = -1;
         this.pressedBy[side] = false;
+        this.chipBy[side] = false;
         continue;
       }
       let i = this.dragging[side];
@@ -178,6 +214,13 @@ export class PartyConsoleSystem extends createSystem({
         this.pressedBy[side] = true;
         this.fireworks(d);
       } else if (!held) this.pressedBy[side] = false;
+      // A song chip: tap it.
+      const chip = this.console.chips.findIndex((ch) => Math.abs(at.x - ch.x) < ch.w / 2 + 0.003 && Math.abs(at.y - ch.y) < ch.h / 2 + 0.004);
+      if (chip >= 0 && held && !this.chipBy[side]) {
+        this.chipBy[side] = true;
+        this.pickSong(d, chip);
+      } else if (!held || chip < 0) this.chipBy[side] = false;
+      if (chip >= 0) this.chipGlow[chip] = Math.max(this.chipGlow[chip], held ? 1 : 0.5);
     }
     for (let i = 0; i < DIALS.length; i++) this.console.setHover(i, hover[i]);
   }

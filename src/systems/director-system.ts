@@ -41,6 +41,8 @@ import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 const UP = new Vector3(0, 1, 0);
 const ONE = new Vector3(1, 1, 1);
 const CAM_RATE = 1.4;
+/** The wanted camera position jumping more than this (m) in one frame is a cut. */
+const CUT_JUMP = 2.5;
 const CARD_W = 1.5;
 
 // Hand shots for the trailer (head space: x right, y up, -z forward; identity = palm down, fingers forward).
@@ -61,6 +63,8 @@ const POINT_R: HandShot = { at: new Vector3(0.12, -0.13, -0.34), rot: Q_ID, pose
 const Q_OFFER_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -0.15)).multiply(Q_PALM_UP);
 /** The right index finger pointing forward and in to the left (reaching across from the right). */
 const Q_POINT_IN_R = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.6);
+/** The right palm held out the same way (mirrored). */
+const Q_OFFER_R = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.15)).multiply(Q_PALM_UP);
 const Q_CUP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.55).multiply(Q_PALM_UP);
 const CUP_L: HandShot = { at: new Vector3(-0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
 const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
@@ -84,6 +88,8 @@ const PARTY_DIALS: [number, number, number, number, number][] = [
   [2, 0.25, 1, 21.2, 22.4],
   [1, 0.3, 1, 22.6, 23.6],
 ];
+/** The film's song change on the party console (seconds into a party scene): reach, tap (Afrobeats), back to dancing. */
+const PARTY_SONG = { reach: 3.8, tap: 5.6, done: 7.2, chip: 1 };
 const SEA_DIALS: [number, number, number, number, number][] = [
   [0, 0.85, 1, 6.5, 9.5],
   [0, 1, 0.2, 14, 18],
@@ -129,6 +135,7 @@ export class DirectorSystem extends createSystem({
   private camPos = new Vector3();
   private camLook = new Vector3();
   private wantPos = new Vector3();
+  private lastWant = new Vector3();
   private wantLook = new Vector3();
   private tmp = new Vector3();
   private placed = false;
@@ -196,8 +203,11 @@ export class DirectorSystem extends createSystem({
       this.startRecording();
     }
 
+    this.lastWant.copy(this.wantPos);
     this.chooseShot(d, phase ?? '');
-    const k = this.placed ? 1 - Math.exp(-CAM_RATE * realDelta) : 1;
+    // A new shot far from the last one is a cut, not a glide (gliding would pass through walls and buildings).
+    const cut = this.wantPos.distanceTo(this.lastWant) > CUT_JUMP;
+    const k = this.placed && !cut ? 1 - Math.exp(-CAM_RATE * realDelta) : 1;
     this.camPos.lerp(this.wantPos, k);
     this.camLook.lerp(this.wantLook, k);
     this.placed = true;
@@ -299,8 +309,8 @@ export class DirectorSystem extends createSystem({
       else if (t < 12) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
       // The palm menu in hand, the party and skyline beyond; then the fireworks it launches.
       else if (t < 17) this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 9, -1));
-      // Mixing the party by hand: a level shot over the party, the glass console by your left hand.
-      else this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 8, -1));
+      // Mixing the party by hand: the dancers and Bigfoot ahead, the glass console by your left hand.
+      else this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
     } else if (scene === 'leap-back') {
       // From the party roof's edge: the street far below, his tower and window across.
       // From inside his room as he flies home toward the window.
@@ -456,18 +466,20 @@ export class DirectorSystem extends createSystem({
     else if (scene === 'arrive') text = 'Your room becomes a penthouse';
     else if (scene === 'party-wait') text = 'Your gaze picks the song';
     else if (scene.startsWith('party-')) {
-      if (t < 8) {
+      if (t < PARTY_SONG.reach) {
         text = 'A live rooftop cam: spatial cinema';
         DirectorFrame.cinema = true;
-      } else if (t < 12) text = 'The skyline dances to the music';
+      } else if (t < 8) text = 'Change the song with your hand';
+      else if (t < 12) text = 'The skyline dances to the music';
       else if (t < 17) text = "Turn your palm up: you're the DJ";
-      else text = 'Fireworks, from your palm';
+      else if (t < 17.5) text = 'Fireworks, from your palm';
+      else text = 'Mix the party: volume, lights, band';
       if (t > 17.5 && this.cue('fireworks')) d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
     } else if (scene === 'leap-back') text = 'Real music, in spatial audio';
     else if (scene === 'gifts') {
       text = 'Catch his gifts with your hands';
       // A shorter gifts beat for the trailer.
-      if (t > 12 && this.cue('gifts-skip')) d.setValue(DreamDirector, 'beatTime', 20.5);
+      if (t > 15 && this.cue('gifts-skip')) d.setValue(DreamDirector, 'beatTime', 20.5);
     } else if (scene === 'to-bed') text = 'Golden hour, starry night, sunrise';
     else if (phase === RitualPhase.Waking) text = 'Every dream leaves a memory';
     else if (phase === RitualPhase.Awake && roof) text = this.tourScript(d);
@@ -598,10 +610,12 @@ export class DirectorSystem extends createSystem({
     };
     let left = REST_L;
     let right = REST_R;
-    // The party console: the band stripped to the beat, the lights down, then the drop and the lights back up.
-    PartyCue.show = scene.startsWith('party-') && scene !== 'party-wait' && t > 17.2;
+    // The party console, on your left for the whole party: a song tapped early on; later the band stripped
+    // to the beat, the lights down, then the drop and the lights back up.
+    PartyCue.show = scene.startsWith('party-') && scene !== 'party-wait' && t > 0.3;
     PartyCue.drive = -1;
-    if (PartyCue.show) {
+    if (PartyCue.show && t > PARTY_SONG.tap && this.cue('party-song')) PartyCue.song = PARTY_SONG.chip;
+    if (PartyCue.show && t > 17.2) {
       for (const [i, from, to, a, b] of PARTY_DIALS) {
         if (t < a || t > b + 0.3) continue;
         const e = Math.min(1, (t - a) / (b - a));
@@ -617,6 +631,12 @@ export class DirectorSystem extends createSystem({
       // The hand itself sweeps up and across as it drags (the pinch ray follows the hand).
       const hand = H_TMP.r.set(-0.04 + 0.2 * k, -0.24 + 0.46 * k, -0.42);
       right = { ...DRAW_R, at: hand, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 7.4 ? 1 : 0 };
+    } else if (scene.startsWith('party-') && t >= PARTY_SONG.reach && t < PARTY_SONG.done && PartyConsoleSpots.ready) {
+      // The left fingertip reaches to the console's song chips and taps Afrobeats.
+      this.player.head.updateMatrixWorld(true);
+      const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.songs[PARTY_SONG.chip]));
+      const press = t > PARTY_SONG.tap - 0.4 && t < PARTY_SONG.tap + 0.5 ? -0.012 : 0.03;
+      left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.08 + press)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (scene.startsWith('party-') && t < 8) {
       // Dancing: hands up, palms facing each other, swaying on the beat.
       const s = Math.sin(this.clock * 4.2);
@@ -632,7 +652,7 @@ export class DirectorSystem extends createSystem({
         H_TMP.aim.add(H_TMP.off.set(0.058, 0.02, 0).applyQuaternion(H_TMP.q));
         right = { ...POINT_R, aim: H_TMP.aim, pinch: t > 14.3 && t < 15.1 ? 1 : 0 };
       }
-    } else if (PartyCue.show && PartyConsoleSpots.ready) {
+    } else if (PartyCue.show && t > 17.2 && PartyConsoleSpots.ready) {
       // The left fingertip on the party console's knob it drags (or the next one).
       this.player.head.updateMatrixWorld(true);
       const k = PartyCue.drive >= 0 ? PartyCue.drive : t < 19.6 ? 2 : t < 21.1 ? 1 : t < 22.5 ? 2 : 1;
@@ -641,11 +661,12 @@ export class DirectorSystem extends createSystem({
     } else if (scene === 'gifts') {
       // One gift at a time: both palms held out together, open and up, for it; once it rests
       // there a moment, both hands lower together to set it on the floor.
+      // (Cupped with the fingers a little apart and tipped up toward you, like the garden's palm.)
       const lower = GiftHold.holding && GiftHold.holdFor > 1.4;
-      const y = lower ? -0.8 : -0.22;
-      const z = lower ? -0.3 : -0.4;
-      left = { at: H_TMP.l.set(-0.055, y, z), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
-      right = { at: H_TMP.r.set(0.055, y, z), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+      const y = lower ? -0.78 : -0.16;
+      const z = lower ? -0.3 : -0.38;
+      left = { at: H_TMP.l.set(-0.07, y, z), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
+      right = { at: H_TMP.r.set(0.07, y, z), rot: Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
     }
     let ease = Math.min(1, dt * 6);
     const tt = phase === RitualPhase.Awake ? this.tourTime() : -1;

@@ -187,7 +187,9 @@ export class CatchSystem extends createSystem({
         this.hand.y += 0.08;
         f.to.lerp(this.hand, Math.min(1, delta * 3));
       }
-      if (this.touched(o.position, cupped)) {
+      // Near the end of its flight a gift settles into palms held out for it.
+      const settling = !!palm && f.age > f.flight * this.slow * 0.7 && o.position.distanceTo(this.hand) < Tuning.rooftop.giftSettle;
+      if (settling || this.touched(o.position, cupped)) {
         f.state = 'held';
         f.age = 0;
         f.holder = this.nearestHand(o.position);
@@ -250,7 +252,7 @@ export class CatchSystem extends createSystem({
     let n = 0;
     for (const h of this.queries.hands.entities) {
       if (!h.getValue(HandGestureState, 'tracked')) return false;
-      if (palmsUp && !h.getValue(HandGestureState, 'palmUp')) return false;
+      if (palmsUp && !this.palmOut(h)) return false;
       const p = n === 0 ? this.hand : this.other;
       const c = n === 0 ? this.cup : this.otherCup;
       p.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
@@ -263,12 +265,15 @@ export class CatchSystem extends createSystem({
     return true;
   }
 
-  /** A tracked hand held open, palm up. */
+  /** A tracked hand held out to receive: palm facing mostly up (open, or gently cupped). */
   private openPalm(): Entity | undefined {
-    for (const h of this.queries.hands.entities) {
-      if (h.getValue(HandGestureState, 'tracked') && h.getValue(HandGestureState, 'palmUp')) return h;
-    }
+    for (const h of this.queries.hands.entities) if (this.palmOut(h)) return h;
     return undefined;
+  }
+
+  private palmOut(h: Entity): boolean {
+    if (!h.getValue(HandGestureState, 'tracked')) return false;
+    return !!h.getValue(HandGestureState, 'palmUp') || h.getVectorView(HandGestureState, 'palmNormal')[1] > Tuning.rooftop.giftPalmUp;
   }
 
   private nearestHand(p: Vector3): Entity | undefined {

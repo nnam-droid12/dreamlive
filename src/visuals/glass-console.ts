@@ -21,8 +21,10 @@ export class GlassConsole {
   readonly root = new Group();
   readonly pills: { dial: ConsoleDial; mesh: Mesh; mat: ShaderMaterial; x: number }[] = [];
   readonly button: { mesh: Mesh; mat: ShaderMaterial; y: number; w: number; h: number };
+  /** An optional row of small glass buttons above the pills (the party's songs); the chosen one fills white. */
+  readonly chips: { mesh: Mesh; mat: ShaderMaterial; x: number; y: number; w: number; h: number }[] = [];
 
-  constructor(dials: readonly ConsoleDial[], buttonText = 'Goodnight', name = 'GlassConsole') {
+  constructor(dials: readonly ConsoleDial[], buttonText = 'Goodnight', name = 'GlassConsole', chips: readonly string[] = []) {
     this.root.name = name;
     const W = cfg.pillW;
     const H = cfg.pillH;
@@ -47,6 +49,30 @@ export class GlassConsole {
     bmesh.name = `${name}_button`;
     this.root.add(bmesh);
     this.button = { mesh: bmesh, mat: bmat, y: by, w: bw, h: bh };
+    const gap = 0.007;
+    const cw = (bw - gap * (chips.length - 1)) / Math.max(1, chips.length);
+    const ch = 0.03;
+    const cy = H + 0.034;
+    chips.forEach((text, i) => {
+      const mat = buttonMaterial(cw, ch, chipTexture(text));
+      const mesh = new Mesh(new PlaneGeometry(cw + 0.006, ch + 0.006), mat);
+      const x = -bw / 2 + cw / 2 + i * (cw + gap);
+      mesh.position.set(x, cy, 0);
+      mesh.renderOrder = 30;
+      mesh.name = `${name}_chip_${i}`;
+      this.root.add(mesh);
+      this.chips.push({ mesh, mat, x, y: cy, w: cw, h: ch });
+    });
+  }
+
+  /** A chip's look: hover (a fingertip on it) and chosen (filled white). */
+  setChip(i: number, hover: number, chosen: number): void {
+    this.chips[i].mat.uniforms.uHover.value = hover;
+    this.chips[i].mat.uniforms.uPress.value = chosen;
+  }
+
+  chipWorld(i: number, out: Vector3): Vector3 {
+    return this.root.localToWorld(out.set(this.chips[i].x, this.chips[i].y, 0.004));
   }
 
   setValue(i: number, v: number): void {
@@ -65,6 +91,7 @@ export class GlassConsole {
   setOpacity(a: number): void {
     for (const p of this.pills) p.mat.uniforms.uAlpha.value = a;
     this.button.mat.uniforms.uAlpha.value = a;
+    for (const c of this.chips) c.mat.uniforms.uAlpha.value = a;
     this.root.visible = a > 0.01;
   }
 
@@ -334,6 +361,17 @@ function labelTexture(text: string): CanvasTexture {
   g.shadowBlur = 6;
   g.fillStyle = '#ffffff';
   g.fillText(text, 64, 26);
+  return tex(c);
+}
+
+/** A chip's word, drawn for the chip's squarer shape. */
+function chipTexture(text: string): CanvasTexture {
+  const [c, g] = canvas(240, 128);
+  g.font = '600 46px system-ui, "Segoe UI", Roboto, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = '#ffffff';
+  g.fillText(text, 120, 68, 220);
   return tex(c);
 }
 

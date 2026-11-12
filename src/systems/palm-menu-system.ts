@@ -39,16 +39,18 @@ export class PalmMenuSystem extends createSystem({
     const phase = d.getValue(Ritual, 'phase');
     const allowed = phase !== RitualPhase.Idle && !d.getValue(Session, 'paused');
 
-    // Hands: left palm up (and the right not cupping beside it) for a moment.
+    // Hands: left palm up (and the right not cupping beside it) for a moment. In the garden your
+    // left palm is for a butterfly, so there the RIGHT palm opens the menu (hands only, no controller needed).
+    const garden = d.getValue(Session, 'world') === 'garden';
+    const menuSide = garden ? Handedness.Right : Handedness.Left;
     let left: Entity | undefined;
-    let rightUp = false;
+    let otherUp = false;
     for (const h of this.queries.hands.entities) {
       if (!h.getValue(HandGestureState, 'tracked')) continue;
-      if (h.getValue(HandGestureState, 'hand') === Handedness.Left) left = h;
-      else if (h.getValue(HandGestureState, 'palmUp')) rightUp = true;
+      if (h.getValue(HandGestureState, 'hand') === menuSide) left = h;
+      else if (h.getValue(HandGestureState, 'palmUp')) otherUp = true;
     }
-    // (In the garden your open left palm is for a butterfly: the menu waits for the X button there.)
-    const palmUp = !!left && !!left.getValue(HandGestureState, 'palmUp') && !rightUp && d.getValue(Session, 'world') !== 'garden';
+    const palmUp = !!left && !!left.getValue(HandGestureState, 'palmUp') && !otherUp;
     this.upFor = palmUp ? this.upFor + realDelta : 0;
     this.downFor = palmUp ? 0 : this.downFor + realDelta;
 

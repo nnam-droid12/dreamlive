@@ -98,6 +98,8 @@ export class GardenWorldSystem extends createSystem({
   private sky!: HemisphereLight;
   private room?: Object3D;
   private time = 0;
+  private hinted = false;
+  private touchedAtBegin = 0;
   private head = new Vector3();
   private fwd = new Vector3();
   private headQ = new Quaternion();
@@ -235,6 +237,11 @@ export class GardenWorldSystem extends createSystem({
     else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.butterflies(dt);
+    // Once a butterfly has come and gone: how to get home with hands alone.
+    if (!this.hinted && (GardenSpots.touched > this.touchedAtBegin || this.time > cfg.menuHintAfter)) {
+      this.hinted = true;
+      this.kit.caption(d, 'Turn your right palm up for the menu', 6);
+    }
     // The garden is yours alone: Bigfoot is away.
     this.kit.placeBigfoot(d, GardenSpots.bigfoot, 0, 'away');
     WorldSpots.hold = false;
@@ -266,6 +273,8 @@ export class GardenWorldSystem extends createSystem({
       f.on = '';
     });
     this.time = 0;
+    this.hinted = false;
+    this.touchedAtBegin = GardenSpots.touched;
     this.kit.caption(d, 'A garden grows in your room');
   }
 

@@ -16,4 +16,6 @@ export const PartyCue = {
   drive: -1,
   value: 0,
   press: false,
+  /** A song chip to tap this frame (0 disco, 1 afro, 2 house), or -1. */
+  song: -1,
 };
