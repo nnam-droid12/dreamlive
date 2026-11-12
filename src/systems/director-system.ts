@@ -798,7 +798,7 @@ export class DirectorSystem extends createSystem({
     let canvas: OffscreenCanvas | undefined;
     DirectorFrame.onFrame = () => {
       // Resuming a stopped render: these frames are already on disk.
-      if (n < Director.skip) {
+      if (n < Director.skip || (Director.until > 0 && n >= Director.until)) {
         n++;
         return;
       }
