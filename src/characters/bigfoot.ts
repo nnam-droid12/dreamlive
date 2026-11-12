@@ -48,6 +48,8 @@ const CLIP_HINTS: Record<Exclude<BigfootAnim, 'rest'>, RegExp> = {
   leap: /big/i,
 };
 const HEIGHT = 1.6;
+/** How far he bows at most (rad), bringing his head down within a seated arm's reach. */
+const BOW_MAX = 0.9;
 /** Starting guess for how far his skin reaches below his lowest bone (meters at scale 1). */
 const GROUND_PAD = 0.07;
 /** The skin is re-measured this often (and on every new animation); bones carry it between. */
@@ -73,6 +75,8 @@ export interface BigfootRig {
   setPose(pose: '' | 'sit', eat?: number): void;
   /** Height of his hips above his root, in metres (where a seat must be for 'sit'). */
   hipHeight(): number;
+  /** Bow toward the way he faces, 0..1 (to be patted by someone sitting down). */
+  setBow(a: number): void;
   /** Turn his head toward a world point (null = let the animation lead). */
   setLook(target: Vector3 | null): void;
   /**
@@ -181,6 +185,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   let pose: '' | 'sit' = '';
   const look = { on: false, target: new Vector3(), weight: 0 };
   const upright = { want: 0, weight: 0 };
+  const bow = { want: 0, weight: 0, fwd: new Vector3(), dir: new Vector3(), q: new Quaternion() };
   const spine = bone(/Spine$/);
   const neck = bone(/Neck$/);
   const reach = {
@@ -345,6 +350,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     setUpright(a) {
       upright.want = Math.max(0, Math.min(1, a));
     },
+    setBow(a) {
+      bow.want = Math.max(0, Math.min(1, a));
+    },
     setLook(target) {
       look.on = !!target;
       if (target) look.target.copy(target);
@@ -378,6 +386,15 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
         neck.updateWorldMatrix(false, false);
         const cur = IK.u.setFromMatrixPosition(neck.matrixWorld).sub(IK.s.setFromMatrixPosition(spine.matrixWorld)).normalize();
         aim(spine, neck, cur.lerp(IK.yAxis, upright.weight).normalize());
+      }
+      // Bowing toward you (to be patted): the spine-to-neck line leans forward, bringing his head down.
+      bow.weight += (bow.want - bow.weight) * Math.min(1, delta * 2.5);
+      if (bow.weight > 0.01 && spine && neck) {
+        root.getWorldQuaternion(bow.q);
+        bow.fwd.set(0, 0, 1).applyQuaternion(bow.q).setY(0).normalize();
+        const a = bow.weight * BOW_MAX;
+        bow.dir.set(0, Math.cos(a), 0).addScaledVector(bow.fwd, Math.sin(a));
+        aim(spine, neck, bow.dir);
       }
       // Reaching and looking ease in and out (no snapping).
       for (const h of ['left', 'right'] as const) {

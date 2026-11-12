@@ -25,6 +25,8 @@ export const BigfootControl = {
   info: '',
   /** Seconds since your last hand moment with him (bedtime waits while you are playing). */
   quietFor: 0,
+  /** Bowing toward you, 0..1 (so you can pat his head from your seat). */
+  bow: 0,
   /** A little shake of the whole body (laughing), 0..1. */
   shake: 0,
 };

@@ -38,7 +38,6 @@ import { buildCeilingFan } from '../scene-assets/ceiling-fan.scene-asset.js';
 const cfg = Tuning.movie;
 
 /** A film the viewer picked on the start page (blob URL), if any; otherwise Big Buck Bunny. */
-export const MovieChoice = { url: '' };
 
 /**
  * Where everyone sits for Movie Night (world space, set when the film starts):
@@ -277,7 +276,7 @@ export class MovieNightSystem extends createSystem({
     if (!this.video) {
       const v = document.createElement('video');
       // (Offline renders use an all-keyframe copy, so each frame's exact seek is quick.)
-      v.src = MovieChoice.url || `${import.meta.env.BASE_URL}video/${Director.offline ? 'intra/' : ''}big-buck-bunny.mp4`;
+      v.src = `${import.meta.env.BASE_URL}video/${Director.offline ? 'intra/' : ''}big-buck-bunny.mp4`;
       v.crossOrigin = 'anonymous';
       v.playsInline = true;
       v.preload = 'auto';
@@ -294,12 +293,12 @@ export class MovieNightSystem extends createSystem({
     Sound.attachVideo(this.video, this.center, cfg.volume);
     this.video.currentTime = 0;
     this.filmClock = 0;
-    Timeline.log('movie', MovieChoice.url ? 'own' : 'big-buck-bunny', 1);
+    Timeline.log('movie', 'big-buck-bunny', 1);
     Journal.add('movies');
     if (Director.offline) this.video.muted = true;
     else void this.video.play().catch(() => undefined);
     this.say(d, 'movie-start', 'Movie night! I brought popcorn. Pinch the screen to pause.');
-    const title = MovieChoice.url ? 'Your movie' : '"Big Buck Bunny" by the Blender Foundation (CC BY 3.0)';
+    const title = '"Big Buck Bunny" by the Blender Foundation (CC BY 3.0)';
     d.setValue(Caption, 'text', `Movie Night: ${title}`);
     d.setValue(Caption, 'ttl', 5);
   }

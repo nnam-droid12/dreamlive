@@ -40,12 +40,11 @@ import { MovieNightSystem } from './systems/movie-night-system.js';
 import { TvCartoonSystem } from './systems/tv-cartoon-system.js';
 import { CloudWorldSystem } from './systems/cloud-world-system.js';
 import { SeaWorldSystem } from './systems/sea-world-system.js';
-import { StreetWalkSystem } from './systems/street-walk-system.js';
+import { GardenWorldSystem } from './systems/garden-world-system.js';
 import { FriendSystem } from './systems/friend-system.js';
 import { JournalSystem } from './systems/journal-system.js';
 import { SeaConsoleSystem } from './systems/sea-console-system.js';
 import { PartyConsoleSystem } from './systems/party-console-system.js';
-import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
@@ -99,7 +98,7 @@ World.create(
     .registerSystem(TvCartoonSystem)
     .registerSystem(CloudWorldSystem)
     .registerSystem(SeaWorldSystem)
-    .registerSystem(StreetWalkSystem)
+    .registerSystem(GardenWorldSystem)
     .registerSystem(FriendSystem)
     .registerSystem(JournalSystem)
     .registerSystem(SeaConsoleSystem)
@@ -120,7 +119,6 @@ World.create(
   // Dev-only demo recording (`?director`): scripted camera, cards, WebM capture.
   if (Director.enabled) world.registerSystem(DirectorSystem);
   if (Director.offline) offlineRender(world);
-  if (!Director.enabled) mountMoviePicker();
 });
 
 /**

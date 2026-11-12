@@ -147,6 +147,7 @@ export class BigfootSystem extends createSystem({
     const fc = BigfootControl.active && phase === RitualPhase.Awake;
     this.rig.setLook(fc && BigfootControl.looking ? BigfootControl.look : null);
     this.rig.setUpright(fc ? 0.85 : 0);
+    this.rig.setBow(fc ? BigfootControl.bow : 0);
     this.rig.setReach('right', fc && BigfootControl.reach.right ? BigfootControl.reachAt.right : null, BigfootControl.shape.right);
     this.rig.setReach('left', fc && BigfootControl.reach.left ? BigfootControl.reachAt.left : null, BigfootControl.shape.left);
     // In the boat: holding on to both gunwales, sitting tall, head up, looking at you.

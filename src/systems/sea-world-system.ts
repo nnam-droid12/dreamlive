@@ -85,6 +85,7 @@ export class SeaWorldSystem extends createSystem({
   private board!: Object3D;
   private boat!: Group;
   private room?: Object3D;
+  private hidRoom = false;
   private sunDisc!: Mesh;
   private sunGlow!: Sprite;
   private sunLight!: DirectionalLight;
@@ -359,7 +360,15 @@ export class SeaWorldSystem extends createSystem({
   private hideRoom(hide: boolean): void {
     if (!Showcase.enabled) return;
     this.room ??= this.scene.getObjectByName('NycBedroom') ?? undefined;
-    if (this.room && this.room.visible === hide) this.room.visible = !hide;
+    if (!this.room) return;
+    // Only give the room back if the sea took it (another world may be holding it).
+    if (hide) {
+      this.room.visible = false;
+      this.hidRoom = true;
+    } else if (this.hidRoom) {
+      this.room.visible = true;
+      this.hidRoom = false;
+    }
     this.flood.mesh.visible = false;
   }
 

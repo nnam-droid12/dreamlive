@@ -30,6 +30,7 @@ import { WorldSpots } from './lib/world-kit.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { FriendCue } from './friend-system.js';
 import { SeaConsoleSpots } from './sea-console-system.js';
+import { GardenSpots } from './garden-world-system.js';
 import { PartyConsoleSpots } from './party-console-system.js';
 import { PartyCue } from './lib/party-mix.js';
 import { SeaCue, SeaWeather } from './lib/sea-weather.js';
@@ -62,7 +63,9 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, sea: 113, whale: 138, flood: 143, bed: 143, end: 169 };
+const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, garden: 113, sea: 129, whale: 154, flood: 159, bed: 159, end: 185 };
+/** The garden (seconds into it): the right palm opens for a butterfly, the left finger points for the ladybug. */
+const GARDEN = { palm: 3, palmEnd: 12, point: 8, pointEnd: 13.5 };
 /**
  * Storm and sunshine at sea (seconds after the sea begins): the console shows,
  * each dial the left hand drags [index, from, to, start, end], the right hand's
@@ -328,7 +331,8 @@ export class DirectorSystem extends createSystem({
       // The hangout: from your seat, across the open floor toward the window; he comes to you.
       // For the pat he stands close, so the shot tilts up to keep his head in frame.
       const fr = tt - TOUR.friend;
-      const up = !FriendCue.close ? 1.05 : fr < FRIEND.pat - 0.5 ? 0.85 : 1.6;
+      // (He bows for the pat, so his head comes down: the shot stays level with it.)
+      const up = !FriendCue.close ? 1.05 : fr < FRIEND.pat - 0.5 ? 0.85 : 1.1;
       this.aim(seat.clone().setY(1.5), seat.clone().add(new Vector3(0.94, 0, -0.34).multiplyScalar(2)).setY(up));
       return true;
     }
@@ -366,7 +370,16 @@ export class DirectorSystem extends createSystem({
     else if (tt < TOUR.star) {
       const p = WorldSpots.puff;
       this.aim(p.clone().addScaledVector(this.toward(p, seat), 0.6).setY(p.y + 0.12), p);
-    } else if (tt < TOUR.sea) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
+    } else if (tt < TOUR.garden) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
+    else if (tt < TOUR.sea) {
+      // The garden: Bigfoot in the grass; then your open palm (and the butterfly on it) with him beyond.
+      const gg = tt - TOUR.garden;
+      const c = GardenSpots.center;
+      const b = GardenSpots.bigfoot;
+      const dir = H_TMP.off.subVectors(b, c).setY(0).normalize();
+      if (gg < GARDEN.palm || gg > GARDEN.pointEnd) this.aim(c.clone().addScaledVector(dir, -0.5).setY(1.3), b.clone().setY(0.9));
+      else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 0.75).setY(0.62));
+    }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
     else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.25, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.6));
     else if (tt < TOUR.flood) this.aim(at(-0.6, 1.6, 0.3), WorldSpots.whale);
@@ -479,11 +492,12 @@ export class DirectorSystem extends createSystem({
     FriendCue.on = tt >= TOUR.friend && tt < TOUR.friendEnd;
     // He steps in close for the tickle and the pat, so a real arm's reach finds him (and your hand is big in the shot).
     FriendCue.close = FriendCue.on && tt - TOUR.friend >= FRIEND.tickle - 1.2;
+    FriendCue.pat = FriendCue.on && tt - TOUR.friend >= FRIEND.pat - 1.5;
     if (tt > TOUR.movie && this.cue('movie')) d.setValue(Session, 'movie', true);
     if (tt > TOUR.movieEnd && this.cue('movie-end')) d.setValue(Session, 'movie', false);
     if (tt > TOUR.snap && this.cue('snap')) d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1);
-    if (tt > TOUR.street && this.cue('street')) world('street');
     if (tt > TOUR.clouds && this.cue('clouds')) world('clouds');
+    if (tt > TOUR.garden && this.cue('garden')) world('garden');
     if (tt > TOUR.sea && this.cue('sea')) world('sea');
     if (tt > TOUR.sea + 7 && this.cue('strike-1')) WorldSpots.strikeNow = true;
     if (tt > TOUR.whale && this.cue('breach')) WorldSpots.breachNow = true;
@@ -521,10 +535,17 @@ export class DirectorSystem extends createSystem({
     if (tt < TOUR.sofa) return 'A movie star walks out to join you';
     if (tt < TOUR.movieEnd) return 'Popcorn on the sofa, lit by the film';
     if (tt < TOUR.street) return 'Frame a photo with your fingers';
-    if (tt < TOUR.clouds) return 'Bigfoot walks the streets of New York';
+    if (tt < TOUR.clouds) return 'Fly above the clouds';
     if (tt < TOUR.puff) return 'Fly above the clouds';
     if (tt < TOUR.star) return 'Wave the little clouds away';
-    if (tt < TOUR.sea) return 'Catch a falling star';
+    if (tt < TOUR.garden) return 'Catch a falling star';
+    if (tt < TOUR.sea) {
+      const gg = tt - TOUR.garden;
+      if (gg < GARDEN.palm) return 'A garden grows in your room';
+      if (gg < GARDEN.point) return 'Open your palm: a butterfly lands on it';
+      if (gg < GARDEN.pointEnd) return 'Point, and a ladybug walks your finger';
+      return 'Fireflies at dusk';
+    }
     const gs = tt - TOUR.sea;
     if (gs < SEA.console) return 'Storm at sea: Bigfoot rides it out in his rowboat';
     if (gs < SEA.fist) return 'The storm is in your hands';
@@ -661,7 +682,12 @@ export class DirectorSystem extends createSystem({
       const k = tt - TOUR.puff - 1.5;
       const s = k < 1 ? k : 2 - k;
       right = { ...DANCE_R, at: H_TMP.r.set(0.35 - 0.65 * s, -0.1, -0.55) };
-    } else if (tt >= TOUR.star && tt < TOUR.sea && WorldSpots.starOn) {
+    } else if (tt >= TOUR.garden && tt < TOUR.sea) {
+      // The garden: the right palm open and up for a butterfly; the left finger pointing for the ladybug.
+      const gg = tt - TOUR.garden;
+      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd) right = { at: H_TMP.r.set(0.1, -0.2, -0.36), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+      if (gg >= GARDEN.point && gg < GARDEN.pointEnd) left = { at: H_TMP.l.set(-0.14, -0.14, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
+    } else if (tt >= TOUR.star && tt < TOUR.garden && WorldSpots.starOn) {
       // Reach for the falling star once it is within reach.
       head.updateMatrixWorld(true);
       const p = head.worldToLocal(H_TMP.aim.copy(WorldSpots.star));

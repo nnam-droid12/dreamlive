@@ -168,7 +168,10 @@ export class FriendSystem extends createSystem({
   private stand(dt: number): void {
     // (The Director's camera stands him a little further off, so both his hands are in the shot.)
     // Reach out flat, palm down, and he steps in so you can pat his head.
-    const close = FriendCue.close || this.moment === 'pat' || (!Director.enabled && this.reachingToPat());
+    const reaching = !Director.enabled && this.reachingToPat();
+    const close = FriendCue.close || this.moment === 'pat' || reaching;
+    // He bows his head down to you for a pat (you are sitting; he is tall).
+    BigfootControl.bow = this.moment === 'pat' || reaching || FriendCue.pat ? 1 : 0;
     const dist = close ? (Director.enabled ? cfg.filmCloseDistance : cfg.closeDistance) : Director.enabled ? cfg.filmDistance : cfg.distance;
     this.target.copy(this.head).addScaledVector(this.fwd, dist).setY(0);
     if (!this.placed) {
@@ -437,7 +440,7 @@ export class FriendSystem extends createSystem({
 
 /** The Director's film turns the hangout on at its moment (a real session has it whenever he is awake). */
 /** The Director's film: turn the hangout on, and bring him in close for the pat. */
-export const FriendCue = { on: false, close: false };
+export const FriendCue = { on: false, close: false, pat: false };
 
 function heartTexture(): CanvasTexture {
   const c = document.createElement('canvas');

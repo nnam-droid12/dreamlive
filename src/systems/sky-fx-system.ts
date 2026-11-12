@@ -105,7 +105,7 @@ export class SkyFxSystem extends createSystem({
     const world = d.getValue(Session, 'world') ?? '';
     // At sea the rain follows the storm, and stops when the sun breaks through.
     const seaRain = SeaWeather.storm > 0.3 && SeaWeather.sun < 0.5;
-    const worldWeather = world === 'clouds' ? 'clear' : world === 'sea' ? (seaRain ? 'rain' : 'clear') : '';
+    const worldWeather = world === 'clouds' || world === 'garden' ? 'clear' : world === 'sea' ? (seaRain ? 'rain' : 'clear') : '';
     const kind = (worldWeather || (d.getValue(Session, 'weather') ?? 'clear')) as WeatherKind;
     this.weather.update(kind, delta, this.time, cfg.weatherRate, cfg.rainSpeed, cfg.snowSpeed);
     this.rain(this.weather.rainLevel);

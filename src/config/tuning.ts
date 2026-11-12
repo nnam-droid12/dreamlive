@@ -610,6 +610,34 @@ export const Tuning = {
     replaySec: 12,
   },
 
+  /** The garden (a dream world): lawn, plants, butterflies on your palm, the ladybug, fireflies. */
+  garden: {
+    /** Lawn radius (m) and grass tiling; plants from this near to this far (m). */
+    radius: 24,
+    groundRepeat: 22,
+    /** The tree stump Bigfoot sits on (scale of the Poly Haven model). */
+    stumpScale: 0.75,
+    /** Bigfoot sits this far in front of you (m). */
+    bigfootAhead: 2.1,
+    /** Golden-hour light: the sun and the sky fill. */
+    sunLight: 2.6,
+    skyLight: 1.1,
+    /** Butterflies; an open palm held still this long (s) calls one; it leaves this long after the palm closes or moves. */
+    butterflies: 7,
+    palmHold: 0.6,
+    approachSec: 2.2,
+    leaveAfter: 0.5,
+    /** One settles on Bigfoot's head after this long (s), and stays this long. */
+    bigfootButterflyAt: 4,
+    bigfootPerchSec: 9,
+    /** The ladybug: its size (x real) and seconds to walk the finger. */
+    ladybugScale: 2,
+    ladybugSec: 2.6,
+    /** Fireflies, and when they come out (s into the garden). */
+    fireflies: 70,
+    firefliesAfter: 6,
+  },
+
   /** Storm and sunshine at sea: the console on your left and the hand gestures. */
   seaConsole: {
     /** The console appears this long after the storm begins (headset). */

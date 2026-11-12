@@ -142,6 +142,14 @@ export const Palette = {
   fanNickel: 0xb8b4ac,
   fanWalnut: 0x5a3a22,
   fanGlass: 0xf2ece0,
+  /** The garden at golden hour: low warm sun, sky and lawn bounce light. */
+  gardenSun: 0xffd2a0,
+  gardenSky: 0xbfd8ff,
+  gardenGround: 0x4f6a2e,
+  /** The lawn's tint over the grass scan (a lush, watered green). */
+  gardenLawn: 0x8fc46a,
+  /** The garden's fireflies (warm green-gold). */
+  firefly: 0xd8ff7a,
   /** Sunshine at sea: the sun's disc, its glow, its warm light, and sunlit cloud. */
   seaSun: 0xffe7b0,
   seaSunGlow: 0xffc982,
