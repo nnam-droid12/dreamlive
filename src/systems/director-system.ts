@@ -294,8 +294,8 @@ export class DirectorSystem extends createSystem({
     } else if (scene === 'to-window') {
       this.aim(t < 6.8 ? him.clone().addScaledVector(this.toward(him, seat), 2.4).setY(1.6) : at(-2.4, 1.5, 1.4), t < 6.8 ? him : at(2, 2.2, -0.5));
     } else if (scene === 'leap-out') {
-      // From the party roof as he flies up toward it.
-      this.aim(at(9.5, 7.8, 3.8), him);
+      // From the party roof as he flies up toward it (high, over the dancers' heads).
+      this.aim(at(9.5, 9.4, 3.8), him);
     } else if (scene === 'arrive') {
       // In the room as the window wall dissolves and the ceiling opens to the sky.
       this.aim(at(-3.2, 1.35, 1.9), at(0, 2.4, -0.6));
