@@ -96,9 +96,27 @@ export class DirectorHands {
     if (d.hands?.right) d.hands.right.connected = true;
     // The emulator built into the page only knows default, pinch and point: give its hands the
     // rest of IWER's pose library (fist, thumbs-up, rock, open...) so the film can show them.
-    void import('iwer/lib/device/configs/hand/library.js')
-      .then((lib) => {
-        for (const h of [d.hands?.left, d.hands?.right]) addPoses(h, lib.libraryHandPoses as Record<string, unknown>);
+    void Promise.all([
+      import('iwer/lib/device/configs/hand/library.js'),
+      import('iwer/lib/device/configs/hand/builder.js'),
+      import('iwer/lib/device/configs/hand/relaxed.js'),
+      import('iwer/lib/device/configs/hand/pinch.js'),
+    ])
+      .then(([lib, builder, relaxed, pinch]) => {
+        // Plus a receiving hand: the cupped palm with the fingers spaced a little apart
+        // (fingertips 2-3 cm apart instead of touching; 'open' has them about 5 cm apart).
+        const angles = lib.handPoseAngles as unknown as Record<string, Record<string, Record<string, unknown>>>;
+        const cup = angles.cup;
+        const cupSpread = {
+          ...cup,
+          index: { ...cup.index, yaw: -14 },
+          middle: { ...cup.middle, yaw: -5 },
+          ring: { ...cup.ring, yaw: 22 },
+          pinky: { ...cup.pinky, yaw: 22 },
+        };
+        const build = builder.buildHandPose as (a: unknown, r: unknown, p: unknown) => unknown;
+        const poses = { ...(lib.libraryHandPoses as Record<string, unknown>), cupSpread: build(cupSpread, relaxed.relaxedHandPose, pinch.pinchHandPose) };
+        for (const h of [d.hands?.left, d.hands?.right]) addPoses(h, poses);
       })
       .catch(() => undefined);
     return d;

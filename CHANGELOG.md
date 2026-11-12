@@ -2,6 +2,20 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-12 — A garden of your own; the party at your fingertips; gifts to your palm
+
+- **The garden (a new dream world):** the room becomes a real garden at golden hour: a lawn, flower beds (Poly Haven CC0 gazanias, ursinias, periwinkles, dandelions and ferns) and a hedge all around. It is yours alone; Bigfoot waits at home.
+  - Hold out your left palm and a butterfly (monarch or blue morpho) lands on it, wings slowly opening and closing.
+  - Touch it with your right index finger and it flies off.
+  - Fireflies come out as the light fades.
+  - Reach it from the palm menu (Garden).
+- **The party console:** glass dials beside you at the rooftop party: **Volume**, **Lights** (dims or brightens the beams, spots and equaliser) and **Band** (strip the song to the beat and bass, then bring the chords, voices and shimmer back). A **Fireworks!** button sets off a shot.
+- **The live party screen** hangs up high, over the dancers, tilted to face you.
+- **Gifts, one at a time:** each gift flies to your open palm and rests there. Lower your hand (or tip it) to set it on the floor. Only then does Bigfoot throw the next.
+- **Seated-friendly:** Bigfoot bows his head for a pat, so you can reach it from your seat.
+- **Bigfoot is always the real model:** if he loads slowly, the app keeps trying; there is no stand-in.
+- **Removed:** the New York street walk and "play your own movie" (the experience is entirely our own).
+
 ## 2026-11-11 — Storm and sunshine at sea; Movie Night as a cinema; hands like Quest's
 
 - **Storm at sea, in your hands (the new finale):**

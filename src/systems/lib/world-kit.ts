@@ -30,6 +30,41 @@ export const WorldSpots = {
 };
 
 /**
+ * The bedroom's furnishings that live outside the room model (the TV and its
+ * cartoon, the chalkboard, the memory shelf, the city beyond the glass, the
+ * gifts left on the floor...). A world that replaces the room hides these too.
+ */
+const ROOM_EXTRAS = ['DreamTv', 'TvCartoon', 'FriendshipBoard', 'MemoryShelf', 'MemoryOrb', 'TomorrowOrb', 'Polaroid', 'Gift', 'ParachuteGift', 'SideTable', 'BedsideLamp', 'WallArt', 'Curtain', 'Skyline', 'CityLife', 'CityGlow', 'Traffic', 'Helicopter', 'Doves', 'RooftopParty', 'RoomPartyLight', 'WindowOutline', 'WallOccluder'];
+const extras: Object3D[] = [];
+let extrasFound = false;
+let extrasHeldBy = '';
+
+/**
+ * Hides (every frame, as other systems may show them) or gives back the room's
+ * furnishings outside the room model. `by` = the world holding them hidden.
+ */
+export function hideRoomExtras(scene: Object3D, hide: boolean, by: string): void {
+  // Look them up afresh each time a world takes the room (photos and orbs appear during a visit).
+  if (!extrasFound || (hide && !extrasHeldBy)) {
+    extrasFound = true;
+    extras.length = 0;
+    scene.traverse((o) => {
+      if (o.name !== 'NycBedroom' && ROOM_EXTRAS.includes(o.name)) extras.push(o);
+    });
+  }
+  if (hide) {
+    // On the first hidden frame, remember which were showing (only those come back).
+    if (!extrasHeldBy) for (let i = 0; i < extras.length; i++) extrasWere[i] = extras[i].visible;
+    extrasHeldBy = by;
+    for (const o of extras) o.visible = false;
+  } else if (extrasHeldBy === by) {
+    extrasHeldBy = '';
+    for (let i = 0; i < extras.length; i++) if (extrasWere[i]) extras[i].visible = true;
+  }
+}
+const extrasWere: boolean[] = [];
+
+/**
  * Shared pieces of the dream worlds (clouds, winter, sea): the fade in and out,
  * both hands (position and speed, from the grip spaces, which follow the hands
  * when hand tracking is on), Bigfoot's place in the world, and his lines.

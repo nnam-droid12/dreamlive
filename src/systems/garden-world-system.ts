@@ -1,20 +1,27 @@
 import {
-  AssetManager,
-  Box3,
+  BackSide,
+  BufferAttribute,
+  BufferGeometry,
   CircleGeometry,
   Color,
   createSystem,
   DirectionalLight,
+  DoubleSide,
   Entity,
   Group,
   HemisphereLight,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
+  PlaneGeometry,
   Quaternion,
   RepeatWrapping,
+  SphereGeometry,
   SRGBColorSpace,
+  Texture,
   TextureLoader,
+  Vector2,
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
@@ -25,32 +32,31 @@ import { Palette } from '../config/palette.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { HandSigns, HandReading } from '../input/hand-signs.js';
-import { Butterfly, Fireflies, WingPattern } from '../visuals/garden-life.js';
+import { Butterfly, picnicMatTexture, pitchLawnTexture, WingPattern } from '../visuals/garden-life.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
-import { WorldKit, WorldSpots } from './lib/world-kit.js';
+import { hideRoomExtras, WorldKit, WorldSpots } from './lib/world-kit.js';
 import type { EmulatedHand } from './real-hands.js';
 
 const cfg = Tuning.garden;
 /**
- * Poly Haven plants (CC0): model folder, how many, scale range, and the ring they
- * grow in (m from you): flower beds close around you, ferns and shrubs beyond,
- * and a tall hedge closing the garden in (spaced evenly around it).
+ * The distant trees and bushes: pictures of Poly Haven CC0 trees (island_tree_02,
+ * searsia_lucida), rendered once from the real models (scripts/dev/bake_trees.py),
+ * standing in rings far around you. Picture, width/height, how many, height range
+ * (m), and the ring (m from you).
  */
-const PLANTS: [string, number, number, number, number, number, boolean][] = [
-  ['flower_gazania', 40, 1.5, 2.3, 1.2, 3.6, false],
-  ['flower_ursinia', 40, 1.5, 2.3, 1.2, 3.6, false],
-  ['periwinkle_plant', 20, 1.3, 1.9, 1.3, 4.2, false],
-  ['dandelion_01', 16, 1.2, 1.7, 1.5, 4.5, false],
-  ['fern_02', 14, 1.4, 2.0, 3.0, 6.5, false],
-  ['shrub_03', 14, 1.3, 1.9, 3.5, 7, false],
-  ['shrub_02', 22, 2.6, 3.4, 8, 8.8, true],
-  ['shrub_03', 22, 2.8, 3.6, 8.6, 9.6, true],
+const TREES: [string, number, number, number, number, number, number][] = [
+  ['bush_a', 0.867, 34, 2.4, 3.6, 22, 27],
+  ['tree_a', 1.425, 22, 7, 10, 28, 36],
+  ['tree_b', 1.2, 22, 7.5, 11, 29, 37],
+  ['tree_a', 1.425, 26, 10, 13, 42, 52],
+  ['tree_b', 1.2, 26, 10, 14, 44, 54],
 ];
 /** Index into the 25 hand joints (WebXR order): the index fingertip. */
 const INDEX_TIP = 9;
+const css = (hex: number) => `#${hex.toString(16).padStart(6, '0')}`;
 
-/** Where Bigfoot sits and the garden's centre (world), for the film's camera. */
-export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3(), /** Times a butterfly was touched away. */ touched: 0, /** Where the perched butterfly is (world), for the film's fingertip; null when none. */ perched: null as Vector3 | null };
+/** Where Bigfoot would be and the garden's centre (world), for the film's camera. */
+export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3(), /** Times a butterfly was touched away. */ touched: 0, /** Where the perched butterfly is (world), for the film's fingertip; null when none. */ perched: null as Vector3 | null, /** The right index fingertip (world), or null. */ rightTip: null as Vector3 | null };
 
 interface Fly {
   b: Butterfly;
@@ -66,22 +72,24 @@ interface Fly {
 }
 
 /**
- * A garden grows in your room: the room steps away to a lawn at golden hour,
- * real flowers and shrubs all around (Poly Haven, CC0), Bigfoot sitting in the
- * lawn. Monarchs and blue morphos flutter between the flowers. Hold out your
- * left hand, palm up and still, and one flies to you and settles on your palm,
- * slowly opening and closing its wings; touch it with your right index finger
- * and it flies away. At dusk fireflies drift around you and gather near an
- * open hand. Session.world = 'garden'.
+ * A garden grows in your room: the room steps away to a wide, freshly mown lawn
+ * under a summer sky, striped like a football pitch, with trees far off all
+ * around. You sit on a picnic blanket. Monarchs and blue morphos flutter about.
+ * Hold out your left hand, palm up and still, and one flies to you and settles
+ * on your palm, slowly opening and closing its wings; touch it with your right
+ * index finger and it flies away. It is yours alone: Bigfoot is away.
+ * Session.world = 'garden'.
  */
 export class GardenWorldSystem extends createSystem({
   director: { required: [Ritual, Session, RoomSlots] },
 }) {
   private kit = new WorldKit('garden');
   private root!: Group;
+  private lawn!: Mesh;
+  private mat!: Group;
+  private trees!: Group;
+  private dome!: Mesh;
   private flies: Fly[] = [];
-  private fireflies!: Fireflies;
-  private fireVel!: Float32Array;
   private hidRoom = false;
   private signs = new HandSigns();
   private upFor = { left: 0, right: 0 };
@@ -89,7 +97,6 @@ export class GardenWorldSystem extends createSystem({
   private sun!: DirectionalLight;
   private sky!: HemisphereLight;
   private room?: Object3D;
-  private plantsLoaded = false;
   private time = 0;
   private head = new Vector3();
   private fwd = new Vector3();
@@ -98,37 +105,100 @@ export class GardenWorldSystem extends createSystem({
   private center = new Vector3();
   private tmp = new Vector3();
   private tmp2 = new Vector3();
-  private q = new Quaternion();
 
   init(): void {
     this.root = new Group();
     this.root.name = 'GardenWorld';
     this.root.visible = false;
-    this.fireVel = new Float32Array(cfg.fireflies * 3);
-    // The lawn: a real grass scan (Poly Haven, CC0), tiled.
     const loader = new TextureLoader();
-    const tex = (id: string, srgb: boolean) => {
-      const t = loader.load(`${import.meta.env.BASE_URL}textures/garden/leafy_grass_${id}_1k.jpg`);
-      t.wrapS = t.wrapT = RepeatWrapping;
-      t.repeat.set(cfg.groundRepeat, cfg.groundRepeat);
-      if (srgb) t.colorSpace = SRGBColorSpace;
-      return t;
+    const base = import.meta.env.BASE_URL;
+    // The lawn: mown stripes, with the grass scan's relief (Poly Haven, CC0) for the blades.
+    const stripes = pitchLawnTexture(css(Palette.gardenLawnLight), css(Palette.gardenLawnDark));
+    stripes.wrapS = stripes.wrapT = RepeatWrapping;
+    stripes.repeat.set((cfg.radius * 2) / cfg.stripeTile, (cfg.radius * 2) / cfg.stripeTile);
+    stripes.anisotropy = 8;
+    const relief = loader.load(`${base}textures/garden/leafy_grass_nor_gl_1k.jpg`);
+    relief.wrapS = relief.wrapT = RepeatWrapping;
+    relief.repeat.set(cfg.groundRepeat, cfg.groundRepeat);
+    this.lawn = new Mesh(new CircleGeometry(cfg.radius, 96), new MeshStandardMaterial({ map: stripes, normalMap: relief, normalScale: new Vector2(0.6, 0.6), roughness: 0.95 }));
+    this.lawn.name = 'Lawn';
+    this.root.add(this.lawn);
+    // The picnic blanket you sit on.
+    const linen = loader.load(`${base}textures/rough_linen/nor.webp`);
+    linen.wrapS = linen.wrapT = RepeatWrapping;
+    linen.repeat.set(5, 6);
+    const blanket = new Mesh(new PlaneGeometry(cfg.matWidth, cfg.matLength), new MeshStandardMaterial({ map: picnicMatTexture(), normalMap: linen, roughness: 0.97 }));
+    blanket.rotation.x = -Math.PI / 2;
+    blanket.name = 'PicnicBlanket';
+    this.mat = new Group();
+    this.mat.add(blanket);
+    this.root.add(this.mat);
+    // A summer sky all around (Poly Haven CC0 photo), beyond the trees.
+    const skyTex = loader.load(`${base}env/sky/day.webp`);
+    skyTex.colorSpace = SRGBColorSpace;
+    this.dome = new Mesh(new SphereGeometry(cfg.skyRadius, 48, 24), new MeshBasicMaterial({ map: skyTex, side: BackSide, depthWrite: false, fog: false }));
+    this.dome.renderOrder = -10;
+    this.dome.name = 'GardenSky';
+    this.root.add(this.dome);
+    // Trees far off: one mesh per picture, every tree a card facing you, hazier further away.
+    this.trees = new Group();
+    this.trees.name = 'GardenTrees';
+    const pics = new Map<string, Texture>();
+    let seed = 11;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
     };
-    const ground = new Mesh(new CircleGeometry(cfg.radius, 64), new MeshStandardMaterial({ map: tex('diff', true), normalMap: tex('nor_gl', false), roughnessMap: tex('arm', false), roughness: 1, color: new Color(Palette.gardenLawn) }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0.004;
-    ground.receiveShadow = true;
-    ground.name = 'Lawn';
-    this.root.add(ground);
+    const haze = new Color(Palette.gardenHaze);
+    const groups = new Map<string, { pos: number[]; uv: number[]; col: number[]; idx: number[] }>();
+    for (const [pic, aspect, count, h0, h1, r0, r1] of TREES) {
+      const g = groups.get(pic) ?? { pos: [], uv: [], col: [], idx: [] };
+      groups.set(pic, g);
+      for (let i = 0; i < count; i++) {
+        const a = ((i + rand() * 0.8) / count) * Math.PI * 2;
+        const r = r0 + rand() * (r1 - r0);
+        const h = h0 + rand() * (h1 - h0);
+        const w = h * aspect * (rand() < 0.5 ? 1 : -1);
+        const x = Math.cos(a) * r;
+        const z = Math.sin(a) * r;
+        // The card's across direction: perpendicular to the line to you.
+        const ax = -Math.sin(a) * (w / 2);
+        const az = Math.cos(a) * (w / 2);
+        const v = g.pos.length / 3;
+        g.pos.push(x - ax, 0, z - az, x + ax, 0, z + az, x + ax, h, z + az, x - ax, h, z - az);
+        g.uv.push(0, 0, 1, 0, 1, 1, 0, 1);
+        const c = new Color(1, 1, 1).lerp(haze, Math.min(0.55, (r - 20) / 60));
+        for (let k = 0; k < 4; k++) g.col.push(c.r, c.g, c.b);
+        g.idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
+      }
+    }
+    for (const [pic, g] of groups) {
+      let tex = pics.get(pic);
+      if (!tex) {
+        tex = loader.load(`${base}textures/garden/${pic}.webp`);
+        tex.colorSpace = SRGBColorSpace;
+        pics.set(pic, tex);
+      }
+      const geo = new BufferGeometry();
+      geo.setAttribute('position', new BufferAttribute(new Float32Array(g.pos), 3));
+      geo.setAttribute('uv', new BufferAttribute(new Float32Array(g.uv), 2));
+      geo.setAttribute('color', new BufferAttribute(new Float32Array(g.col), 3));
+      geo.setIndex(g.idx);
+      // (A touch brighter than the picture: sunlit leaves on a summer day.)
+      const m = new Mesh(geo, new MeshBasicMaterial({ map: tex, color: new Color(1.25, 1.25, 1.25), vertexColors: true, alphaTest: 0.45, side: DoubleSide, fog: false }));
+      m.frustumCulled = false;
+      this.trees.add(m);
+    }
+    this.root.add(this.trees);
     // Butterflies: monarchs and blue morphos.
     for (let i = 0; i < cfg.butterflies; i++) {
       const pattern: WingPattern = i % 3 === 2 ? 'morpho' : 'monarch';
       const b = new Butterfly(pattern, pattern === 'morpho' ? 0.14 : 0.125);
+      // Drawn after the see-through hands, so one on your palm sits on it, not behind the glass.
+      b.root.traverse((o) => (o.renderOrder = 20));
       this.root.add(b.root);
       this.flies.push({ b, home: new Vector3(), pos: new Vector3(), last: new Vector3(), phase: i * 1.7, state: 'wander', t: 0, from: new Vector3(), on: '' });
     }
-    this.fireflies = new Fireflies(cfg.fireflies);
-    this.root.add(this.fireflies.points);
     this.sun = new DirectionalLight(Palette.gardenSun, 0);
     this.sky = new HemisphereLight(Palette.gardenSky, Palette.gardenGround, 0);
     this.world.createTransformEntity(this.root);
@@ -150,11 +220,12 @@ export class GardenWorldSystem extends createSystem({
       return;
     }
     this.hideRoom(true);
-    if (!this.plantsLoaded) void this.plant();
     this.time += dt;
     this.sun.intensity = k * cfg.sunLight;
     this.sky.intensity = k * cfg.skyLight;
     this.player.head.getWorldPosition(this.head);
+    // The sky stays around you.
+    this.dome.position.copy(this.head);
     this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.headQ)).setY(0);
     if (this.fwd.lengthSq() < 1e-4) this.fwd.set(0, 0, -1);
     this.fwd.normalize();
@@ -164,7 +235,6 @@ export class GardenWorldSystem extends createSystem({
     else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.butterflies(dt);
-    this.firefliesTick(dt);
     // The garden is yours alone: Bigfoot is away.
     this.kit.placeBigfoot(d, GardenSpots.bigfoot, 0, 'away');
     WorldSpots.hold = false;
@@ -176,12 +246,18 @@ export class GardenWorldSystem extends createSystem({
     this.center.set(this.head.x, 0, this.head.z);
     GardenSpots.center.copy(this.center);
     this.root.position.set(0, 0, 0);
-    (this.root.children[0] as Mesh).position.set(this.center.x, 0.004, this.center.z);
-    // Bigfoot a couple of metres in front, sitting on the lawn.
+    // The lawn's stripes run away from you, like a pitch seen from the halfway line.
+    this.lawn.position.set(this.center.x, 0.004, this.center.z);
+    this.lawn.rotation.set(-Math.PI / 2, 0, Math.atan2(-this.fwd.x, -this.fwd.z));
+    // The blanket under you, its length running ahead.
+    this.mat.position.copy(this.center).addScaledVector(this.fwd, cfg.matAhead).setY(0.012);
+    this.mat.rotation.set(0, Math.atan2(this.fwd.x, this.fwd.z), 0);
+    this.trees.position.copy(this.center);
+    // (The film's camera looks this way.)
     GardenSpots.bigfoot.copy(this.center).addScaledVector(this.fwd, cfg.bigfootAhead);
-    // The sun low and warm behind him, a little to the side.
-    this.sun.position.copy(this.center).addScaledVector(this.fwd, 30).add(this.tmp.set(-12, 14, 0));
-    this.sun.target.position.copy(this.center);
+    // A high summer sun, behind you and to the left, so the lawn ahead is lit.
+    this.sun.position.copy(this.center).addScaledVector(this.fwd, -20).add(this.tmp.set(0, 32, 0)).addScaledVector(this.rightV, -14);
+    this.sun.target.position.copy(this.center).addScaledVector(this.fwd, 4);
     this.flies.forEach((f, i) => {
       const a = (i / this.flies.length) * Math.PI * 2;
       f.home.copy(this.center).add(this.tmp.set(Math.cos(a) * (1.1 + (i % 3) * 0.45), 0.75 + (i % 2) * 0.3, Math.sin(a) * (1.1 + (i % 3) * 0.45)));
@@ -189,52 +265,14 @@ export class GardenWorldSystem extends createSystem({
       f.state = 'wander';
       f.on = '';
     });
-    for (let i = 0; i < cfg.fireflies; i++) {
-      const a = i * 2.39996;
-      const r = 1.0 + ((i * 0.618) % 1) * 3.4;
-      this.fireflies.positions.set([this.center.x + Math.cos(a) * r, 0.3 + ((i * 0.37) % 1) * 1.8, this.center.z + Math.sin(a) * r], i * 3);
-    }
     this.time = 0;
     this.kit.caption(d, 'A garden grows in your room');
-  }
-
-  /** The plants, once: scattered all around you (none right at your feet, none where Bigfoot sits). */
-  private async plant(): Promise<void> {
-    this.plantsLoaded = true;
-    let seed = 5;
-    const rand = () => {
-      seed = (seed * 16807) % 2147483647;
-      return seed / 2147483647;
-    };
-    for (const [name, count, s0, s1, rNear, rFar, even] of PLANTS) {
-      let gltf;
-      try {
-        gltf = await AssetManager.loadGLTF(`${import.meta.env.BASE_URL}models/garden/${name}/${name}.gltf`);
-      } catch {
-        continue;
-      }
-      for (let i = 0; i < count; i++) {
-        let x = 0;
-        let z = 0;
-        for (let tries = 0; tries < 12; tries++) {
-          const a = even ? ((i + rand() * 0.6) / count) * Math.PI * 2 : rand() * Math.PI * 2;
-          const r = rNear + rand() * (rFar - rNear);
-          x = this.center.x + Math.cos(a) * r;
-          z = this.center.z + Math.sin(a) * r;
-          if (Math.hypot(x - GardenSpots.bigfoot.x, z - GardenSpots.bigfoot.z) > 1.3) break;
-        }
-        const p = gltf.scene.clone(true);
-        p.position.set(x, 0, z);
-        p.rotation.y = rand() * Math.PI * 2;
-        p.scale.setScalar(s0 + rand() * (s1 - s0));
-        this.root.add(p);
-      }
-    }
   }
 
   /** At the garden there is only the garden: the showcase bedroom steps away. */
   private hideRoom(hide: boolean): void {
     if (!Showcase.enabled) return;
+    hideRoomExtras(this.scene, hide, 'garden');
     this.room ??= this.scene.getObjectByName('NycBedroom') ?? undefined;
     if (!this.room) return;
     // Only give the room back if the garden took it (another world may be holding it).
@@ -247,9 +285,9 @@ export class GardenWorldSystem extends createSystem({
     }
   }
 
-  /** An open hand, palm up, held still: a place for a butterfly to land. */
+  /** A hand held out palm up and still, open or gently curved to receive: a place for a butterfly to land. */
   private palmReady(h: HandReading): boolean {
-    return h.tracked && h.sign === 'open' && h.normal.y > 0.55 && h.speed < 0.45;
+    return h.tracked && (h.sign === 'open' || h.sign === 'other') && h.normal.y > 0.55 && h.speed < 0.45;
   }
 
   private butterflies(dt: number): void {
@@ -313,9 +351,12 @@ export class GardenWorldSystem extends createSystem({
         if (this.tmp.lengthSq() > 1e-8) f.b.root.lookAt(this.tmp.normalize().add(f.pos));
       }
       f.b.flap(flap);
+      // On (or settling onto) a palm, it shows in front of the fingers curled around it.
+      f.b.setOnTop(f.state === 'perch' || (f.state === 'approach' && f.t > cfg.approachSec * 0.75));
     }
     const sat = this.flies.find((x) => x.state === 'perch' && x.on === 'left');
     GardenSpots.perched = sat ? sat.pos : null;
+    GardenSpots.rightTip = this.signs.right.tracked ? this.signs.right.joints[INDEX_TIP] : null;
   }
 
   private approach(f: Fly, on: 'left' | 'right' | 'bigfoot'): void {
@@ -338,42 +379,8 @@ export class GardenWorldSystem extends createSystem({
     if (on === 'bigfoot') return out.copy(BigfootControl.head).add(this.tmp.set(0, Tuning.friend.headTop - 0.02, 0));
     if (on === 'left' || on === 'right') {
       const h = this.signs[on];
-      return out.copy(h.palm).addScaledVector(h.normal, 0.015);
+      return out.copy(h.palm).addScaledVector(h.normal, cfg.perchAbove);
     }
     return undefined;
   }
-
-  /** Fireflies drift and blink at dusk, and gather near an open hand. */
-  private firefliesTick(dt: number): void {
-    const amount = Math.min(1, Math.max(0, (this.time - cfg.firefliesAfter) / 4));
-    const p = this.fireflies.positions;
-    const v = this.fireVel;
-    for (let i = 0; i < cfg.fireflies; i++) {
-      const o = i * 3;
-      const t = this.time * 0.3 + i;
-      v[o] += (Math.sin(t * 1.7) * 0.05 - v[o] * 0.5) * dt;
-      v[o + 1] += (Math.sin(t * 2.3) * 0.04 - v[o + 1] * 0.5) * dt;
-      v[o + 2] += (Math.cos(t * 1.3) * 0.05 - v[o + 2] * 0.5) * dt;
-      // Drawn to an open hand.
-      for (const side of ['left', 'right'] as const) {
-        const h = this.signs[side];
-        if (!h.tracked || h.sign !== 'open') continue;
-        const dx = h.palm.x - p[o];
-        const dy = h.palm.y + 0.15 - p[o + 1];
-        const dz = h.palm.z - p[o + 2];
-        const dist = Math.hypot(dx, dy, dz);
-        if (dist < 1.4 && dist > 0.12) {
-          const f = (0.25 * dt) / dist;
-          v[o] += dx * f;
-          v[o + 1] += dy * f;
-          v[o + 2] += dz * f;
-        }
-      }
-      p[o] += v[o] * dt;
-      p[o + 1] = Math.min(2.4, Math.max(0.15, p[o + 1] + v[o + 1] * dt));
-      p[o + 2] += v[o + 2] * dt;
-    }
-    this.fireflies.update(this.time, amount * this.kit.amount);
-  }
 }
-

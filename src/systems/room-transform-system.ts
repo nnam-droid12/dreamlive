@@ -99,7 +99,7 @@ export class RoomTransformSystem extends createSystem({
     this.ceiling += (ceilingTarget - this.ceiling) * Math.min(1, delta * cfg.ceilingRate);
     // Time of day: the story's, unless the palm menu chose one.
     // A dream world sets its own sky: sunrise above the clouds, night for the storm.
-    const worldSky = world === 'clouds' ? 'dawn' : world === 'garden' ? 'sunset' : world === 'sea' ? (SeaWeather.sun > 0.45 ? 'dawn' : 'night') : '';
+    const worldSky = world === 'clouds' ? 'dawn' : world === 'garden' ? 'day' : world === 'sea' ? (SeaWeather.sun > 0.45 ? 'dawn' : 'night') : '';
     const sky = worldSky || (cinema > 0.05 ? 'night' : d.hasComponent(Session) ? (d.getValue(Session, 'skyOverride') ?? '') : '');
     const storyDawn = after ? 1 : scene === 'to-bed' ? cfg.dawnInBed * Math.min(1, this.beat.time / 9) : 0;
     const dawnTarget = sky === 'dawn' ? 1 : sky ? 0 : storyDawn;

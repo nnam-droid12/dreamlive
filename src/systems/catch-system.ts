@@ -85,6 +85,8 @@ export class CatchSystem extends createSystem({
   private side = new Vector3();
   private hand = new Vector3();
   private cup = new Vector3();
+  private other = new Vector3();
+  private otherCup = new Vector3();
   private taughtGoal = false;
   /** Flight-time multiplier (reduced motion slows catchables). */
   private slow = 1;
@@ -178,10 +180,10 @@ export class CatchSystem extends createSystem({
     const o = f.obj;
     const g = Tuning.rooftop;
     if (f.state === 'flying') {
-      // Steer the landing toward an open palm, if one is held out.
+      // Steer the landing toward both open palms held together (or one open palm).
       const palm = this.openPalm();
-      if (palm) {
-        this.hand.fromArray(palm.getVectorView(HandGestureState, 'palmCenter'));
+      if (this.bothPalms(true) || palm) {
+        if (!this.bothPalms(true)) this.hand.fromArray(palm!.getVectorView(HandGestureState, 'palmCenter'));
         this.hand.y += 0.08;
         f.to.lerp(this.hand, Math.min(1, delta * 3));
       }
@@ -193,7 +195,7 @@ export class CatchSystem extends createSystem({
         d.setValue(DreamDirector, 'catches', caught);
         const gold = caught === dreamNight(d.getValue(Session, 'night') ?? 1).goldGoal;
         if (gold) Sound.play('bloom', o.position, 0.8);
-        d.setValue(Caption, 'text', gold ? 'Golden memory earned! Set it down, and he throws another.' : 'Lower your hand to set the gift on the floor.');
+        d.setValue(Caption, 'text', gold ? 'Golden memory earned! Set it down, and he throws another.' : 'Lower your hands to set the gift on the floor.');
         d.setValue(Caption, 'ttl', 3);
         Sound.play('catch', o.position, 0.6);
         return true;
@@ -205,7 +207,10 @@ export class CatchSystem extends createSystem({
     if (f.state === 'held') {
       const h = f.holder;
       const lost = !h || !h.getValue(HandGestureState, 'tracked');
-      if (h && !lost) {
+      if (this.bothPalms(false)) {
+        o.position.copy(this.hand).addScaledVector(this.cup, 0.06);
+        o.rotation.y += delta * 0.6;
+      } else if (h && !lost) {
         this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
         this.cup.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
         o.position.copy(this.hand).addScaledVector(this.cup, 0.06);
@@ -234,6 +239,28 @@ export class CatchSystem extends createSystem({
     f.fall = 0;
     const box = new Box3().setFromObject(f.obj);
     f.floorY = f.obj.position.y - box.min.y + 0.002;
+  }
+
+  /**
+   * Both hands tracked and held together (palms within 30 cm); `this.hand` = the
+   * point between the palms, `this.cup` = their average normal. With `palmsUp`,
+   * both must also be palm up.
+   */
+  private bothPalms(palmsUp: boolean): boolean {
+    let n = 0;
+    for (const h of this.queries.hands.entities) {
+      if (!h.getValue(HandGestureState, 'tracked')) return false;
+      if (palmsUp && !h.getValue(HandGestureState, 'palmUp')) return false;
+      const p = n === 0 ? this.hand : this.other;
+      const c = n === 0 ? this.cup : this.otherCup;
+      p.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
+      c.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
+      if (++n === 2) break;
+    }
+    if (n < 2 || this.hand.distanceTo(this.other) > 0.3) return false;
+    this.hand.add(this.other).multiplyScalar(0.5);
+    this.cup.add(this.otherCup).normalize();
+    return true;
   }
 
   /** A tracked hand held open, palm up. */

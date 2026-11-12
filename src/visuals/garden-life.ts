@@ -121,6 +121,7 @@ export class Butterfly {
   readonly root = new Group();
   private left = new Group();
   private right = new Group();
+  private mats: { depthTest: boolean }[] = [];
 
   constructor(pattern: WingPattern, span = 0.09) {
     this.root.name = `Butterfly_${pattern}`;
@@ -133,7 +134,8 @@ export class Butterfly {
     const wingL = new Mesh(geo, mat);
     wingL.scale.x = -1;
     this.left.add(wingL);
-    const bodyMat = new MeshStandardMaterial({ color: 0x1a140f, roughness: 0.6 });
+    // (Transparent pass, so a perched butterfly draws after the see-through hands.)
+    const bodyMat = new MeshStandardMaterial({ color: 0x1a140f, roughness: 0.6, transparent: true });
     const body = new Mesh(new CylinderGeometry(span * 0.035, span * 0.02, span * 0.42, 8), bodyMat);
     body.rotation.x = Math.PI / 2;
     const head = new Mesh(new SphereGeometry(span * 0.04, 8, 6), bodyMat);
@@ -146,6 +148,12 @@ export class Butterfly {
       this.root.add(a);
     }
     this.root.add(this.left, this.right, body, head);
+    this.mats = [mat, bodyMat];
+  }
+
+  /** Resting in a hand: drawn in front of the fingers (never hidden or shaded by them). */
+  setOnTop(on: boolean): void {
+    for (const m of this.mats) m.depthTest = !on;
   }
 
   flap(angle: number): void {
@@ -178,6 +186,82 @@ export function buildLadybug(): Group {
   head.position.set(0, 0.0008, 0.0052);
   root.add(shell, head);
   return root;
+}
+
+/**
+ * A mown lawn like a football pitch: broad stripes of light and dark green (the
+ * mower's passes), with fine blade-scale speckle so it reads as grass up close.
+ * One tile = `stripes` stripes; tile it across the ground.
+ */
+export function pitchLawnTexture(light: string, dark: string, stripes = 4): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1024;
+  const g = c.getContext('2d')!;
+  const w = 1024 / stripes;
+  for (let i = 0; i < stripes; i++) {
+    g.fillStyle = i % 2 ? dark : light;
+    g.fillRect(i * w, 0, w, 1024);
+  }
+  // Blades: short strokes, a little lighter or darker than the stripe under them (deterministic).
+  let seed = 7;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  for (let i = 0; i < 26000; i++) {
+    const x = rand() * 1024;
+    const y = rand() * 1024;
+    const lighter = rand() < 0.5;
+    g.strokeStyle = lighter ? `rgba(190,235,120,${0.1 + rand() * 0.14})` : `rgba(10,40,5,${0.1 + rand() * 0.16})`;
+    g.lineWidth = 1 + rand();
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + (rand() - 0.5) * 3, y - 3 - rand() * 5);
+    g.stroke();
+  }
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
+}
+
+/** A wool picnic blanket: a woven tartan in deep red, cream and forest green, with a fringe-less hem. */
+export function picnicMatTexture(): CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 640;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#9e1b1f';
+  g.fillRect(0, 0, 512, 640);
+  // Tartan: wide and narrow bands crossing; where they cross, the colours mix (semi-transparent).
+  const bands: [number, number, string][] = [
+    [40, 46, 'rgba(240,226,196,0.55)'],
+    [120, 14, 'rgba(22,62,40,0.7)'],
+    [176, 8, 'rgba(240,226,196,0.6)'],
+    [250, 46, 'rgba(22,62,40,0.55)'],
+    [340, 14, 'rgba(240,226,196,0.55)'],
+    [420, 30, 'rgba(22,62,40,0.6)'],
+  ];
+  for (const [p, w, col] of bands) {
+    g.fillStyle = col;
+    g.fillRect(p, 0, w, 640);
+    g.fillRect(0, p * 1.25, 512, w);
+  }
+  // The weave: fine diagonal twill lines.
+  g.strokeStyle = 'rgba(0,0,0,0.08)';
+  g.lineWidth = 1;
+  for (let i = -640; i < 512; i += 4) {
+    g.beginPath();
+    g.moveTo(i, 0);
+    g.lineTo(i + 640, 640);
+    g.stroke();
+  }
+  // A stitched hem all round.
+  g.strokeStyle = 'rgba(40,10,10,0.6)';
+  g.lineWidth = 10;
+  g.strokeRect(5, 5, 502, 630);
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  return t;
 }
 
 /** Fireflies: soft warm green-gold points that blink, each on its own rhythm. Positions are set by the owner. */

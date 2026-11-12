@@ -36,7 +36,7 @@ import { buildWhale } from '../scene-assets/whale.scene-asset.js';
 import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { buildBeam, FloodWater, Lightning, Ocean, StormClouds, swellHeight, swellSlope } from '../visuals/sea-fx.js';
 import { cloudTexture } from '../visuals/soft-sprites.js';
-import { WorldKit, WorldSpots } from './lib/world-kit.js';
+import { hideRoomExtras, WorldKit, WorldSpots } from './lib/world-kit.js';
 
 const cfg = Tuning.sea;
 
@@ -359,6 +359,7 @@ export class SeaWorldSystem extends createSystem({
   /** At sea there is only the sea: the showcase bedroom (and the floodwater in it) steps away. */
   private hideRoom(hide: boolean): void {
     if (!Showcase.enabled) return;
+    hideRoomExtras(this.scene, hide, 'sea');
     this.room ??= this.scene.getObjectByName('NycBedroom') ?? undefined;
     if (!this.room) return;
     // Only give the room back if the sea took it (another world may be holding it).

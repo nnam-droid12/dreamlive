@@ -27,6 +27,8 @@ export const Director = {
    * deterministic, one fixed step per frame), but the first N frames are not saved again; numbering continues.
    */
   skip: Number(params.get('skip') ?? 0),
+  /** `&at=110` (previews only, never for the film): the tour starts this many seconds in, to check one moment. */
+  at: Number(params.get('at') ?? 0),
   /** `&until=N`: stop saving at frame N (with `skip`, re-render one stretch of the film in place). */
   until: Number(params.get('until') ?? 0),
   /** `&only=4-14,76-94`: test renders save only frames in these tour-time windows (s); the story still plays through. */

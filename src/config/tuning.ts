@@ -614,26 +614,32 @@ export const Tuning = {
     replaySec: 12,
   },
 
-  /** The garden (a dream world): lawn, plants, butterflies on your palm, the ladybug, fireflies. */
+  /** The garden (a dream world): a mown lawn, distant trees, a picnic blanket, butterflies on your palm. */
   garden: {
-    /** Lawn radius (m) and grass tiling; plants from this near to this far (m). */
-    radius: 24,
-    groundRepeat: 22,
-    /** Bigfoot sits this far in front of you (m). */
+    /** Lawn radius (m); one light+dark stripe pair every this many metres x2; the grass relief's tiling. */
+    radius: 70,
+    stripeTile: 10,
+    groundRepeat: 90,
+    /** The sky dome's radius (m; beyond the trees and the lawn's edge). */
+    skyRadius: 90,
+    /** The picnic blanket (m): across, along, and how far ahead of you its centre is (in front of you, all in view). */
+    matWidth: 1.4,
+    matLength: 1.7,
+    matAhead: 1.75,
+    /** The film's camera looks toward this point ahead of you (m). */
     bigfootAhead: 2.1,
-    /** Golden-hour light: the sun and the sky fill. */
-    sunLight: 2.6,
-    skyLight: 1.1,
+    /** Summer daylight: the sun and the sky fill. */
+    sunLight: 3.0,
+    skyLight: 1.5,
     /** Butterflies; an open palm held still this long (s) calls one; it leaves this long after the palm closes or moves. */
     butterflies: 7,
     palmHold: 0.6,
     approachSec: 2.2,
     leaveAfter: 0.5,
     /** A right fingertip this close (m) to the butterfly on your palm sends it away. */
-    touchReach: 0.04,
-    /** Fireflies, and when they come out (s into the garden). */
-    fireflies: 70,
-    firefliesAfter: 6,
+    touchReach: 0.05,
+    /** A butterfly on your palm sits this far above its surface (m). */
+    perchAbove: 0.03,
   },
 
   /** Storm and sunshine at sea: the console on your left and the hand gestures. */

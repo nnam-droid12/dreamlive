@@ -144,6 +144,8 @@ export class BigfootSystem extends createSystem({
       else this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
     }
 
+    // The garden is yours alone, whatever else is going on: he is away.
+    if (d.getValue(Session, 'world') === 'garden') this.rig.root.visible = false;
     this.rig.setPose(this.wantPose, this.wantEat);
     // The friend system's look and reach (released whenever it is not in charge).
     const fc = BigfootControl.active && phase === RitualPhase.Awake;

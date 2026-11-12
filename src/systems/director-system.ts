@@ -57,6 +57,10 @@ const DANCE_R: HandShot = { at: new Vector3(), rot: Q_DANCE_R, pose: 'open', pin
 const PALM_UP_L: HandShot = { at: new Vector3(-0.09, -0.17, -0.38), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
 const POINT_R: HandShot = { at: new Vector3(0.12, -0.13, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
 // Held out to catch: palms up, fingers tilted up toward the gift.
+/** A left palm held out wide open: fingers forward, the palm tipped up toward your eyes. */
+const Q_OFFER_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -0.15)).multiply(Q_PALM_UP);
+/** The right index finger pointing forward and in to the left (reaching across from the right). */
+const Q_POINT_IN_R = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.6);
 const Q_CUP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.55).multiply(Q_PALM_UP);
 const CUP_L: HandShot = { at: new Vector3(-0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
 const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
@@ -313,7 +317,7 @@ export class DirectorSystem extends createSystem({
 
   /** Seconds since he woke (the tour's clock), or -1 before that. */
   private tourTime(): number {
-    return this.awakeAt < 0 ? -1 : this.clock - this.awakeAt;
+    return this.awakeAt < 0 ? -1 : this.clock - this.awakeAt + Director.at;
   }
 
   /** The tour's shots: the cinema screen, Bigfoot for the photo, then each world's best views. */
@@ -359,27 +363,22 @@ export class DirectorSystem extends createSystem({
         // On the loveseat together, lit by the film: from just in front of them.
         this.aim(this.inRoom(sofa.clone().addScaledVector(toScreen, 1.9).addScaledVector(side, 0.35).setY(1.1)), sofa.clone().setY(0.85));
       }
-    } else if (tt < TOUR.street) {
-      if (head) this.aim(head.clone().addScaledVector(this.toward(head, seat), 2.2).setY(1.45), head);
     } else if (tt < TOUR.clouds) {
-      // Walking the street: a tracking shot ahead of him, then low, looking up at the towers.
-      const w = WorldSpots.walker;
-      // Both shots stay over the sidewalk, clear of the cabs.
-      if (tt < TOUR.streetLow) this.aim(w.clone().addScaledVector(f.along, 3.4).addScaledVector(f.out, 0.5).setY(w.y + 1.55), w.clone().setY(w.y + 1.15));
-      else this.aim(w.clone().addScaledVector(f.along, 4.5).addScaledVector(f.out, 0.6).setY(w.y + 0.45), w.clone().setY(w.y + 2.6));
+      // In the room with him (the street walk is gone; this stretch is cut from the film).
+      if (head) this.aim(this.inRoom(head.clone().addScaledVector(this.toward(head, seat), 2.2).setY(1.45)), head);
     } else if (tt < TOUR.puff) this.aim(at(-1.0, 1.5, 0.3), WorldSpots.balloon.clone().setY(WorldSpots.balloon.y + 1.9));
     else if (tt < TOUR.star) {
       const p = WorldSpots.puff;
       this.aim(p.clone().addScaledVector(this.toward(p, seat), 0.6).setY(p.y + 0.12), p);
     } else if (tt < TOUR.garden) this.aim(at(-1.6, 1.4, 0.3), at(2, 2.0, 0.3));
     else if (tt < TOUR.sea) {
-      // The garden: the flower beds ahead; then your open left palm and the butterfly on it.
+      // The garden: the lawn and the trees far ahead; then your open left palm and the butterfly on it.
       const gg = tt - TOUR.garden;
       const c = GardenSpots.center;
       const dir = H_TMP.off.subVectors(GardenSpots.bigfoot, c).setY(0).normalize();
       const leftV = H_TMP.a.set(dir.z, 0, -dir.x);
-      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4).setY(1.3), c.clone().addScaledVector(dir, 3).setY(0.6));
-      else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 0.55).addScaledVector(leftV, 0.12).setY(0.68));
+      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4).setY(1.3), c.clone().addScaledVector(dir, 3).setY(0.45));
+      else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 1.3).addScaledVector(leftV, 0.1).setY(0.72));
     }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
     else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.25, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.6));
@@ -545,7 +544,7 @@ export class DirectorSystem extends createSystem({
       if (gg < GARDEN.palm) return 'A garden grows in your room';
       if (gg < GARDEN.touch) return 'Open your palm: a butterfly lands on it';
       if (gg < GARDEN.palmEnd + 1) return 'Touch it gently, and it flies away';
-      return 'Fireflies at dusk';
+      return 'A summer garden, all yours';
     }
     const gs = tt - TOUR.sea;
     if (gs < SEA.console) return 'Storm at sea: Bigfoot rides it out in his rowboat';
@@ -580,6 +579,13 @@ export class DirectorSystem extends createSystem({
    * pinch-dragging to draw the window, dancing at the party, turning the left
    * palm up for the palm menu and pinching Fireworks, cupping to catch gifts.
    */
+  /** The film's fingertip touch (garden): a correction toward the butterfly, built up while touching. */
+  private touchFix = new Vector3();
+  private touchSteer = false;
+  /** When (s into the garden) the butterfly was touched away; -1 until then. */
+  private touchedAt = -1;
+  private touchedSeen = 0;
+
   private handScript(d: Entity, phase: string, dt: number): void {
     if (!this.hands) return;
     const asleep = phase === RitualPhase.Asleep && readBeat(d, this.beat);
@@ -633,9 +639,13 @@ export class DirectorSystem extends createSystem({
       const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.knob[k]));
       left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.11)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (scene === 'gifts') {
-      // One gift at a time: the right palm held up for it; once it rests there a moment, the hand lowers to set it on the floor.
+      // One gift at a time: both palms held out together, open and up, for it; once it rests
+      // there a moment, both hands lower together to set it on the floor.
       const lower = GiftHold.holding && GiftHold.holdFor > 1.4;
-      right = { at: H_TMP.r.set(0.12, lower ? -0.8 : -0.2, lower ? -0.3 : -0.4), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+      const y = lower ? -0.8 : -0.22;
+      const z = lower ? -0.3 : -0.4;
+      left = { at: H_TMP.l.set(-0.055, y, z), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
+      right = { at: H_TMP.r.set(0.055, y, z), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
     }
     let ease = Math.min(1, dt * 6);
     const tt = phase === RitualPhase.Awake ? this.tourTime() : -1;
@@ -687,15 +697,32 @@ export class DirectorSystem extends createSystem({
     } else if (tt >= TOUR.garden && tt < TOUR.sea) {
       // The garden: the left palm open and up for a butterfly; then the right index finger touches it.
       const gg = tt - TOUR.garden;
-      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd) left = { at: H_TMP.l.set(-0.1, -0.22, -0.38), rot: Q_PALM_UP, pose: 'open', pinch: 0 };
-      if (gg >= GARDEN.touch && gg < GARDEN.touchEnd) {
+      // (In the middle of the shot, palm up toward you, cupped with the fingers a little apart, ready to receive.)
+      // Once the butterfly has flown off your palm, both hands come down a moment later.
+      if (GardenSpots.touched !== this.touchedSeen) {
+        this.touchedSeen = GardenSpots.touched;
+        this.touchedAt = gg;
+      }
+      const flown = this.touchedAt >= 0 && gg > this.touchedAt + 0.8;
+      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd && !flown) left = { at: H_TMP.l.set(0, -0.15, -0.36), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
+      // The right hand comes in from the right, index finger out, angled in toward the palm...
+      if (gg >= GARDEN.touch - 1.2 && gg < GARDEN.touch && GardenSpots.perched && !flown) right = { at: H_TMP.r.set(0.3, -0.17, -0.36), rot: Q_POINT_IN_R, pose: 'point', pinch: 0 };
+      // ...and its fingertip touches the butterfly.
+      if (gg >= GARDEN.touch && gg < GARDEN.touchEnd && !flown) {
         const p = GardenSpots.perched;
         if (p) {
+          // The fingertip reaches the butterfly: the hand is placed by its wrist, so steer by
+          // where the fingertip actually is until it touches (a little more each frame).
+          const tip = GardenSpots.rightTip;
+          if (tip && this.touchSteer) this.touchFix.addScaledVector(H_TMP.aim.subVectors(p, tip), Math.min(1, dt * 3));
+          this.touchSteer = true;
           head.updateMatrixWorld(true);
-          const local = head.worldToLocal(H_TMP.aim.copy(p));
-          // The fingertip reaches the butterfly (the emulator's hand sits at its wrist).
-          right = { ...POINT_R, at: H_TMP.r.copy(local).add(H_TMP.off.set(-0.03, -0.04, 0.12)) };
-        } else right = { ...POINT_R, at: H_TMP.r.set(0.02, -0.18, -0.3) };
+          const local = head.worldToLocal(H_TMP.aim.copy(p).add(this.touchFix));
+          right = { at: H_TMP.r.copy(local).add(H_TMP.off.set(0.08, -0.04, 0.08)), rot: Q_POINT_IN_R, pose: 'point', pinch: 0 };
+        } else if (this.touchedAt < 0) right = { at: H_TMP.r.set(0.3, -0.17, -0.36), rot: Q_POINT_IN_R, pose: 'point', pinch: 0 };
+      } else {
+        this.touchSteer = false;
+        this.touchFix.set(0, 0, 0);
       }
     } else if (tt >= TOUR.star && tt < TOUR.garden && WorldSpots.starOn) {
       // Reach for the falling star once it is within reach.
@@ -753,10 +780,10 @@ export class DirectorSystem extends createSystem({
     m.translateY(-0.355);
   }
 
-  /** Title card at the start, end card once he's awake and the orb is shelved. */
+  /** The end card once he's awake and the orb is shelved. */
   private updateCard(phase: string): void {
     let want = '';
-    if (this.clock < 4.5) want = 'title';
+    // (No title card over the opening: the film starts straight in the room.)
     if (this.awakeAt >= 0 && this.clock - this.awakeAt > TOUR.end) want = 'end';
     if (want && want !== this.cardShown) this.drawCard(want);
     this.cardMat.opacity += ((want ? 1 : 0) - this.cardMat.opacity) * 0.08;
