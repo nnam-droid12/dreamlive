@@ -1,4 +1,5 @@
 import { Journal } from '../memory/journal.js';
+import { PartyMix } from './lib/party-mix.js';
 import {
   AssetManager,
   BackSide,
@@ -247,7 +248,7 @@ export class RooftopPartySystem extends createSystem({
     const k = Math.min(1, realDelta * 12);
     const v = eq.bands.value;
     v.set(v.x + (b.bass - v.x) * k, v.y + (b.mid - v.y) * k, v.z + (b.high - v.z) * k, b.kick);
-    eq.amount.value += ((on ? cfg.visualizer : 0) - eq.amount.value) * Math.min(1, realDelta * 0.8);
+    eq.amount.value += ((on ? cfg.visualizer * PartyMix.lights : 0) - eq.amount.value) * Math.min(1, realDelta * 0.8);
     eq.base.value = this.frame.origin.y + Rooftop.street.y;
   }
 

@@ -1,7 +1,7 @@
 /**
  * Bigfoot — the hero. Loads the owner's Meshy model (`public/models/bigfoot.glb`,
- * CC BY 4.0) and drives its animation clips; until that file exists, a soft
- * stand-in with procedural motion keeps every system testable.
+ * CC BY 4.0) and drives its animation clips. Only that model is ever shown: a
+ * failed load is retried until it succeeds (there is no stand-in).
  *
  * Origin = between the feet, facing +Z, Y up, ~1.9 m tall.
  */
@@ -57,7 +57,7 @@ const SKIN_STRIDE = 12;
 
 export interface BigfootRig {
   root: Object3D;
-  /** True when this is the real model (false = stand-in). */
+  /** Always true: only the real model is used.  */
   real: boolean;
   play(anim: BigfootAnim, opts?: { once?: boolean; fade?: number; rate?: number }): void;
   /** Whether the model has its own clip for this animation. */
@@ -88,19 +88,34 @@ export interface BigfootRig {
   current: BigfootAnim;
 }
 
-let source: Promise<{ scene: Object3D; clips: AnimationClip[] } | null> | undefined;
+let source: Promise<{ scene: Object3D; clips: AnimationClip[] }> | undefined;
 
+/**
+ * Bigfoot's model (the owner's Meshy Bigfoot), and only that model: a load that
+ * fails on a passing hiccup (a cold dev server reloading its dependencies, a slow
+ * disk or network) is simply tried again, as long as it takes. There is no
+ * stand-in: until the real Bigfoot has loaded, he is not shown.
+ */
 function loadSource() {
-  source ??= AssetManager.loadGLTF(`${import.meta.env.BASE_URL}models/bigfoot.glb`)
-    .then((g) => ({ scene: g.scene, clips: g.animations }))
-    .catch(() => null);
+  source ??= (async () => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const url = `${import.meta.env.BASE_URL}models/bigfoot.glb${attempt ? `?retry=${attempt}` : ''}`;
+        const g = await AssetManager.loadGLTF(url);
+        return { scene: g.scene, clips: g.animations };
+      } catch (err) {
+        console.warn(`Bigfoot's model did not load (attempt ${attempt + 1}); trying again.`, err);
+        await new Promise((r) => setTimeout(r, Math.min(5000, 1000 * (attempt + 1))));
+      }
+    }
+  })();
   return source;
 }
 
 /** A new, independent Bigfoot (each call clones the skeleton and its own mixer). */
 export async function createBigfoot(): Promise<BigfootRig> {
   const src = await loadSource();
-  return src ? realRig(src.scene, src.clips) : standInRig();
+  return realRig(src.scene, src.clips);
 }
 
 const DOWN = new Vector3(0, -1, 0);
@@ -421,78 +436,6 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   return rig;
 }
 
-/** Soft brown stand-in with procedural motion (until the Meshy model arrives). */
-function standInRig(): BigfootRig {
-  const fur = new MeshStandardMaterial({ color: 0x7b4a2d, roughness: 0.95 });
-  const face = new MeshStandardMaterial({ color: 0xc89a74, roughness: 0.9 });
-  const eye = new MeshStandardMaterial({ color: 0x1b1408, roughness: 0.2 });
-  const root = new Group();
-  root.name = 'Bigfoot';
-  const body = new Group();
-  body.name = 'StandInBody';
-  const torso = new Mesh(new CapsuleGeometry(0.42, 0.7, 8, 16), fur);
-  torso.position.y = 0.95;
-  const head = new Mesh(new SphereGeometry(0.3, 20, 14), fur);
-  head.position.y = 1.62;
-  const muzzle = new Mesh(new SphereGeometry(0.17, 16, 12), face);
-  muzzle.position.set(0, 1.56, 0.22);
-  muzzle.scale.set(1.2, 0.85, 0.8);
-  for (const s of [-1, 1]) {
-    const e = new Mesh(new SphereGeometry(0.04, 10, 8), eye);
-    e.position.set(0.1 * s, 1.7, 0.26);
-    body.add(e);
-    const arm = new Mesh(new CapsuleGeometry(0.11, 0.55, 6, 10), fur);
-    arm.name = s < 0 ? 'ArmL' : 'ArmR';
-    arm.position.set(0.52 * s, 1.0, 0);
-    arm.rotation.z = 0.35 * s;
-    const leg = new Mesh(new CapsuleGeometry(0.14, 0.35, 6, 10), fur);
-    leg.name = s < 0 ? 'LegL' : 'LegR';
-    leg.position.set(0.2 * s, 0.32, 0);
-    body.add(arm, leg);
-  }
-  body.add(torso, head, muzzle);
-  body.traverse((o) => {
-    if ((o as Mesh).isMesh) o.castShadow = o.receiveShadow = true;
-  });
-  root.add(body);
-  let t = 0;
-  const rig: BigfootRig = {
-    root,
-    real: false,
-    current: 'idle',
-    play(anim) {
-      rig.current = anim;
-    },
-    has() {
-      return false;
-    },
-    headPosition(out) {
-      return root.localToWorld(out.set(0, 1.62, 0.1));
-    },
-    setPose() {},
-    hipHeight() {
-      return 0.5;
-    },
-    setLook() {},
-    setReach() {},
-    setUpright() {},
-    handPosition(h, out) {
-      return root.localToWorld(out.set(h === 'left' ? 0.5 : -0.5, 1.0, 0.2));
-    },
-    update(delta) {
-      t += delta;
-      const a = rig.current;
-      const swing = a === 'walk' ? Math.sin(t * 6) : 0;
-      body.position.y = a === 'walk' ? Math.abs(Math.sin(t * 6)) * 0.04 : a === 'dance' ? Math.abs(Math.sin(t * 5)) * 0.08 : a === 'jump' ? Math.max(0, Math.sin(t * 4)) * 0.3 : 0;
-      body.rotation.y = a === 'dance' ? Math.sin(t * 2.5) * 0.4 : 0;
-      body.rotation.z = a === 'walk' ? swing * 0.05 : 0;
-      const arm = body.getObjectByName('ArmR');
-      if (arm) arm.rotation.z = a === 'wave' ? -2.4 + Math.sin(t * 8) * 0.3 : a === 'dance' ? -1.2 + Math.sin(t * 5) * 0.6 : 0.35 + swing * 0.3;
-      body.scale.y = a === 'stretch' ? 1 + Math.max(0, Math.sin(t * 1.5)) * 0.08 : 1 + (a === 'sleep' ? Math.sin(t * 1.4) * 0.02 : 0);
-    },
-  };
-  return rig;
-}
 
 export const BIGFOOT_HEIGHT = HEIGHT;
 export const BIGFOOT_FUR = new Color(0x7b4a2d);

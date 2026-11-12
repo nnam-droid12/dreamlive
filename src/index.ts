@@ -44,6 +44,7 @@ import { StreetWalkSystem } from './systems/street-walk-system.js';
 import { FriendSystem } from './systems/friend-system.js';
 import { JournalSystem } from './systems/journal-system.js';
 import { SeaConsoleSystem } from './systems/sea-console-system.js';
+import { PartyConsoleSystem } from './systems/party-console-system.js';
 import { mountMoviePicker } from './ui/movie-picker.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
@@ -102,6 +103,7 @@ World.create(
     .registerSystem(FriendSystem)
     .registerSystem(JournalSystem)
     .registerSystem(SeaConsoleSystem)
+    .registerSystem(PartyConsoleSystem)
     .registerSystem(MovieNightSystem)
     .registerSystem(SkyFxSystem)
     .registerSystem(NightSkySystem)

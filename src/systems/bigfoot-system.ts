@@ -1,5 +1,6 @@
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { WorldSpots } from './lib/world-kit.js';
+import { Director, DirectorFrame } from '../config/director.js';
 import { MovieSpots } from './movie-night-system.js';
 import {
   CanvasTexture,
@@ -459,7 +460,10 @@ export class BigfootSystem extends createSystem({
 
   private async spawn(d: Entity): Promise<void> {
     this.layout(d);
+    // (An offline film render holds its story until the real Bigfoot is in: never a frame without him.)
+    if (Director.offline) DirectorFrame.busy++;
     this.rig = await createBigfoot();
+    if (Director.offline) DirectorFrame.busy--;
     this.rig.root.name = 'RoomBigfoot';
     this.entity = this.world.createTransformEntity(this.rig.root);
     this.entity.addComponent(Bigfoot, { state: BigfootState.Sleeping });

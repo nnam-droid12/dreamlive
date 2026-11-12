@@ -80,6 +80,11 @@ class AudioEngine {
   /** The act playing on the TV: its own bus, placed at the TV. */
   private act: ActName = '';
   private actBus?: GainNode;
+  private bandIn?: GainNode;
+  private bandMid?: GainNode;
+  private bandHigh?: GainNode;
+  private partyVol = 1;
+  private partyBand = 1;
   private actPanner?: PannerNode;
   /** Low-pass between the act and the room: the party heard through closed glass. */
   private actFilter?: BiquadFilterNode;
@@ -379,12 +384,31 @@ class AudioEngine {
       this.actFilter.type = 'lowpass';
       this.actFilter.frequency.value = 20000;
       this.actBus.connect(this.actFilter).connect(this.actPanner).connect(this.sfx);
+      // The party console's Band: the song split three ways (beat and bass / chords and voices / hats and shimmer).
+      this.bandIn = c.createGain();
+      const low = c.createBiquadFilter();
+      low.type = 'lowpass';
+      low.frequency.value = 220;
+      const midHp = c.createBiquadFilter();
+      midHp.type = 'highpass';
+      midHp.frequency.value = 220;
+      const midLp = c.createBiquadFilter();
+      midLp.type = 'lowpass';
+      midLp.frequency.value = 3200;
+      const high = c.createBiquadFilter();
+      high.type = 'highpass';
+      high.frequency.value = 3200;
+      this.bandMid = c.createGain();
+      this.bandHigh = c.createGain();
+      this.bandIn.connect(low).connect(this.actBus);
+      this.bandIn.connect(midHp).connect(midLp).connect(this.bandMid).connect(this.actBus);
+      this.bandIn.connect(high).connect(this.bandHigh).connect(this.actBus);
     }
     this.place(this.actPanner!, at);
-    this.actBus.gain.setTargetAtTime(act ? 0.9 : 0, c.currentTime, act ? 0.6 : 0.8);
+    this.actBus.gain.setTargetAtTime(act ? 0.9 * this.partyVol : 0, c.currentTime, act ? 0.6 : 0.8);
     // Recorded songs for the party; a new song starts from its top.
     if (this.trackAct && this.trackAct !== act) this.stopTrack(this.trackAct);
-    this.trackAct = TRACK_ACTS.has(act) && this.startTrack(act, this.actBus, 1, 0.3, true) ? act : '';
+    this.trackAct = TRACK_ACTS.has(act) && this.startTrack(act, this.bandIn ?? this.actBus, 1, 0.3, true) ? act : '';
     if (act === 'surf') this.actLoop = this.loop('waves', at, 0.7);
     if (act === 'ski') this.actLoop = this.loop('wind', at, 0.45);
     if (act) {
@@ -423,8 +447,8 @@ class AudioEngine {
     if (this.act && this.actBus) {
       const a = this.actBus.gain;
       a.cancelScheduledValues(t);
-      a.setTargetAtTime(0.9 * (1 - amount * 0.7), t, 0.08);
-      a.setTargetAtTime(0.9, t + seconds, 0.8);
+      a.setTargetAtTime(0.9 * this.partyVol * (1 - amount * 0.7), t, 0.08);
+      a.setTargetAtTime(0.9 * this.partyVol, t + seconds, 0.8);
     }
     if (!this.musicOn) return;
     const g = this.music.gain;
@@ -466,6 +490,23 @@ class AudioEngine {
     if (this.score && this.score !== name) this.stopTrack(this.score);
     this.score = name;
     if (name && this.ctx && this.musicOn) this.startTrack(name, this.music, 0.8, 1.6, true);
+  }
+
+  /** The party console: the song's volume (0..1, 0.85 = as mixed) and how much of the band plays (0..1). Logged for the film's mix. */
+  setPartyMix(volume: number, band: number): void {
+    const v = volume / 0.85;
+    if (Math.abs(v - this.partyVol) > 0.02) {
+      this.partyVol = v;
+      Timeline.log('volume', '', volume);
+      if (this.ctx && this.act && this.actBus) this.actBus.gain.setTargetAtTime(0.9 * v, this.ctx.currentTime, 0.08);
+    }
+    if (Math.abs(band - this.partyBand) > 0.02) {
+      this.partyBand = band;
+      Timeline.log('band', '', band);
+      const t = this.ctx?.currentTime ?? 0;
+      this.bandMid?.gain.setTargetAtTime(Math.min(1, Math.max(0, band * 2)), t, 0.06);
+      this.bandHigh?.gain.setTargetAtTime(Math.min(1, Math.max(0, band * 2 - 1)), t, 0.06);
+    }
   }
 
   /**

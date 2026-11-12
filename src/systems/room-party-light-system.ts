@@ -12,6 +12,7 @@ import {
   Vector3,
   VisibilityState,
 } from '@iwsdk/core';
+import { PartyMix } from './lib/party-mix.js';
 import { Sound } from '../audio/engine.js';
 import { DreamDirector } from '../components/dream.js';
 import { Ritual, RitualPhase } from '../components/ritual.js';
@@ -132,7 +133,7 @@ export class RoomPartyLightSystem extends createSystem({
       b.mesh.scale.set(1, len, 1);
       b.mesh.visible = true;
       b.mat.color.setHex(palette[(i + bar) % palette.length]);
-      b.mat.opacity = this.energy * (cfg.beamOpacity + cfg.beamFlash * flash);
+      b.mat.opacity = this.energy * PartyMix.lights * (cfg.beamOpacity + cfg.beamFlash * flash);
     }
 
     // Spotlights (showcase room): coloured washes sliding across the walls and ceiling.
@@ -146,7 +147,7 @@ export class RoomPartyLightSystem extends createSystem({
       this.spotTargets[i].position.set(R.minX + 0.2 + (1 + Math.sin(k * 0.6)) * 1.5, 0.6 + (1 + Math.sin(k * 1.3)) * 1.1, (R.minZ + R.maxZ) / 2 + Math.sin(k) * 2.6);
       this.color.setHex(palette[(i * 2 + bar) % palette.length]);
       s.color.copy(this.color);
-      s.intensity = this.energy * (cfg.spotIntensity + cfg.spotFlash * flash);
+      s.intensity = this.energy * PartyMix.lights * (cfg.spotIntensity + cfg.spotFlash * flash);
     }
   }
 

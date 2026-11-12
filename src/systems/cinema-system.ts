@@ -201,7 +201,8 @@ export class CinemaSystem extends createSystem({
     this.screen.position.set(cfg.x, cfg.y, cfg.z);
     this.player.localToWorld(this.screen.position);
     this.player.head.getWorldPosition(this.head);
-    this.screen.rotation.set(0, Math.atan2(this.head.x - this.screen.position.x, this.head.z - this.screen.position.z), 0);
+    // Facing you, tilted down from up high.
+    this.screen.lookAt(this.head);
   }
 
   private findHidden(): void {

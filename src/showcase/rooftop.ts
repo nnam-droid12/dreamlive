@@ -5,6 +5,7 @@
  * frame (see rooftop-layout.ts) so it stands outside the showcase glass or
  * beyond the headset's dream window. Repeats are instanced.
  */
+import { PartyMix } from '../systems/lib/party-mix.js';
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -345,7 +346,7 @@ export function buildRooftop(): RooftopWorld {
         (b.material as MeshBasicMaterial).opacity = (0.25 + 0.6 * hit) * energy;
       });
       light.color.setHex(palette[Math.floor(t * 0.5) % palette.length]);
-      light.intensity = (14 + 16 * hit) * energy;
+      light.intensity = (14 + 16 * hit) * energy * PartyMix.lights;
     },
   };
 }

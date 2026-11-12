@@ -30,6 +30,8 @@ import { WorldSpots } from './lib/world-kit.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { FriendCue } from './friend-system.js';
 import { SeaConsoleSpots } from './sea-console-system.js';
+import { PartyConsoleSpots } from './party-console-system.js';
+import { PartyCue } from './lib/party-mix.js';
 import { SeaCue, SeaWeather } from './lib/sea-weather.js';
 import { MovieSpots } from './movie-night-system.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
@@ -67,6 +69,13 @@ const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEn
  * fist (thunder) and raised palm (sunshine), and the Goodnight button.
  */
 const SEA = { console: 5, fist: 10.5, palm: 18.5, palmEnd: 22, press: 28 };
+/** The party console in the film (seconds into a party scene, after the palm menu): [dial, from, to, start, end]. */
+const PARTY_DIALS: [number, number, number, number, number][] = [
+  [2, 1, 0.25, 18, 19.4],
+  [1, 0.85, 0.3, 19.7, 20.8],
+  [2, 0.25, 1, 21.2, 22.4],
+  [1, 0.3, 1, 22.6, 23.6],
+];
 const SEA_DIALS: [number, number, number, number, number][] = [
   [0, 0.85, 1, 6.5, 9.5],
   [0, 1, 0.2, 14, 18],
@@ -561,6 +570,17 @@ export class DirectorSystem extends createSystem({
     };
     let left = REST_L;
     let right = REST_R;
+    // The party console: the band stripped to the beat, the lights down, then the drop and the lights back up.
+    PartyCue.show = scene.startsWith('party-') && scene !== 'party-wait' && t > 17.2;
+    PartyCue.drive = -1;
+    if (PartyCue.show) {
+      for (const [i, from, to, a, b] of PARTY_DIALS) {
+        if (t < a || t > b + 0.3) continue;
+        const e = Math.min(1, (t - a) / (b - a));
+        PartyCue.drive = i;
+        PartyCue.value = from + (to - from) * e * e * (3 - 2 * e);
+      }
+    }
     if (scene === 'draw-window' && t > 1.5 && t < 8.5) {
       // Point at the wall's lower corner, pinch, drag a big window up to the top corner, hold, release.
       const a = frameToWorld(f, { x: 0, y: 0.25, z: -0.8 }, H_TMP.a);
@@ -584,6 +604,12 @@ export class DirectorSystem extends createSystem({
         H_TMP.aim.add(H_TMP.off.set(0.058, 0.02, 0).applyQuaternion(H_TMP.q));
         right = { ...POINT_R, aim: H_TMP.aim, pinch: t > 14.3 && t < 15.1 ? 1 : 0 };
       }
+    } else if (PartyCue.show && PartyConsoleSpots.ready) {
+      // The left fingertip on the party console's knob it drags (or the next one).
+      this.player.head.updateMatrixWorld(true);
+      const k = PartyCue.drive >= 0 ? PartyCue.drive : t < 19.6 ? 2 : t < 21.1 ? 1 : t < 22.5 ? 2 : 1;
+      const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.knob[k]));
+      left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.11)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (scene === 'gifts') {
       left = CUP_L;
       right = CUP_R;

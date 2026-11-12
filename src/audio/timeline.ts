@@ -7,7 +7,7 @@
  */
 export interface TimelineEvent {
   t: number;
-  type: 'act' | 'music' | 'score' | 'voice' | 'sfx' | 'open' | 'world' | 'movie' | 'lullaby';
+  type: 'act' | 'music' | 'score' | 'voice' | 'sfx' | 'open' | 'world' | 'movie' | 'lullaby' | 'volume' | 'band';
   name: string;
   value?: number;
 }
