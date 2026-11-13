@@ -20,7 +20,7 @@ export const chapterRooftop: ChapterDef = {
   start: 'draw-window',
   beats: {
     // The user draws Bigfoot's window on the wall (or, with no input, it draws itself).
-    'draw-window': { id: 'draw-window', duration: 14, scene: 'draw-window', tint: 'moonBlue', endOn: 'window-drawn', next: 'to-window' },
+    'draw-window': { id: 'draw-window', duration: 17, scene: 'draw-window', tint: 'moonBlue', endOn: 'window-drawn', next: 'to-window' },
     'to-window': { id: 'to-window', duration: 9, scene: 'to-window', tint: 'moonBlue', next: 'leap-out' },
     'leap-out': { id: 'leap-out', duration: 4.6, scene: 'leap-out', tint: 'moonBlue', next: 'arrive' },
     arrive: { id: 'arrive', duration: 4, scene: 'arrive', tint: 'pinkSoft', next: 'choice-1' },

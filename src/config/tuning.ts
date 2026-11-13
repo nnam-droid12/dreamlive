@@ -516,12 +516,12 @@ export const Tuning = {
   },
 
   drawWindow: {
-    /** With no drawing, the window starts drawing itself after this long, taking this long. */
-    autoAfterSec: 9,
+    /** With no drawing, the window starts drawing itself after this long (a few seconds after Bigfoot asks; his line ends at 9 s), taking this long. */
+    autoAfterSec: 13,
     autoDrawSec: 2.5,
-    /** In the Director's film: the outline grows with the scripted hand's sweep (beat time it starts, how long). */
-    directorDrawAt: 3,
-    directorDrawSec: 3,
+    /** In the Director's film: the outline grows with the scripted hand's sweep (beat time it starts, how long; matches DRAW in the director). */
+    directorDrawAt: 9.3,
+    directorDrawSec: 2.8,
     /** The drawn window dissolves open over this long. */
     openSec: 1.4,
     /** The invisible drawing surface over the wall, and the smallest window accepted. */
