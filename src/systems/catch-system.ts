@@ -27,6 +27,8 @@ import { dreamNight } from '../dreams/nights.js';
 import { Tuning } from '../config/tuning.js';
 import { buildGift } from '../visuals/goodies.js';
 import { Rooftop } from '../showcase/rooftop-layout.js';
+import { HandReading, HandSigns } from '../input/hand-signs.js';
+import type { EmulatedHand } from './real-hands.js';
 
 const SPAWN_EVERY = 2.4;
 const FLIGHT_SEC = 2.2;
@@ -49,7 +51,7 @@ interface Flyer {
   to: Vector3;
   state: 'idle' | 'flying' | 'caught' | 'missed' | 'held' | 'placing' | 'placed';
   /** A gift on your palm: which hand holds it; where it settles on the floor; its fall speed. */
-  holder?: Entity;
+  holder?: 'left' | 'right';
   floorY: number;
   fall: number;
   spin: Vector3;
@@ -80,6 +82,8 @@ export class CatchSystem extends createSystem({
   private right = new Vector3();
   private up = new Vector3(0, 1, 0);
   private head = new Vector3();
+  private signs = new HandSigns();
+  private sideV = new Vector3();
   private headQuat = new Quaternion();
   private fwd = new Vector3();
   private side = new Vector3();
@@ -103,6 +107,12 @@ export class CatchSystem extends createSystem({
     const d = this.queries.director.entities.values().next().value;
     if (!d || !d.getValue(RoomSlots, 'anchorReady')) return;
     const delta = dreamDelta(d, realDelta);
+    // Both hands' palms (from the joints: on a headset, or the emulator's hands the film drives).
+    const dev = (window as unknown as { IWER_DEVICE?: { hands?: { left?: EmulatedHand; right?: EmulatedHand } } }).IWER_DEVICE;
+    if (dev?.hands) this.signs.readEmulator(dev.hands, this.player);
+    else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
+    this.player.head.getWorldQuaternion(this.headQuat);
+    this.signs.update(Math.min(realDelta, 0.1), this.sideV.set(1, 0, 0).applyQuaternion(this.headQuat).setY(0).normalize());
     const dreaming = d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat);
     const scene = this.beat.scene;
     const tvAct = scene === 'surf' || scene === 'dj' || scene === 'ski';
@@ -187,7 +197,7 @@ export class CatchSystem extends createSystem({
       const both = this.offering();
       const palm = both ? undefined : this.openPalm();
       if (both || palm) {
-        if (palm) this.hand.fromArray(palm.getVectorView(HandGestureState, 'palmCenter'));
+        if (palm) this.hand.copy(palm.palm);
         this.hand.y += 0.07;
         f.to.lerp(this.hand, Math.min(1, delta * 4));
       }
@@ -211,14 +221,14 @@ export class CatchSystem extends createSystem({
       return false;
     }
     if (f.state === 'held') {
-      const h = f.holder;
-      const lost = !h || !h.getValue(HandGestureState, 'tracked');
+      const h = f.holder ? this.signs[f.holder] : undefined;
+      const lost = !h || !h.tracked;
       if (this.bothPalms(false)) {
         o.position.copy(this.hand).addScaledVector(this.cup, 0.06);
         o.rotation.y += delta * 0.6;
       } else if (h && !lost) {
-        this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
-        this.cup.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
+        this.hand.copy(h.palm);
+        this.cup.copy(h.normal);
         o.position.copy(this.hand).addScaledVector(this.cup, 0.06);
         o.rotation.y += delta * 0.6;
       }
@@ -249,23 +259,17 @@ export class CatchSystem extends createSystem({
 
   /**
    * Both hands tracked and held together (palms within 30 cm); `this.hand` = the
-   * point between the palms, `this.cup` = their average normal. With `palmsUp`,
-   * both must also be palm up.
+   * point between the palms, `this.cup` = their average facing. With `palmsUp`,
+   * both must also face up.
    */
   private bothPalms(palmsUp: boolean): boolean {
-    let n = 0;
-    for (const h of this.queries.hands.entities) {
-      if (!h.getValue(HandGestureState, 'tracked')) return false;
-      if (palmsUp && !this.palmOut(h)) return false;
-      const p = n === 0 ? this.hand : this.other;
-      const c = n === 0 ? this.cup : this.otherCup;
-      p.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
-      c.fromArray(h.getVectorView(HandGestureState, 'palmNormal'));
-      if (++n === 2) break;
-    }
-    if (n < 2 || this.hand.distanceTo(this.other) > 0.3) return false;
-    this.hand.add(this.other).multiplyScalar(0.5);
-    this.cup.add(this.otherCup).normalize();
+    const l = this.signs.left;
+    const r = this.signs.right;
+    if (!l.tracked || !r.tracked) return false;
+    if (palmsUp && (!this.palmOut(l) || !this.palmOut(r))) return false;
+    if (l.palm.distanceTo(r.palm) > 0.3) return false;
+    this.hand.copy(l.palm).add(r.palm).multiplyScalar(0.5);
+    this.cup.copy(l.normal).add(r.normal).normalize();
     return true;
   }
 
@@ -281,32 +285,30 @@ export class CatchSystem extends createSystem({
   }
 
   /** A tracked hand held out to receive: palm facing mostly up (open, or gently cupped). */
-  private openPalm(): Entity | undefined {
-    for (const h of this.queries.hands.entities) if (this.palmOut(h)) return h;
+  private openPalm(): HandReading | undefined {
+    for (const side of ['left', 'right'] as const) if (this.palmOut(this.signs[side])) return this.signs[side];
     return undefined;
   }
 
-  private palmOut(h: Entity): boolean {
-    if (!h.getValue(HandGestureState, 'tracked')) return false;
-    return !!h.getValue(HandGestureState, 'palmUp') || h.getVectorView(HandGestureState, 'palmNormal')[1] > Tuning.rooftop.giftPalmUp;
+  private palmOut(h: HandReading): boolean {
+    return h.tracked && h.normal.y > Tuning.rooftop.giftPalmUp;
   }
 
-  private nearestHand(p: Vector3): Entity | undefined {
-    let best: Entity | undefined;
-    let bestD = Infinity;
-    for (const h of this.queries.hands.entities) {
-      if (!h.getValue(HandGestureState, 'tracked')) continue;
-      const dd = this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter')).distanceTo(p);
-      if (dd < bestD) {
-        bestD = dd;
-        best = h;
-      }
-    }
-    return best;
+  private nearestHand(p: Vector3): 'left' | 'right' | undefined {
+    const l = this.signs.left;
+    const r = this.signs.right;
+    if (!l.tracked && !r.tracked) return undefined;
+    if (!r.tracked) return 'left';
+    if (!l.tracked) return 'right';
+    return l.palm.distanceTo(p) <= r.palm.distanceTo(p) ? 'left' : 'right';
   }
 
   private touched(p: Vector3, cupped: boolean): boolean {
     if (cupped && this.cup.distanceTo(p) < CUP_RADIUS) return true;
+    for (const side of ['left', 'right'] as const) {
+      const h = this.signs[side];
+      if (h.tracked && h.palm.distanceTo(p) < TOUCH_RADIUS) return true;
+    }
     for (const h of this.queries.hands.entities) {
       if (!h.getValue(HandGestureState, 'tracked')) continue;
       this.hand.fromArray(h.getVectorView(HandGestureState, 'palmCenter'));
