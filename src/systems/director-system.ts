@@ -32,6 +32,7 @@ import { BigfootControl } from './lib/bigfoot-control.js';
 import { FriendCue } from './friend-system.js';
 import { SeaConsoleSpots } from './sea-console-system.js';
 import { GardenSpots } from './garden-world-system.js';
+import { ProximityCue } from './proximity-passthrough-system.js';
 import { GiftHold } from './catch-system.js';
 import { PartyConsoleSpots } from './party-console-system.js';
 import { PartyCue } from './lib/party-mix.js';
@@ -80,7 +81,7 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  */
 const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, garden: 113, sea: 129, whale: 154, flood: 159, bed: 159, end: 185 };
 /** The garden (seconds into it): the right palm opens for a butterfly, the left finger points for the ladybug. */
-const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10 };
+const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10, leanFrom: 11.8, leanBack: 14.2 };
 /**
  * Storm and sunshine at sea (seconds after the sea begins): the console shows,
  * each dial the left hand drags [index, from, to, start, end], the right hand's
@@ -95,6 +96,8 @@ const PARTY_DIALS: [number, number, number, number, number][] = [
   [1, 0.2, 1, 22.0, 23.3],
 ];
 /** The film's song change on the party console (seconds into a party scene): reach, tap (Afrobeats), back to dancing. */
+/** Drawing the window (seconds into the scene), after his line asking for it ends (it runs 0.4 to 9.0 s). */
+const DRAW = { show: 8.6, pinch: 9.3, drag: 2.8, release: 12.5, hide: 13.6 };
 const PARTY_SONG = { reach: 3.8, tap: 5.6, done: 7.2, chip: 0 };
 /** The film presses the console's Fireworks! button (seconds into a party scene): reach, press, done. */
 const PARTY_FW = { reach: 12.6, press: 14, done: 15.2 };
@@ -404,7 +407,10 @@ export class DirectorSystem extends createSystem({
       const c = GardenSpots.center;
       const dir = H_TMP.off.subVectors(GardenSpots.bigfoot, c).setY(0).normalize();
       const leftV = H_TMP.a.set(dir.z, 0, -dir.x);
-      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4).setY(1.3), c.clone().addScaledVector(dir, 3).setY(0.45));
+      // Proximity passthrough: after the butterfly, you lean away; the garden fades and your room shows.
+      const lean = smooth01((gg - GARDEN.leanFrom) / 0.8) * (1 - smooth01((gg - GARDEN.leanBack) / 0.8));
+      ProximityCue.film = gg > GARDEN.leanFrom - 0.5 && gg < GARDEN.leanBack + 1.5 ? lean : -1;
+      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4 - 0.25 * lean).addScaledVector(leftV, 0.55 * lean).setY(1.3 + 0.1 * lean), c.clone().addScaledVector(dir, 3).setY(0.45));
       else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 1.3).addScaledVector(leftV, 0.1).setY(0.72));
     }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
@@ -587,7 +593,7 @@ export class DirectorSystem extends createSystem({
     if (tt < TOUR.garden) return 'Catch a falling star';
     if (tt < TOUR.sea) {
       const gg = tt - TOUR.garden;
-      if (gg < GARDEN.palm) return 'A garden grows in your room';
+      if (gg < GARDEN.palm) return 'Proximity passthrough';
       if (gg < GARDEN.touch) return 'Open your palm: a butterfly lands on it';
       if (gg < GARDEN.palmEnd + 1) return 'Touch it gently, and it flies away';
       return 'A summer garden, all yours';
@@ -658,14 +664,15 @@ export class DirectorSystem extends createSystem({
         PartyCue.value = from + (to - from) * e * e * (3 - 2 * e);
       }
     }
-    if (scene === 'draw-window' && t > 1.5 && t < 8.5) {
-      // Point at the wall's lower corner, pinch, drag a big window up to the top corner, hold, release.
+    if (scene === 'draw-window' && t > DRAW.show && t < DRAW.hide) {
+      // Only once he has asked ("...Pinch, and drag on the wall."): point at the wall's lower corner,
+      // pinch, drag a big window up to the top corner, hold, release.
       const a = frameToWorld(f, { x: 0, y: 0.25, z: -0.8 }, H_TMP.a);
       const b = frameToWorld(f, { x: 0, y: 2.75, z: 0.8 }, H_TMP.b);
-      const k = Math.min(1, Math.max(0, (t - 3) / 3));
+      const k = Math.min(1, Math.max(0, (t - DRAW.pinch) / DRAW.drag));
       // The hand itself sweeps up and across as it drags (the pinch ray follows the hand).
       const hand = H_TMP.r.set(-0.04 + 0.2 * k, -0.24 + 0.46 * k, -0.42);
-      right = { ...DRAW_R, at: hand, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > 3 && t < 7.4 ? 1 : 0 };
+      right = { ...DRAW_R, at: hand, aim: H_TMP.aim.lerpVectors(a, b, k), pinch: t > DRAW.pinch && t < DRAW.release ? 1 : 0 };
     } else if (scene.startsWith('party-') && t >= PARTY_SONG.reach && t < PARTY_SONG.done && PartyConsoleSpots.ready) {
       // The left fingertip reaches to the console's song chips and taps Afrobeats.
       this.player.head.updateMatrixWorld(true);
@@ -821,7 +828,7 @@ export class DirectorSystem extends createSystem({
     }
     const want = this.featureText && this.cardMat.opacity < 0.2 && (Director.debug || this.clock - this.featureAt < FEATURE_HOLD) ? 1 : 0;
     // No running text in the film: the in-scene subtitles, hints and chapter cards stay hidden.
-    if (!this.quiet.length) for (const n of ['Caption', 'FilmChapter']) { const o = this.scene.getObjectByName(n); if (o) this.quiet.push(o); }
+    if (!this.quiet.length) for (const n of ['Caption', 'FilmChapter', 'FilmTitle']) { const o = this.scene.getObjectByName(n); if (o) this.quiet.push(o); }
     for (const o of this.quiet) o.visible = false;
     this.featureOpacity += (want - this.featureOpacity) * Math.min(1, dt * 3);
     const m = this.feature.mesh;
@@ -972,4 +979,9 @@ export class DirectorSystem extends createSystem({
     this.saveTimeline?.();
     if (this.recorder?.state === 'recording') this.recorder.stop();
   }
+}
+
+function smooth01(x: number): number {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
 }

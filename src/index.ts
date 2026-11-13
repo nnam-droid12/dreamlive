@@ -48,6 +48,7 @@ import { PartyConsoleSystem } from './systems/party-console-system.js';
 import { SkyFxSystem } from './systems/sky-fx-system.js';
 import { RoomUnderstandingSystem } from './systems/room-understanding-system.js';
 import { QualitySystem } from './systems/quality-system.js';
+import { ProximityPassthroughSystem } from './systems/proximity-passthrough-system.js';
 import { SessionSystem } from './systems/session-system.js';
 import { ShowcaseSystem } from './systems/showcase-system.js';
 import { WakingSystem } from './systems/waking-system.js';
@@ -115,7 +116,8 @@ World.create(
     .registerSystem(ShowcaseSystem)
     .registerSystem(AudioSystem)
     .registerSystem(CaptionSystem)
-    .registerSystem(PanelSystem);
+    .registerSystem(PanelSystem)
+    .registerSystem(ProximityPassthroughSystem);
   // Dev-only demo recording (`?director`): scripted camera, cards, WebM capture.
   if (Director.enabled) world.registerSystem(DirectorSystem);
   if (Director.offline) offlineRender(world);

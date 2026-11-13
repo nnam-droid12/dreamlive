@@ -275,7 +275,7 @@ export class GardenWorldSystem extends createSystem({
     this.time = 0;
     this.hinted = false;
     this.touchedAtBegin = GardenSpots.touched;
-    this.kit.caption(d, 'A garden grows in your room');
+    this.kit.caption(d, 'Proximity passthrough: lean away to see your room');
   }
 
   /** At the garden there is only the garden: the showcase bedroom steps away. */

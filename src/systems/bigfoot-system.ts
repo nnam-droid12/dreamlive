@@ -1,4 +1,5 @@
 import { BigfootControl } from './lib/bigfoot-control.js';
+import { VoiceNow } from '../audio/voice-now.js';
 import { WorldSpots } from './lib/world-kit.js';
 import { Director, DirectorFrame } from '../config/director.js';
 import { MovieSpots } from './movie-night-system.js';
@@ -32,6 +33,12 @@ import { NycLayout } from '../showcase/nyc-bedroom.js';
 import { frameToWorld, Rooftop } from '../showcase/rooftop-layout.js';
 
 /** Look at sleeping Bigfoot this long to slip into his dream; else it starts by itself. */
+/** Each voice line's loudness, 30 times a second (public/audio/voice/envelopes.json, from scripts/audio/voice_envelopes.py). */
+const VOICE_ENV: Record<string, number[]> = {};
+void fetch(`${import.meta.env.BASE_URL}audio/voice/envelopes.json`)
+  .then((r) => (r.ok ? r.json() : {}))
+  .then((e: Record<string, number[]>) => Object.assign(VOICE_ENV, e))
+  .catch(() => undefined);
 const DREAM_DWELL_SEC = 1.5;
 const DREAM_AUTO_SEC = 12;
 const UP = new Vector3(0, 1, 0);
@@ -53,6 +60,9 @@ export class BigfootSystem extends createSystem({
   director: { required: [Ritual, RoomSlots, DevControls] },
 }) {
   private rig?: BigfootRig;
+  /** The line he is saying: its loudness 30 times a second, and how far into it he is. */
+  private talkLine: number[] = [];
+  private talkTime = 0;
   private entity?: Entity;
   private target?: Entity;
   private loading = false;
@@ -174,6 +184,14 @@ export class BigfootSystem extends createSystem({
     this.snore?.setGain(sleeping ? 0.7 : 0);
     this.updateZzz(sleeping, delta);
     this.entity.setValue(Bigfoot, 'stateTime', (this.entity.getValue(Bigfoot, 'stateTime') ?? 0) + delta);
+    // Talking: his head and chest move with the loudness of the line he is saying.
+    if (VoiceNow.fresh) {
+      VoiceNow.fresh = false;
+      this.talkLine = VOICE_ENV[VoiceNow.name] ?? [];
+      this.talkTime = 0;
+    }
+    this.talkTime += realDelta;
+    this.rig.setTalk(this.talkLine[Math.floor(this.talkTime * 30)] ?? 0);
     this.rig.update(delta);
     this.uprightPopcorn();
     if (import.meta.env.DEV) BigfootControl.info = `${this.rig.current} head${(this.rig.headPosition(this.tmp).y - this.rig.root.position.y).toFixed(2)}`;

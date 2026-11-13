@@ -2,6 +2,17 @@
 
 All notable changes to Dreamlive, newest first.
 
+## 2026-11-13 — Gifts in your cupped hands, a simpler party console, proximity passthrough, a talking Bigfoot
+
+- **Gifts land in your hands:** hold both hands out together, cupped, and each gift the DJ throws settles into them; lower and tip your hands and it slides off onto the floor. One gift at a time, and every gift comes to you (Bigfoot cheers each catch). Works with any palm shape, read straight from the hand joints.
+- **The party console**, on your left for the whole party: **Disco** or **House** (tap to switch the song), **Volume**, **Lights**, and **Fireworks!**. The Afrobeats option and the Band dial are gone.
+- **Proximity passthrough** in the garden: lean or step away from your spot, or reach far out, and the garden fades so you see your real room; settle back and it returns. A short "Proximity passthrough" note shows as the garden begins.
+- **Bigfoot talks with his body:** his head nods and tilts and his chest lifts with the loudness of each line he says.
+- **Hands only, end to end:** in the garden (where your left palm is for the butterfly) the right palm opens the menu.
+- **Bedtime** is a calm, clear night (no rain).
+- **Quest performance:** fixed foveated rendering, and 90 Hz when the headset offers it (falling back to a steady 72 Hz if a scene can't keep up).
+- **Film:** one short caption per scene; the window is drawn only after Bigfoot asks; the camera cuts (never glides through walls); the sea camera rides above the storm's swells.
+
 ## 2026-11-12 — A garden of your own; the party at your fingertips; gifts to your palm
 
 - **The garden (a new dream world):** the room becomes a real garden at golden hour: a lawn, flower beds (Poly Haven CC0 gazanias, ursinias, periwinkles, dandelions and ferns) and a hedge all around. It is yours alone; Bigfoot waits at home.

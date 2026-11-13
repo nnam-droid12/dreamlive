@@ -35,6 +35,8 @@ export type BigfootAnim =
   | 'dance2' | 'cheer' | 'leap';
 
 /** Name fragments that identify each clip in a Meshy export. */
+/** Talking motion (radians at full voice): chin nod, side tilt, a little turn; chest lift (scale). */
+const TALK = { nod: 0.13, tilt: 0.06, turn: 0.05, chest: 0.018 };
 const CLIP_HINTS: Record<Exclude<BigfootAnim, 'rest'>, RegExp> = {
   idle: /idle|breath|stand/i,
   walk: /walk/i,
@@ -89,6 +91,8 @@ export interface BigfootRig {
   handPosition(hand: 'left' | 'right', out: Vector3): Vector3;
   /** Stand tall: straighten his spine toward vertical (0..1) on top of the animation. */
   setUpright(amount: number): void;
+  /** Talking: how loud his voice is right now (0..1); his head nods and tilts and his chest lifts with it. */
+  setTalk(level: number): void;
   current: BigfootAnim;
 }
 
@@ -186,6 +190,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   const look = { on: false, target: new Vector3(), weight: 0 };
   const upright = { want: 0, weight: 0 };
   const bow = { want: 0, weight: 0, fwd: new Vector3(), dir: new Vector3(), q: new Quaternion() };
+  const talk = { want: 0, level: 0, time: 0, applied: false, before: new Quaternion() };
   const spine = bone(/Spine$/);
   const neck = bone(/Neck$/);
   const reach = {
@@ -353,6 +358,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     setBow(a) {
       bow.want = Math.max(0, Math.min(1, a));
     },
+    setTalk(a) {
+      talk.want = Math.max(0, Math.min(1, a));
+    },
     setLook(target) {
       look.on = !!target;
       if (target) look.target.copy(target);
@@ -377,6 +385,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       return root.worldToLocal(AIM.a.setFromMatrixPosition(limb.hips.matrixWorld)).y * root.scale.y;
     },
     update(delta) {
+      // (Undo last frame's talking nod first, in case the animation leaves the head alone.)
+      if (talk.applied && headBone) headBone.quaternion.copy(talk.before);
+      talk.applied = false;
       mixer.update(delta);
       if (pose === 'sit') applySit();
       // Standing tall: the line from his lower spine to his neck turned toward vertical.
@@ -404,8 +415,20 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
       }
       look.weight += ((look.on ? 1 : 0) - look.weight) * Math.min(1, delta * 4);
       applyLook();
+      // Talking: with each loud syllable his chin dips a little and his head tilts side to side;
+      // between phrases it settles (quick to rise, a little slower to fall).
+      talk.level += (talk.want - talk.level) * Math.min(1, delta * (talk.want > talk.level ? 18 : 9));
+      talk.time += delta;
+      if (headBone && talk.level > 0.01) {
+        talk.before.copy(headBone.quaternion);
+        talk.applied = true;
+        headBone.rotateX(TALK.nod * talk.level);
+        headBone.rotateZ(TALK.tilt * talk.level * Math.sin(talk.time * 3.1));
+        headBone.rotateY(TALK.turn * talk.level * Math.sin(talk.time * 1.7 + 1));
+        headBone.updateMatrixWorld(true);
+      }
       breath += delta;
-      if (chest) chest.scale.setScalar(rig.current === 'rest' ? 1 + Math.sin(breath * 1.4) * 0.025 : 1);
+      if (chest) chest.scale.setScalar((rig.current === 'rest' ? 1 + Math.sin(breath * 1.4) * 0.025 : 1) + TALK.chest * talk.level);
       // Self-grounding: whatever height the caller placed him at is the surface his
       // skin rests on (soles on the floor standing, back on the mattress lying, the
       // hop's height mid-jump). Mixamo's root heights don't survive the unit

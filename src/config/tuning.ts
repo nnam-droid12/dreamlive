@@ -679,6 +679,15 @@ export const Tuning = {
     homeAfter: 3,
   },
 
+  /** Proximity passthrough in the fully virtual worlds: the world fades as you move this far (m) from your spot, gone by this far; the same for a hand reaching out from your head; fade speed. */
+  proximity: {
+    headStart: 0.3,
+    headFull: 0.55,
+    handStart: 0.62,
+    handFull: 0.8,
+    fadeRate: 5,
+  },
+
   performance: {
     /** On Quest: ask for this refresh rate (Hz) when the headset offers it; fall back to the steady one if quality has already stepped down this far and it still can't keep up. */
     preferredHz: 90,

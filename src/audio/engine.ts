@@ -4,6 +4,7 @@
  * Spatial sounds use HRTF PannerNodes; music ducks under key moments; an
  * analyser feeds the music visualizer.
  */
+import { VoiceNow } from './voice-now.js';
 import { Timeline } from './timeline.js';
 import { Director } from '../config/director.js';
 
@@ -597,6 +598,9 @@ class AudioEngine {
    */
   speak(name: string, at: Vec, gain = 1): boolean {
     Timeline.log('voice', name, gain);
+    // (His body moves with the line, also in the film's silent offline render.)
+    VoiceNow.name = name;
+    VoiceNow.fresh = true;
     const c = this.ctx;
     const buf = this.voices.get(name);
     if (!c || !buf) {
