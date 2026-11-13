@@ -142,7 +142,9 @@ export class CatchSystem extends createSystem({
       o.scale.setScalar(0.4 + 0.6 * Math.min(1, k * 2));
       o.rotation.x += f.spin.x * delta;
       o.rotation.y += f.spin.y * delta;
-      if (this.touched(o.position, cupped) || (k >= 1 && f.age > f.flight * this.slow + 0.35 && !!d.getValue(DevControls, 'autoCatch'))) {
+      if (f.kind === 'gift') {
+        // (A gift's own step catches it or floats it down to the floor.)
+      } else if (this.touched(o.position, cupped) || (k >= 1 && f.age > f.flight * this.slow + 0.35 && !!d.getValue(DevControls, 'autoCatch'))) {
         f.state = 'caught';
         f.age = 0;
         const caught = (d.getValue(DreamDirector, 'catches') ?? 0) + 1;
@@ -180,15 +182,17 @@ export class CatchSystem extends createSystem({
     const o = f.obj;
     const g = Tuning.rooftop;
     if (f.state === 'flying') {
-      // Steer the landing toward both open palms held together (or one open palm).
-      const palm = this.openPalm();
-      if (this.bothPalms(true) || palm) {
-        if (!this.bothPalms(true)) this.hand.fromArray(palm!.getVectorView(HandGestureState, 'palmCenter'));
-        this.hand.y += 0.08;
-        f.to.lerp(this.hand, Math.min(1, delta * 3));
+      // Steer the landing toward both hands held out together in front of you (cupped, open or flat),
+      // or else toward one open palm.
+      const both = this.offering();
+      const palm = both ? undefined : this.openPalm();
+      if (both || palm) {
+        if (palm) this.hand.fromArray(palm.getVectorView(HandGestureState, 'palmCenter'));
+        this.hand.y += 0.07;
+        f.to.lerp(this.hand, Math.min(1, delta * 4));
       }
-      // Near the end of its flight a gift settles into palms held out for it.
-      const settling = !!palm && f.age > f.flight * this.slow * 0.7 && o.position.distanceTo(this.hand) < Tuning.rooftop.giftSettle;
+      // Near the end of its flight a gift settles into the hands held out for it.
+      const settling = (both || !!palm) && f.age > f.flight * this.slow * 0.6 && o.position.distanceTo(this.hand) < Tuning.rooftop.giftSettle;
       if (settling || this.touched(o.position, cupped)) {
         f.state = 'held';
         f.age = 0;
@@ -263,6 +267,17 @@ export class CatchSystem extends createSystem({
     this.hand.add(this.other).multiplyScalar(0.5);
     this.cup.add(this.otherCup).normalize();
     return true;
+  }
+
+  /**
+   * Both hands held out together to receive: tracked, side by side (palms within 30 cm),
+   * in front of you and below your eyes. `this.hand` = the point between the palms.
+   */
+  private offering(): boolean {
+    if (!this.bothPalms(false)) return false;
+    this.player.head.getWorldPosition(this.head);
+    const below = this.head.y - this.hand.y;
+    return below > 0.05 && below < Tuning.rooftop.giftSetDown && Math.hypot(this.hand.x - this.head.x, this.hand.z - this.head.z) > 0.15;
   }
 
   /** A tracked hand held out to receive: palm facing mostly up (open, or gently cupped). */
