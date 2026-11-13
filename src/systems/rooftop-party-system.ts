@@ -156,7 +156,8 @@ export class RooftopPartySystem extends createSystem({
     for (const f of this.fallers) if (f.active) this.fall(f, delta);
 
     // Back home: one gift per cycle, thrown to Bigfoot's hands at the window.
-    if (scene === 'gifts' && t >= 1) {
+    // (Every gift now goes to the viewer's cupped hands; none to Bigfoot.)
+    if (scene === 'gifts' && t >= 1 && Tuning.rooftop.giftsToBigfoot) {
       const n = Math.floor((t - 1) / cfg.giftEvery);
       if (n !== this.lastGift) {
         this.lastGift = n;

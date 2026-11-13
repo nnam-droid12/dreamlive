@@ -37,7 +37,7 @@ const FADE_SEC = 0.8;
 const POOL = 6;
 
 /** The gift you are holding (for the film's hand: hold it a moment, then lower it to the floor). */
-export const GiftHold = { holding: false, holdFor: 0, inFlight: false };
+export const GiftHold = { holding: false, holdFor: 0, inFlight: false, /** A gift is sliding off the hands or falling to the floor. */ placing: false, /** Seconds since a gift last landed on the floor. */ sincePlaced: 99 };
 const TOUCH_RADIUS = 0.13;
 const CUP_RADIUS = 0.2;
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -125,6 +125,8 @@ export class CatchSystem extends createSystem({
     const held = this.flyers.find((x) => x.kind === 'gift' && x.state === 'held');
     GiftHold.holding = !!held;
     GiftHold.holdFor = held ? held.age : 0;
+    GiftHold.placing = this.flyers.some((x) => x.kind === 'gift' && x.state === 'placing');
+    GiftHold.sincePlaced += delta;
     if (kind && !giftBusy && this.beat.progress > 0.08 && this.beat.progress < 0.95) {
       this.timer -= delta;
       if (this.timer <= 0) {
@@ -244,6 +246,7 @@ export class CatchSystem extends createSystem({
     o.position.y = Math.max(f.floorY, o.position.y - f.fall * delta);
     if (o.position.y <= f.floorY) {
       f.state = 'placed';
+      GiftHold.sincePlaced = 0;
       Sound.play('catch', o.position, 0.25);
       this.timer = g.giftAfterPlaced;
     }

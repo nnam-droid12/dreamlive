@@ -17,12 +17,11 @@ const cfg = Tuning.seaConsole;
 const DIALS: ConsoleDial[] = [
   { icon: 'volume', label: 'Volume' },
   { icon: 'lights', label: 'Lights' },
-  { icon: 'instruments', label: 'Band' },
 ];
-const START = [0.85, 0.85, 1];
+const START = [0.85, 0.85];
 /** The party's three songs (real tracks, CC BY; see CREDITS): the chips above the pills. */
-const SONGS = ['disco', 'afro', 'house'];
-const SONG_LABEL = ['Disco', 'Afrobeats', 'House'];
+const SONGS = ['disco', 'house'];
+const SONG_LABEL = ['Disco', 'House'];
 
 /** Where the console's knobs and button are (world), for the film's hand. */
 export const PartyConsoleSpots = { ready: false, knob: DIALS.map(() => new Vector3()), button: new Vector3(), songs: SONGS.map(() => new Vector3()) };
@@ -30,7 +29,7 @@ export const PartyConsoleSpots = { ready: false, knob: DIALS.map(() => new Vecto
 /**
  * Mix the rooftop party with your hand. While the party is live, a
  * DreamSpace-style console floats on your LEFT for the whole party: the song
- * (Disco, Afrobeats or House: tap one), Volume (the song's level),
+ * (Disco or House: tap one), Volume (the song's level),
  * Lights (stage lights, lasers, the skyline's glow) and Band (how much of the
  * song plays: the beat and bass alone, then the chords and voices, then the
  * hats and shimmer). "Fireworks!" fires a volley over the city.
@@ -106,8 +105,8 @@ export class PartyConsoleSystem extends createSystem({
     }
     PartyMix.volume = this.shown[0];
     PartyMix.lights = this.shown[1];
-    PartyMix.instruments = this.shown[2];
-    Sound.setPartyMix(this.shown[0], this.shown[2]);
+    PartyMix.instruments = 1;
+    Sound.setPartyMix(this.shown[0], 1);
     this.pressGlow = Math.max(0, this.pressGlow - dt * 1.5);
     this.console.setButton(0, this.pressGlow);
     if (this.console.root.visible) {
@@ -128,7 +127,8 @@ export class PartyConsoleSystem extends createSystem({
     this.left.set(this.fwd.z, 0, -this.fwd.x);
     const film = Director.enabled;
     const c = this.console.root;
-    c.position.copy(this.head).addScaledVector(this.fwd, film ? cfg.filmForward : cfg.forward).addScaledVector(this.left, film ? cfg.filmLeft : cfg.left);
+    // (In the film a little closer, so the sliders read clearly.)
+    c.position.copy(this.head).addScaledVector(this.fwd, film ? cfg.partyFilmForward : cfg.forward).addScaledVector(this.left, film ? cfg.partyFilmLeft : cfg.left);
     c.position.y -= (film ? cfg.filmBelow : cfg.below) + cfg.pillH * 0.5;
     c.lookAt(this.head.x, this.head.y, this.head.z);
     c.updateMatrixWorld(true);

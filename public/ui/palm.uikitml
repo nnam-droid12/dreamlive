@@ -43,7 +43,6 @@
   <div class="label">You DJ</div>
   <div class="row">
     <Button id="song-disco" class="b"><ButtonLabel>Disco</ButtonLabel></Button>
-    <Button id="song-afro" class="b"><ButtonLabel>Afro</ButtonLabel></Button>
     <Button id="song-house" class="b"><ButtonLabel>House</ButtonLabel></Button>
   </div>
   <div class="row">

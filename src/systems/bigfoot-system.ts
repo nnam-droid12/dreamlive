@@ -24,6 +24,7 @@ import { Ritual, RitualPhase } from '../components/ritual.js';
 import { RoomSlots } from '../components/stage.js';
 import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
+import { GiftHold } from './catch-system.js';
 import { buildPopcorn } from '../scene-assets/popcorn.scene-asset.js';
 import { Session } from '../components/session.js';
 import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
@@ -62,6 +63,7 @@ export class BigfootSystem extends createSystem({
   private zzzTimer = 0;
   // Layout (world space), fixed once known.
   private restPos = new Vector3();
+  private tmpHead = new Vector3();
   private restAxis = new Vector3();
   private exitTop = new Vector3();
   private exit = new Vector3();
@@ -601,6 +603,13 @@ export class BigfootSystem extends createSystem({
         return;
       }
       r.position.copy(this.inside);
+      if (!Tuning.rooftop.giftsToBigfoot) {
+        // Every gift goes to you: he turns to you, waves, and cheers each time one lands in your hands.
+        this.player.head.getWorldPosition(this.tmpHead);
+        r.quaternion.copy(this.face(this.inside, this.tmpHead.setY(this.inside.y)));
+        rig.play(t < 3 ? 'wave' : GiftHold.holding ? 'cheer' : 'idle');
+        return;
+      }
       const P = Tuning.rooftop.giftEvery;
       const u = (t - 1) % P;
       const toDj = this.face(this.inside, this.djAt);

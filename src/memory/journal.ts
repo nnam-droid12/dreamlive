@@ -70,7 +70,7 @@ export const Journal = {
   seedDemo(): void {
     now = fresh();
     now.visits = 2;
-    now.lastSong = 'afro';
+    now.lastSong = 'house';
     now.bunny = true;
     Object.assign(now.counts, { highFive: 9, fistBump: 4, wave: 6, thumbs: 3, rock: 2, pat: 5, tickle: 3, movies: 1, photos: 2, stars: 5 });
     before = JSON.parse(JSON.stringify(now)) as JournalData;

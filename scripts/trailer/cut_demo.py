@@ -12,6 +12,8 @@ import subprocess
 import sys
 
 FADE = 0.18
+# The end card (the last piece) is shown alone on black: only this box of the frame (x, y, w, h) is kept.
+CARD = (352, 268, 504, 184)
 # (start, end) seconds of the full film to remove.
 REMOVE = [
     (0.0, 0.2),       # the room still loading
@@ -29,6 +31,7 @@ REMOVE = [
     (229.0, 233.0),   # the empty garden after the butterfly leaves
     (234.0, 236.5),   # the dark start of the sea
     (247.55, 248.75), # one second of storm foam close to the camera
+    (263.6, 289.6),   # the bedtime stretch (bedtime is now rain-free; the old render had rain)
     (294.0, 296.6),   # the end of the final title card
 ]
 
@@ -52,8 +55,12 @@ def main(src, out):
     chains, labels = [], []
     for i, (a, b) in enumerate(parts):
         d = b - a
+        last = i == len(parts) - 1
+        x, y, w, h = CARD
+        card = (f',crop={w}:{h}:{x}:{y},pad=iw+{x}+{x}:ih+{y}+{y}:{x}:{y}:black,scale=1208:720' if last else '')
+        fin = 0.6 if last else FADE
         chains.append(
-            f'[0:v]trim={a}:{b},setpts=PTS-STARTPTS,fade=t=in:st=0:d={FADE},fade=t=out:st={d - FADE}:d={FADE}[v{i}];'
+            f'[0:v]trim={a}:{b},setpts=PTS-STARTPTS{card},fade=t=in:st=0:d={fin},fade=t=out:st={d - FADE}:d={FADE}[v{i}];'
             f'[0:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:st=0:d={FADE},afade=t=out:st={d - FADE}:d={FADE}[a{i}]'
         )
         labels.append(f'[v{i}][a{i}]')

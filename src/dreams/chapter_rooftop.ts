@@ -10,7 +10,6 @@ import type { ChapterDef, SeedDef } from './types.js';
  */
 const songSeeds = (suffix: string): SeedDef[] => [
   { id: `disco${suffix}`, branch: `disco${suffix}`, anchor: 'view', position: [-0.55, -0.1, 0], color: 'pinkSoft', radius: 0.09, label: 'Disco' },
-  { id: `afro${suffix}`, branch: `afro${suffix}`, anchor: 'view', position: [0, 0.22, 0], color: 'lanternAmber', radius: 0.09, label: 'Afrobeats' },
   { id: `house${suffix}`, branch: `house${suffix}`, anchor: 'view', position: [0.55, -0.1, 0], color: 'moonBlue', radius: 0.09, label: 'House' },
 ];
 const party = (id: string) => ({ id, duration: 24, scene: `party-${id}`, tint: 'pinkSoft' as const, next: 'leap-back' });
@@ -25,7 +24,7 @@ export const chapterRooftop: ChapterDef = {
     'to-window': { id: 'to-window', duration: 9, scene: 'to-window', tint: 'moonBlue', next: 'leap-out' },
     'leap-out': { id: 'leap-out', duration: 4.6, scene: 'leap-out', tint: 'moonBlue', next: 'arrive' },
     arrive: { id: 'arrive', duration: 4, scene: 'arrive', tint: 'pinkSoft', next: 'choice-1' },
-    'choice-1': { id: 'choice-1', duration: 0, scene: 'party-wait', tint: 'pinkSoft', defaultSeed: 'afro', seeds: songSeeds('') },
+    'choice-1': { id: 'choice-1', duration: 0, scene: 'party-wait', tint: 'pinkSoft', defaultSeed: 'house', seeds: songSeeds('') },
     disco: party('disco'),
     afro: party('afro'),
     house: party('house'),

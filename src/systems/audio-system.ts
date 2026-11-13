@@ -48,7 +48,7 @@ export class AudioSystem extends createSystem({
   private tv = new Vector3();
   private lastAct = '';
   /** The song playing on the rooftop before the first choice, and between beats. */
-  private lastSong: ActName = 'afro';
+  private lastSong: ActName = 'house';
   private bed = false;
 
   update(): void {

@@ -96,7 +96,7 @@ export class PalmMenuSystem extends createSystem({
       d.setValue(Caption, 'text', text);
       d.setValue(Caption, 'ttl', 3.5);
     };
-    for (const song of ['disco', 'afro', 'house']) {
+    for (const song of ['disco', 'house']) {
       this.on(`song-${song}`, () => {
         d.setValue(Session, 'djSong', song);
         say(`You're the DJ: ${SONG_NAME[song]} on the decks!`);

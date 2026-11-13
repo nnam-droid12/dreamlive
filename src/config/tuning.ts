@@ -581,6 +581,8 @@ export const Tuning = {
     streetPool: 14,
     /** Back home, the Yeti DJ throws Bigfoot a gift this often; it flies this long; his pile is capped. */
     giftEvery: 3.4,
+    /** Whether the DJ also throws gifts to Bigfoot (off: every gift goes to your hands). */
+    giftsToBigfoot: false,
     giftFlightSec: 1.9,
     pileMax: 14,
     /** Size of the gifts the Yeti throws to Bigfoot (1 = a 24 cm box). */
@@ -658,6 +660,9 @@ export const Tuning = {
     filmForward: 0.48,
     filmLeft: 0.24,
     filmBelow: 0.2,
+    /** The party console in the film: a little closer than the sea's (m ahead, m left). */
+    partyFilmForward: 0.42,
+    partyFilmLeft: 0.21,
     /** Pill size and spacing (m). */
     pillW: 0.042,
     pillH: 0.2,

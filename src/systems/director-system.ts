@@ -1,5 +1,6 @@
 import { Journal } from '../memory/journal.js';
 import {
+  Object3D,
   CanvasTexture,
   createSystem,
   Entity,
@@ -43,6 +44,8 @@ const ONE = new Vector3(1, 1, 1);
 const CAM_RATE = 1.4;
 /** The wanted camera position jumping more than this (m) in one frame is a cut. */
 const CUT_JUMP = 2.5;
+/** How long (s) each scene's caption shows at its start. */
+const FEATURE_HOLD = 3.5;
 const CARD_W = 1.5;
 
 // Hand shots for the trailer (head space: x right, y up, -z forward; identity = palm down, fingers forward).
@@ -65,6 +68,9 @@ const Q_OFFER_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).
 const Q_POINT_IN_R = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.6);
 /** The right palm held out the same way (mirrored). */
 const Q_OFFER_R = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.15)).multiply(Q_PALM_UP);
+/** Both palms tipped forward and over, so a gift slides off them to the floor. */
+const Q_TIP_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -1.9).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -0.15)).multiply(Q_PALM_UP);
+const Q_TIP_R = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -1.9).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.15)).multiply(Q_PALM_UP);
 const Q_CUP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.55).multiply(Q_PALM_UP);
 const CUP_L: HandShot = { at: new Vector3(-0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
 const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
@@ -83,13 +89,15 @@ const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10 };
 const SEA = { console: 5, fist: 10.5, palm: 18.5, palmEnd: 22, press: 28 };
 /** The party console in the film (seconds into a party scene, after the palm menu): [dial, from, to, start, end]. */
 const PARTY_DIALS: [number, number, number, number, number][] = [
-  [2, 1, 0.25, 18, 19.4],
-  [1, 0.85, 0.3, 19.7, 20.8],
-  [2, 0.25, 1, 21.2, 22.4],
-  [1, 0.3, 1, 22.6, 23.6],
+  [0, 0.85, 0.3, 17.6, 18.9],
+  [0, 0.3, 1, 19.1, 20.2],
+  [1, 0.85, 0.2, 20.6, 21.8],
+  [1, 0.2, 1, 22.0, 23.3],
 ];
 /** The film's song change on the party console (seconds into a party scene): reach, tap (Afrobeats), back to dancing. */
-const PARTY_SONG = { reach: 3.8, tap: 5.6, done: 7.2, chip: 1 };
+const PARTY_SONG = { reach: 3.8, tap: 5.6, done: 7.2, chip: 0 };
+/** The film presses the console's Fireworks! button (seconds into a party scene): reach, press, done. */
+const PARTY_FW = { reach: 12.6, press: 14, done: 15.2 };
 const SEA_DIALS: [number, number, number, number, number][] = [
   [0, 0.85, 1, 6.5, 9.5],
   [0, 1, 0.2, 14, 18],
@@ -155,6 +163,10 @@ export class DirectorSystem extends createSystem({
   /** Feature caption, lower right (DreamSpace-style), and what it says now. */
   private feature!: TitleCard;
   private featureText = '';
+  private featureKey = '';
+  private featureAt = -99;
+  /** The in-scene subtitles and chapter cards, hidden in the film (one short caption per scene instead). */
+  private quiet: Object3D[] = [];
   private featureOpacity = 0;
   private cues = new Set<string>();
   private saveTimeline?: () => void;
@@ -316,7 +328,12 @@ export class DirectorSystem extends createSystem({
       // From inside his room as he flies home toward the window.
       this.aim(at(-2.6, 1.5, 0.9), him);
     } else if (scene === 'gifts') {
-      this.aim(at(-3.3, 1.5, 2.6), him.clone().lerp(at(Rooftop.insideSpot.x + 0.5, 1.3, 0), 0.5));
+      const cam = at(-3.3, 1.5, 2.6);
+      const ahead = him.clone().lerp(at(Rooftop.insideSpot.x + 0.5, 1.3, 0), 0.5);
+      // While a gift is set down (and a moment after it lands): look down at the floor in front.
+      const down = (GiftHold.holding && GiftHold.holdFor > 1.1) || GiftHold.placing || GiftHold.sincePlaced < 1.0;
+      if (down) ahead.copy(cam).addScaledVector(this.toward(cam, ahead), 0.9).setY(0.05);
+      this.aim(cam, ahead);
     } else if (scene === 'to-bed' && root) {
       const look = root.clone().setY(0.9);
       this.aim(look.clone().addScaledVector(this.toward(look, seat), 2.6).setY(1.45), look);
@@ -472,10 +489,9 @@ export class DirectorSystem extends createSystem({
         DirectorFrame.cinema = true;
       } else if (t < 8) text = 'Change the song with your hand';
       else if (t < 12) text = 'The skyline dances to the music';
-      else if (t < 17) text = "Turn your palm up: you're the DJ";
-      else if (t < 17.5) text = 'Fireworks, from your palm';
-      else text = 'Mix the party: volume, lights, band';
-      if (t > 17.5 && this.cue('fireworks')) d.setValue(Session, 'fireworkShots', (d.getValue(Session, 'fireworkShots') ?? 0) + 1);
+      else if (t < 17.4) text = 'Fireworks! at your fingertip';
+      else if (t < 20.4) text = 'Volume: slide it down... and back up';
+      else text = 'Lights: dim the party... and bring them back';
     } else if (scene === 'leap-back') text = 'Real music, in spatial audio';
     else if (scene === 'gifts') {
       text = 'Catch his gifts with your hands';
@@ -485,13 +501,30 @@ export class DirectorSystem extends createSystem({
     else if (phase === RitualPhase.Waking) text = 'Every dream leaves a memory';
     else if (phase === RitualPhase.Awake && roof) text = this.tourScript(d);
     if (!roof && phase === RitualPhase.Asleep) text = '';
-    if (text !== this.featureText && !Director.debug) {
+    // One short caption at the start of each scene (like DreamSpace), shown briefly, then none
+    // until the next scene.
+    const key = asleep ? scene : phase === RitualPhase.Awake && roof ? `tour-${this.tourSection()}` : phase;
+    if (text && key !== this.featureKey && !Director.debug) {
+      this.featureKey = key;
       this.featureText = text;
-      if (text) {
-        this.feature.draw([{ text, size: 62, style: 'italic', color: '#ffd38a' }], 'right');
-        this.backFeature();
-      }
+      this.featureAt = this.clock;
+      this.feature.draw([{ text, size: 62, style: 'italic', color: '#ffd38a' }], 'right');
+      this.backFeature();
     }
+  }
+
+  /** Which part of the tour this is (one caption each). */
+  private tourSection(): string {
+    const tt = this.tourTime();
+    if (tt < TOUR.friendEnd) return 'friend';
+    if (tt < TOUR.movie) return 'board';
+    if (tt < TOUR.movieEnd) return 'movie';
+    if (tt < TOUR.street) return 'photo';
+    if (tt < TOUR.clouds) return 'street';
+    if (tt < TOUR.garden) return 'clouds';
+    if (tt < TOUR.sea) return 'garden';
+    if (tt < TOUR.bed) return 'sea';
+    return 'bed';
   }
 
   /** The tour after the dream: what happens when, and its captions. */
@@ -616,6 +649,7 @@ export class DirectorSystem extends createSystem({
     PartyCue.show = scene.startsWith('party-') && scene !== 'party-wait' && t > 0.3;
     PartyCue.drive = -1;
     if (PartyCue.show && t > PARTY_SONG.tap && this.cue('party-song')) PartyCue.song = PARTY_SONG.chip;
+    if (PartyCue.show && t > PARTY_FW.press && this.cue('party-fireworks')) PartyCue.press = true;
     if (PartyCue.show && t > 17.2) {
       for (const [i, from, to, a, b] of PARTY_DIALS) {
         if (t < a || t > b + 0.3) continue;
@@ -643,31 +677,29 @@ export class DirectorSystem extends createSystem({
       const s = Math.sin(this.clock * 4.2);
       left = { ...DANCE_L, at: H_TMP.l.set(-0.2 + 0.04 * s, -0.02 + 0.07 * Math.abs(s), -0.42) };
       right = { ...DANCE_R, at: H_TMP.r.set(0.2 + 0.04 * s, -0.02 + 0.07 * Math.abs(Math.cos(this.clock * 4.2)), -0.42) };
-    } else if (scene.startsWith('party-') && t >= 12 && t < 17) {
-      // The palm menu: left palm up; the right hand points at Fireworks and pinches.
-      left = PALM_UP_L;
-      const panel = this.scene.getObjectByName('Palm Panel');
-      if (panel && panel.position.y > -5 && t > 13) {
-        panel.getWorldPosition(H_TMP.aim);
-        panel.getWorldQuaternion(H_TMP.q);
-        H_TMP.aim.add(H_TMP.off.set(0.058, 0.02, 0).applyQuaternion(H_TMP.q));
-        right = { ...POINT_R, aim: H_TMP.aim, pinch: t > 14.3 && t < 15.1 ? 1 : 0 };
-      }
+    } else if (scene.startsWith('party-') && t >= PARTY_FW.reach && t < PARTY_FW.done && PartyConsoleSpots.ready) {
+      // The left fingertip presses the console's Fireworks! button.
+      this.player.head.updateMatrixWorld(true);
+      const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.button));
+      const press = t > PARTY_FW.press - 0.4 && t < PARTY_FW.press + 0.5 ? -0.012 : 0.03;
+      left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.08 + press)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (PartyCue.show && t > 17.2 && PartyConsoleSpots.ready) {
       // The left fingertip on the party console's knob it drags (or the next one).
       this.player.head.updateMatrixWorld(true);
-      const k = PartyCue.drive >= 0 ? PartyCue.drive : t < 19.6 ? 2 : t < 21.1 ? 1 : t < 22.5 ? 2 : 1;
+      const k = PartyCue.drive >= 0 ? PartyCue.drive : t < 20.4 ? 0 : 1;
       const p = this.player.head.worldToLocal(H_TMP.aim.copy(PartyConsoleSpots.knob[k]));
       left = { at: H_TMP.l.copy(p).add(H_TMP.off.set(0.02, -0.05, 0.11)), rot: Q_ID, pose: 'point', pinch: 0 };
     } else if (scene === 'gifts') {
       // One gift at a time: both palms held out together, open and up, for it; once it rests
       // there a moment, both hands lower together to set it on the floor.
       // (Cupped with the fingers a little apart and tipped up toward you, like the garden's palm.)
-      const lower = GiftHold.holding && GiftHold.holdFor > 1.4;
-      const y = lower ? -0.78 : -0.16;
-      const z = lower ? -0.3 : -0.38;
-      left = { at: H_TMP.l.set(-0.07, y, z), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
-      right = { at: H_TMP.r.set(0.07, y, z), rot: Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
+      // Setting it down: the camera looks down at the floor, the hands lower and tip forward, and
+      // the gift slides off and drops to the floor in view.
+      const lower = (GiftHold.holding && GiftHold.holdFor > 1.3) || GiftHold.placing;
+      const y = lower ? -0.3 : -0.16;
+      const z = lower ? -0.44 : -0.38;
+      left = { at: H_TMP.l.set(-0.07, y, z), rot: lower ? Q_TIP_L : Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
+      right = { at: H_TMP.r.set(0.07, y, z), rot: lower ? Q_TIP_R : Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
     }
     let ease = Math.min(1, dt * 6);
     const tt = phase === RitualPhase.Awake ? this.tourTime() : -1;
@@ -787,7 +819,10 @@ export class DirectorSystem extends createSystem({
         this.feature.draw(parts.map((p: string) => ({ text: p, size: 22, color: '#ffffff' })), 'right');
       }
     }
-    const want = this.featureText && this.cardMat.opacity < 0.2 ? 1 : 0;
+    const want = this.featureText && this.cardMat.opacity < 0.2 && (Director.debug || this.clock - this.featureAt < FEATURE_HOLD) ? 1 : 0;
+    // No running text in the film: the in-scene subtitles, hints and chapter cards stay hidden.
+    if (!this.quiet.length) for (const n of ['Caption', 'FilmChapter']) { const o = this.scene.getObjectByName(n); if (o) this.quiet.push(o); }
+    for (const o of this.quiet) o.visible = false;
     this.featureOpacity += (want - this.featureOpacity) * Math.min(1, dt * 3);
     const m = this.feature.mesh;
     m.visible = this.featureOpacity > 0.01;
