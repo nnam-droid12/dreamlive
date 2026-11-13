@@ -28,7 +28,6 @@ export const NARRATION: readonly NarrationLine[] = [
   { id: 'home', beat: 'leap-back', at: 0.3, text: 'Time to head home. Hold on!' },
   { id: 'gifts', beat: 'gifts', at: 0.8, text: "Yeti's throwing presents! Catch some for yourself!" },
   { id: 'goodnight', beat: 'to-bed', at: 0.5, text: 'What a night... Thank you for dreaming with me, friend.' },
-  { id: 'rain', beat: 'bedtime', at: 2, text: 'Shhh... listen to the rain. Goodnight.' },
 ];
 
 /** Shared jam line: one voice file for all three songs. */

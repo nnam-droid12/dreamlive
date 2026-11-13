@@ -45,9 +45,10 @@ export class BedtimeSystem extends createSystem({
     d.setValue(Session, 'fadeIn', cfg.fadeSec);
     if (bed) {
       d.setValue(Session, 'djSong', '');
-      d.setValue(Session, 'weather', 'rain');
+      // A calm, clear night: no rain at bedtime.
+      d.setValue(Session, 'weather', 'clear');
       d.setValue(Session, 'skyOverride', 'night');
-      d.setValue(Caption, 'text', 'Bedtime. Bigfoot is fast asleep. Listen to the rain on New York.');
+      d.setValue(Caption, 'text', 'Bedtime. Bigfoot is fast asleep. Goodnight, New York.');
     } else {
       d.setValue(Session, 'weather', 'clear');
       d.setValue(Session, 'skyOverride', '');

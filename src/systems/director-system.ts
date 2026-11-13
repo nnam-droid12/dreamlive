@@ -261,7 +261,7 @@ export class DirectorSystem extends createSystem({
     if (phase === RitualPhase.Awake && this.awakeAt < 0) this.awakeAt = this.clock;
     const orb = this.flyingOrb();
     if (d.getValue(Session, 'bedtime')) {
-      // Bedtime: the rain on the glass, the city at night, Bigfoot asleep in the corner of the shot.
+      // Bedtime: the city at night through the glass, Bigfoot asleep in the corner of the shot.
       const o = new Vector3().fromArray(d.getVectorView(RoomSlots, 'windowOrigin'));
       this.aim(new Vector3(o.x - 3.4, 1.4, o.z + 2.2), new Vector3(o.x, 1.5, o.z - 0.3));
     } else if (this.tourShot(d, seat, head)) {
@@ -567,7 +567,7 @@ export class DirectorSystem extends createSystem({
     if (gs < 23.5) return 'Raise your palm to the sky: sunshine';
     if (gs < SEA.press) return 'Call the whales';
     if (tt < TOUR.bed) return 'Goodnight, sea';
-    if (tt < TOUR.bed + 8) return 'Bedtime: rain on the glass';
+    if (tt < TOUR.bed + 8) return 'Bedtime: a quiet night in New York';
     return 'The end credits roll';
   }
 
