@@ -149,7 +149,8 @@ export class CatchSystem extends createSystem({
       const k = Math.min(1, f.age / (f.flight * this.slow));
       o.position.lerpVectors(f.from, f.to, ease(k)).addScaledVector(this.up, Math.sin(Math.PI * k) * f.arc);
       if (k >= 1) o.position.y += Math.sin(f.age * 3) * 0.01;
-      o.scale.setScalar(0.4 + 0.6 * Math.min(1, k * 2));
+      // (Grows from small to its own size: a gift for your hands is smaller than the dream's catches.)
+      o.scale.setScalar((0.4 + 0.6 * Math.min(1, k * 2)) * (f.kind === 'gift' ? Tuning.rooftop.viewerGiftScale : 1));
       o.rotation.x += f.spin.x * delta;
       o.rotation.y += f.spin.y * delta;
       if (f.kind === 'gift') {
