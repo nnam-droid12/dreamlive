@@ -391,7 +391,8 @@ export class DirectorSystem extends createSystem({
       else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 1.3).addScaledVector(leftV, 0.1).setY(0.72));
     }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
-    else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.25, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.6));
+    // (High enough that the storm's biggest swells pass below the lens, never through it.)
+    else if (tt < TOUR.sea + SEA.press + 2) this.aim(at(-0.3, 1.85, 0.3), WorldSpots.board.clone().setY(WorldSpots.board.y + 1.3));
     else if (tt < TOUR.flood) this.aim(at(-0.6, 1.6, 0.3), WorldSpots.whale);
     else this.aim(at(-2.6, 1.35, 0.9), at(-1.8, 0, 0.8));
     return true;
