@@ -323,7 +323,8 @@ export class DirectorSystem extends createSystem({
       // The skyline as a music visualizer, then the fireworks above it.
       else if (t < 12) this.aim(at(deck.x + 0.5, deck.y + 2.6, deck.z + 2.5), at(40, 16, -2));
       // The palm menu in hand, the party and skyline beyond; then the fireworks it launches.
-      else if (t < 17) this.aim(at(deck.x, deck.y + 1.5, deck.z), at(24, 9, -1));
+      // Fireworks! from the console: the party and its sky ahead, the console and your fingertip in view.
+      else if (t < 17) this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
       // Mixing the party by hand: the dancers and Bigfoot ahead, the glass console by your left hand.
       else this.aim(at(deck.x - 1.0, deck.y + 1.4, deck.z - 0.4), him);
     } else if (scene === 'leap-back') {
