@@ -1,0 +1,17 @@
+{
+  "name": "Dreamlive",
+  "short_name": "Dreamlive",
+  "description": "A mixed-reality dream with Bigfoot: draw him a window, dance at a rooftop party, catch gifts, and explore dream worlds with your own hands.",
+  "id": "/dreamlive/",
+  "start_url": "/dreamlive/",
+  "scope": "/dreamlive/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0c1422",
+  "theme_color": "#0c1422",
+  "icons": [
+    { "src": "icons/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icons/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

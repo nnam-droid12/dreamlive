@@ -58,6 +58,18 @@ World.create(
   document.getElementById('scene-container') as HTMLDivElement,
   projectOptions,
 ).then((world) => {
+  // Installed as the Quest app (a Trusted Web Activity): there is no page to click, so the
+  // app-icon tap goes straight into the immersive session. Never in a normal browser tab.
+  const nav = navigator as Navigator & { xr?: { isSessionSupported?: (m: string) => Promise<boolean> } };
+  if ('getDigitalGoodsService' in window && nav.xr?.isSessionSupported) {
+    nav.xr
+      .isSessionSupported('immersive-ar')
+      .then((ar) => (ar ? true : nav.xr!.isSessionSupported!('immersive-vr')))
+      .then((ok) => {
+        if (ok) world.launchXR();
+      })
+      .catch(() => undefined);
+  }
   // The director entity holds the session-wide dream state.
   world
     .createEntity()
