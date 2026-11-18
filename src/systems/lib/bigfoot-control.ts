@@ -6,6 +6,8 @@ import { Vector3 } from '@iwsdk/core';
  * hand reaching to an exact point (a high-five or a fist bump).
  */
 export const BigfootControl = {
+  /** Seconds left of facing the viewer for a photo (set while a finger frame is held, and by the film). */
+  photoFace: 0,
   active: false,
   spot: new Vector3(),
   yaw: 0,

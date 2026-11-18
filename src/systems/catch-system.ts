@@ -236,7 +236,8 @@ export class CatchSystem extends createSystem({
         o.rotation.y += delta * 0.6;
       }
       this.player.head.getWorldPosition(this.head);
-      const low = !lost && this.hand.y < this.head.y - g.giftSetDown;
+      // (Hands lowered well below your eyes, or brought right down near the floor.)
+      const low = !lost && (this.hand.y < this.head.y - g.giftSetDown || this.hand.y < g.giftFloorReach);
       const tipped = !lost && this.cup.y < -0.2;
       if ((lost || low || tipped) && f.age > 0.6) this.place(f);
       return true;

@@ -21,6 +21,7 @@ import { Caption, Ritual, RitualPhase } from '../components/ritual.js';
 import { Session } from '../components/session.js';
 import { RoomSlots } from '../components/stage.js';
 import { DirectorFrame } from '../config/director.js';
+import { BigfootControl } from './lib/bigfoot-control.js';
 import { Tuning } from '../config/tuning.js';
 import { MemoryStore } from '../memory/store.js';
 
@@ -122,6 +123,7 @@ export class PhotoSystem extends createSystem({
       this.snap(d);
     } else if (framed) {
       this.hold += realDelta;
+      BigfootControl.photoFace = Math.max(BigfootControl.photoFace, 1.5);
       this.showGuide();
       if (this.hold > cfg.poseAfter) this.pose();
       if (this.hold >= cfg.holdSec) this.snap(d);
@@ -300,7 +302,7 @@ export class PhotoSystem extends createSystem({
     g.fillStyle = '#3a3530';
     g.font = 'italic 30px Georgia, serif';
     g.textAlign = 'center';
-    g.fillText(`Me & Bigfoot · ${new Date().toLocaleDateString()}`, card.width / 2, h + pad + 48);
+    g.fillText(`You & Bigfoot · ${new Date().toLocaleDateString()}`, card.width / 2, h + pad + 48);
     return card;
   }
 

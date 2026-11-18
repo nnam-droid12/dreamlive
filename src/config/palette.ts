@@ -105,6 +105,18 @@ export const Palette = {
   doveWhite: 0xf7f7f2,
   doveGrey: 0xd9dcdf,
   doveBeak: 0xe8955a,
+  /** The garden's eagle (a bald eagle): dark and mid brown plumage, lighter covert feathers, white head and tail, yellow beak, feet and eyes, dark talons; its speckled egg. */
+  eagleBrownDark: 0x2b1a0f,
+  eagleBrown: 0x4b301b,
+  eagleCovert: 0x6b4728,
+  eagleWhite: 0xf3f0e7,
+  eagleBeak: 0xf0b323,
+  eagleFoot: 0xe9b52f,
+  eagleTalon: 0x1c1a18,
+  eagleEye: 0xe6c11c,
+  eaglePupil: 0x0b0b0b,
+  eggShell: 0xf2e7d3,
+  eggSpeck: 0x8b6b4b,
   /** Modern towers: curtain-wall glass (blue, dark), lobby glass, aluminium and bronze fins, concrete, crown. */
   towerGlassBlue: 0x1d3048,
   towerGlassDark: 0x0b0e13,

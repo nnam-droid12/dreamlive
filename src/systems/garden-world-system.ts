@@ -33,6 +33,7 @@ import { Showcase } from '../config/showcase.js';
 import { Tuning } from '../config/tuning.js';
 import { HandSigns, HandReading } from '../input/hand-signs.js';
 import { Butterfly, picnicMatTexture, pitchLawnTexture, WingPattern } from '../visuals/garden-life.js';
+import { GardenEagle } from './lib/garden-eagle.js';
 import { BigfootControl } from './lib/bigfoot-control.js';
 import { hideRoomExtras, WorldKit, WorldSpots } from './lib/world-kit.js';
 import type { EmulatedHand } from './real-hands.js';
@@ -53,10 +54,11 @@ const TREES: [string, number, number, number, number, number, number][] = [
 ];
 /** Index into the 25 hand joints (WebXR order): the index fingertip. */
 const INDEX_TIP = 9;
+const THUMB_TIP = 4;
 const css = (hex: number) => `#${hex.toString(16).padStart(6, '0')}`;
 
 /** Where Bigfoot would be and the garden's centre (world), for the film's camera. */
-export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3(), /** Times a butterfly was touched away. */ touched: 0, /** Where the perched butterfly is (world), for the film's fingertip; null when none. */ perched: null as Vector3 | null, /** The right index fingertip (world), or null. */ rightTip: null as Vector3 | null };
+export const GardenSpots = { bigfoot: new Vector3(), center: new Vector3(), /** Times a butterfly was touched away. */ touched: 0, /** Where the perched butterfly is (world), for the film's fingertip; null when none. */ perched: null as Vector3 | null, /** The right index fingertip (world), or null. */ rightTip: null as Vector3 | null, /** The eagle (world) while it is out, and what it is doing (for the film's camera and hands). */ eagle: null as Vector3 | null, eagleState: '', /** The egg (world) while it is out, and the right hand's pinch point (world) when tracked. */ egg: null as Vector3 | null, rightPinch: null as Vector3 | null };
 
 interface Fly {
   b: Butterfly;
@@ -90,6 +92,12 @@ export class GardenWorldSystem extends createSystem({
   private trees!: Group;
   private dome!: Mesh;
   private flies: Fly[] = [];
+  private eagle = new GardenEagle();
+  private matSpot = new Vector3();
+  /** Where the eagle lands: the near end of the mat (set when the garden begins). */
+  private matNear = new Vector3();
+  private eaglePalm = { ready: false, palm: new Vector3(), normal: new Vector3(0, 1, 0) };
+  private eaglePinch = { on: false, at: new Vector3() };
   private hidRoom = false;
   private signs = new HandSigns();
   private upFor = { left: 0, right: 0 };
@@ -201,6 +209,8 @@ export class GardenWorldSystem extends createSystem({
       this.root.add(b.root);
       this.flies.push({ b, home: new Vector3(), pos: new Vector3(), last: new Vector3(), phase: i * 1.7, state: 'wander', t: 0, from: new Vector3(), on: '' });
     }
+    // The eagle that comes to the mat, and the egg it leaves on your palm.
+    this.root.add(this.eagle.root, this.eagle.egg);
     this.sun = new DirectionalLight(Palette.gardenSun, 0);
     this.sky = new HemisphereLight(Palette.gardenSky, Palette.gardenGround, 0);
     this.world.createTransformEntity(this.root);
@@ -237,6 +247,24 @@ export class GardenWorldSystem extends createSystem({
     else this.signs.readFrame(this.xrFrame, this.xrManager.getReferenceSpace(), this.player);
     this.signs.update(dt, this.rightV);
     this.butterflies(dt);
+    // The eagle: lands on the mat, comes to your held-out left palm, lays an egg, flies away.
+    const left = this.signs.left;
+    this.eaglePalm.ready = this.palmReady(left);
+    if (left.tracked) {
+      this.eaglePalm.palm.copy(left.palm);
+      this.eaglePalm.normal.copy(left.normal);
+    }
+    // (On the near end of the mat, so you see it well.)
+    this.matSpot.copy(this.matNear);
+    const r = this.signs.right;
+    this.eaglePinch.on = r.tracked && r.joints[THUMB_TIP].distanceTo(r.joints[INDEX_TIP]) < cfg.pinchClose;
+    if (r.tracked) this.eaglePinch.at.addVectors(r.joints[THUMB_TIP], r.joints[INDEX_TIP]).multiplyScalar(0.5);
+    const said = this.eagle.update(dt, this.time, this.matSpot, this.head, this.fwd, this.eaglePalm, this.eaglePinch);
+    GardenSpots.egg = this.eagle.eggAt;
+    GardenSpots.rightPinch = r.tracked ? this.eaglePinch.at : null;
+    if (said) this.kit.caption(d, said, 4);
+    GardenSpots.eagle = this.eagle.root.visible ? this.eagle.position : null;
+    GardenSpots.eagleState = this.eagle.state;
     // Once a butterfly has come and gone: how to get home with hands alone.
     if (!this.hinted && (GardenSpots.touched > this.touchedAtBegin || this.time > cfg.menuHintAfter)) {
       this.hinted = true;
@@ -259,6 +287,7 @@ export class GardenWorldSystem extends createSystem({
     // The blanket under you, its length running ahead.
     this.mat.position.copy(this.center).addScaledVector(this.fwd, cfg.matAhead).setY(0.012);
     this.mat.rotation.set(0, Math.atan2(this.fwd.x, this.fwd.z), 0);
+    this.matNear.copy(this.mat.position).addScaledVector(this.fwd, -cfg.matLength * 0.3).setY(0.016);
     this.trees.position.copy(this.center);
     // (The film's camera looks this way.)
     GardenSpots.bigfoot.copy(this.center).addScaledVector(this.fwd, cfg.bigfootAhead);
@@ -273,6 +302,7 @@ export class GardenWorldSystem extends createSystem({
       f.on = '';
     });
     this.time = 0;
+    this.eagle.reset();
     this.hinted = false;
     this.touchedAtBegin = GardenSpots.touched;
     this.kit.caption(d, 'Proximity passthrough: lean away to see your room');
@@ -306,7 +336,8 @@ export class GardenWorldSystem extends createSystem({
       this.upFor[side] = ready ? this.upFor[side] + dt : 0;
       this.downFor[side] = ready ? 0 : this.downFor[side] + dt;
       const perched = this.flies.some((f) => f.on === side);
-      if (this.upFor[side] > cfg.palmHold && !perched) {
+      // (While the eagle has your palm, the butterflies keep away.)
+      if (this.upFor[side] > cfg.palmHold && !perched && !this.eagle.wantsPalm) {
         // The nearest wandering butterfly comes to this hand.
         let best: Fly | undefined;
         for (const f of this.flies) if (f.state === 'wander' && (!best || f.pos.distanceTo(h.palm) < best.pos.distanceTo(h.palm))) best = f;

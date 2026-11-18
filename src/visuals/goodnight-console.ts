@@ -22,6 +22,8 @@ export class GoodnightConsole {
 
   constructor() {
     this.root.name = 'GoodnightConsole';
+    // Bigger than life size so its words read clearly (input maps through the root, so scale is safe).
+    this.root.scale.setScalar(cfg.scale);
     const W = cfg.pillW;
     const H = cfg.pillH;
     DIALS.forEach((dial, i) => {
@@ -278,23 +280,30 @@ function iconTexture(dial: GoodnightDial): CanvasTexture {
 }
 
 function labelTexture(text: string): CanvasTexture {
-  const [c, g] = canvas(128, 48);
-  g.font = '600 30px system-ui, "Segoe UI", Roboto, sans-serif';
+  // Drawn large and bold with a dark outline, so the word stays crisp and readable over any background.
+  const [c, g] = canvas(256, 96);
+  g.font = '700 60px system-ui, "Segoe UI", Roboto, sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.shadowColor = 'rgba(0,0,0,0.85)';
-  g.shadowBlur = 6;
+  g.lineJoin = 'round';
+  g.lineWidth = 10;
+  g.strokeStyle = 'rgba(0,0,0,0.9)';
+  g.strokeText(text, 128, 52, 244);
   g.fillStyle = '#ffffff';
-  g.fillText(text, 64, 26);
+  g.fillText(text, 128, 52, 244);
   return tex(c);
 }
 
 function buttonTexture(): CanvasTexture {
   const [c, g] = canvas(512, 96);
-  g.font = '600 50px system-ui, "Segoe UI", Roboto, sans-serif';
+  g.lineJoin = 'round';
+  g.lineWidth = 8;
+  g.strokeStyle = 'rgba(0,0,0,0.85)';
+  g.font = '700 56px system-ui, "Segoe UI", Roboto, sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
+  g.strokeText('Goodnight', 256, 50, 490);
   g.fillStyle = '#ffffff';
-  g.fillText('Goodnight', 256, 50);
+  g.fillText('Goodnight', 256, 50, 490);
   return tex(c);
 }

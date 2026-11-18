@@ -103,19 +103,33 @@ export class DirectorHands {
       import('iwer/lib/device/configs/hand/pinch.js'),
     ])
       .then(([lib, builder, relaxed, pinch]) => {
-        // Plus a receiving hand: the cupped palm with the fingers spaced a little apart
-        // (fingertips 2-3 cm apart instead of touching; 'open' has them about 5 cm apart).
+        // Plus two receiving hands, both with all five fingers slightly apart and the thumb
+        // opened out from the palm so it shows (IWER's cup hides it along the index).
         const angles = lib.handPoseAngles as unknown as Record<string, Record<string, Record<string, unknown>>>;
         const cup = angles.cup;
+        // palmSpread: a gently curved open palm, for the butterfly to land on (fingertips about 4 cm
+        // apart). Its fingers are about 10 degrees straighter than IWER's cup so the hand reads as
+        // 'open' (HandSigns finger extension 0.64-0.73): the garden only lands a butterfly on an open palm.
+        const palmSpread = {
+          ...cup,
+          thumb: { ...cup.thumb, cmc: [-60, 0, -55], shift: 0, mcp: 10, ip: 10 },
+          index: { ...cup.index, yaw: -24, mcp: 26, pip: 22, dip: 15 },
+          middle: { ...cup.middle, yaw: -6, mcp: 28, pip: 25, dip: 16 },
+          ring: { ...cup.ring, yaw: 28, mcp: 29, pip: 21, dip: 15 },
+          pinky: { ...cup.pinky, yaw: 34, mcp: 32, pip: 20, dip: 13 },
+        };
+        // cupSpread: a real bowl, for catching the gifts (fingertips about 2-3 cm apart).
         const cupSpread = {
           ...cup,
-          index: { ...cup.index, yaw: -14 },
-          middle: { ...cup.middle, yaw: -5 },
-          ring: { ...cup.ring, yaw: 22 },
-          pinky: { ...cup.pinky, yaw: 22 },
+          // A deeper cup than IWER's: knuckles and finger joints about 12 degrees more curled.
+          thumb: { ...cup.thumb, cmc: [-52, 0, -62], shift: 0, mcp: 18, ip: 20 },
+          index: { ...cup.index, yaw: -26, mcp: 48, pip: 44, dip: 30 },
+          middle: { ...cup.middle, yaw: -12, mcp: 51, pip: 48, dip: 31, pipYaw: -4 },
+          ring: { ...cup.ring, yaw: 36, mcp: 52, pip: 43, dip: 29, pipYaw: 8 },
+          pinky: { ...cup.pinky, yaw: 44, mcp: 55, pip: 41, dip: 26, pipYaw: 6 },
         };
         const build = builder.buildHandPose as (a: unknown, r: unknown, p: unknown) => unknown;
-        const poses = { ...(lib.libraryHandPoses as Record<string, unknown>), cupSpread: build(cupSpread, relaxed.relaxedHandPose, pinch.pinchHandPose) };
+        const poses = { ...(lib.libraryHandPoses as Record<string, unknown>), cupSpread: build(cupSpread, relaxed.relaxedHandPose, pinch.pinchHandPose), palmSpread: build(palmSpread, relaxed.relaxedHandPose, pinch.pinchHandPose) };
         for (const h of [d.hands?.left, d.hands?.right]) addPoses(h, poses);
       })
       .catch(() => undefined);

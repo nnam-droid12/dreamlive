@@ -1,4 +1,3 @@
-import { BigfootControl } from './lib/bigfoot-control.js';
 import { Director } from '../config/director.js';
 import { createSystem, VisibilityState } from '@iwsdk/core';
 import { DreamDirector } from '../components/dream.js';
@@ -9,8 +8,8 @@ import { Tuning } from '../config/tuning.js';
 const cfg = Tuning.bedtime;
 
 /**
- * Bedtime mode: a calm place to stay after the story. Chosen from the palm
- * menu, or by itself a little while after the Rooftop night ends. The sky goes
+ * Bedtime mode (now used only by the Director's film; the app no longer offers it).
+ * The sky goes
  * to deep night, rain runs down the glass, the party falls quiet and Bigfoot is
  * back in bed, snoring. A soft fade from black covers the change.
  */
@@ -18,7 +17,6 @@ export class BedtimeSystem extends createSystem({
   director: { required: [Session, Ritual, DreamDirector, Caption] },
 }) {
   private was = false;
-  private autoDone = false;
   private generation = -1;
 
   update(): void {
@@ -30,15 +28,11 @@ export class BedtimeSystem extends createSystem({
     if (gen !== this.generation || phase === RitualPhase.Idle || phase === RitualPhase.Arrival) {
       // A new dream: bedtime is over until the story ends again.
       this.generation = gen;
-      this.autoDone = false;
       if (d.getValue(Session, 'bedtime')) d.setValue(Session, 'bedtime', false);
     }
-    const awake = phase === RitualPhase.Awake;
-    // Not during Movie Night: bedtime can wait for the credits.
-    if (awake && !this.autoDone && !d.getValue(Session, 'movie') && !d.getValue(Session, 'world') && !Director.enabled && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && (d.getValue(Ritual, 'phaseTime') ?? 0) > cfg.autoAfterSec && BigfootControl.quietFor > cfg.autoAfterSec) {
-      this.autoDone = true;
-      d.setValue(Session, 'bedtime', true);
-    }
+    // Bedtime is no longer offered in the app (it does not start by itself, and the palm menu and
+    // the sea's Goodnight no longer open it); only the Director's film may still use it.
+    if (!Director.enabled && d.getValue(Session, 'bedtime')) d.setValue(Session, 'bedtime', false);
     const bed = !!d.getValue(Session, 'bedtime');
     if (bed === this.was) return;
     this.was = bed;

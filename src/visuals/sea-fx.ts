@@ -181,7 +181,10 @@ export class Ocean {
           vec3 water = mix(uDeep, vec3(0.03, 0.16, 0.22), uSun * 0.8) + uScatter * sss * 0.8;
           vec3 col = mix(water, sky, fres);
           // Foam on the steepest crests, broken up by noise.
-          float foamN = n(vWorld.xz * 0.35 + uTime * 0.1) * 0.6 + n(vWorld.xz * 1.7 - uTime * 0.3) * 0.4;
+          // (Smooth sums of sines, 0..1: value noise here made hard-edged square patches.)
+          vec2 fq = vWorld.xz * 0.35;
+          float foamN = 0.5 + 0.25 * (sin(fq.x * 1.3 + fq.y * 0.7 + uTime * 0.4) + 0.6 * sin(fq.x * 2.9 - fq.y * 2.3 - uTime * 0.7)
+                                    + 0.4 * sin(fq.x * 5.3 + fq.y * 4.1 + uTime));
           float foam = smoothstep(0.42, 0.62, vCrest + foamN * 0.35 - 0.12) * near * smoothstep(0.2, 0.7, uAmp);
           col = mix(col, uFoam * (0.55 + uFlash * 0.8), foam * 0.85);
           col += vec3(0.7, 0.75, 0.9) * uFlash * 0.12;

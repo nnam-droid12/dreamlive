@@ -45,6 +45,10 @@ const ONE = new Vector3(1, 1, 1);
 const CAM_RATE = 1.4;
 /** The wanted camera position jumping more than this (m) in one frame is a cut. */
 const CUT_JUMP = 2.5;
+/** After the eagle leaves (s): the right hand reaches for the egg, pinches it, carries it down to the mat; it lets go this long before the garden ends. */
+const EGG_PICK = { reach: 0.6, pinch: 1.8, carry: 2.3, releaseBeforeEnd: 1.6 };
+/** Setting a gift down: the camera's crouched eye height (m), and how far (m) each hand moves aside to let it drop. */
+const GIFT_DOWN = { crouch: 0.8, part: 0.09 };
 /** How long (s) each scene's caption shows at its start. */
 const FEATURE_HOLD = 3.5;
 const CARD_W = 1.5;
@@ -64,14 +68,17 @@ const PALM_UP_L: HandShot = { at: new Vector3(-0.09, -0.17, -0.38), rot: Q_PALM_
 const POINT_R: HandShot = { at: new Vector3(0.12, -0.13, -0.34), rot: Q_ID, pose: 'point', pinch: 0 };
 // Held out to catch: palms up, fingers tilted up toward the gift.
 /** A left palm held out wide open: fingers forward, the palm tipped up toward your eyes. */
+/** The left palm turned so its fingers point across to the right (a falconer's hand for the eagle). */
+const Q_FALCON_L_YAW = -0.9;
 const Q_OFFER_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -0.15)).multiply(Q_PALM_UP);
+const Q_FALCON_L = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), Q_FALCON_L_YAW).multiply(Q_OFFER_L);
+/** The right hand picking the egg up: palm down and turned a little toward you, so all five fingers show. */
+const Q_PINCH_R = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.5).multiply(new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -0.35));
 /** The right index finger pointing forward and in to the left (reaching across from the right). */
 const Q_POINT_IN_R = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.6);
 /** The right palm held out the same way (mirrored). */
 const Q_OFFER_R = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.75).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.15)).multiply(Q_PALM_UP);
 /** Both palms tipped forward and over, so a gift slides off them to the floor. */
-const Q_TIP_L = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -1.9).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), -0.15)).multiply(Q_PALM_UP);
-const Q_TIP_R = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -1.9).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 0.15)).multiply(Q_PALM_UP);
 const Q_CUP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.55).multiply(Q_PALM_UP);
 const CUP_L: HandShot = { at: new Vector3(-0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
 const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose: 'cup', pinch: 0 };
@@ -79,9 +86,9 @@ const CUP_R: HandShot = { at: new Vector3(0.075, -0.15, -0.36), rot: Q_CUP, pose
  * After the dream, the tour of everything else (seconds after waking): Movie
  * Night, a finger-frame photo, then the three dream worlds, then bedtime.
  */
-const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, garden: 113, sea: 129, whale: 154, flood: 159, bed: 159, end: 185 };
+const TOUR = { friend: 6, friendEnd: 38, movie: 41, bunny: 46, sofa: 56, movieEnd: 68, photo: 69, snap: 72, street: 76, streetLow: 86, clouds: 94, puff: 102, star: 107, garden: 113, sea: 148, whale: 173, flood: 178, bed: 178, end: 204 };
 /** The garden (seconds into it): the right palm opens for a butterfly, the left finger points for the ladybug. */
-const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10, leanFrom: 11.8, leanBack: 14.2 };
+const GARDEN = { palm: 2.5, palmEnd: 11, touch: 7.6, touchEnd: 10, leanFrom: 11.8, leanBack: 14.2, eagleMat: 15.4, eaglePalm: 19.4, eagleEnd: 33.5 };
 /**
  * Storm and sunshine at sea (seconds after the sea begins): the console shows,
  * each dial the left hand drags [index, from, to, start, end], the right hand's
@@ -96,7 +103,7 @@ const PARTY_DIALS: [number, number, number, number, number][] = [
   [1, 0.2, 1, 22.0, 23.3],
 ];
 /** The film's song change on the party console (seconds into a party scene): reach, tap (Afrobeats), back to dancing. */
-/** Drawing the window (seconds into the scene), after his line asking for it ends (it runs 0.4 to 9.0 s). */
+/** Drawing the window (seconds into the scene), after the beat where he asks for it (0.4 to 9.0 s; the demo video shows the request as a caption). */
 const DRAW = { show: 8.6, pinch: 9.3, drag: 2.8, release: 12.5, hide: 13.6 };
 const PARTY_SONG = { reach: 3.8, tap: 5.6, done: 7.2, chip: 0 };
 /** The film presses the console's Fireworks! button (seconds into a party scene): reach, press, done. */
@@ -332,11 +339,11 @@ export class DirectorSystem extends createSystem({
       // From inside his room as he flies home toward the window.
       this.aim(at(-2.6, 1.5, 0.9), him);
     } else if (scene === 'gifts') {
-      const cam = at(-3.3, 1.5, 2.6);
+      // Setting a gift down, you crouch to the floor with it (and stay a moment after it lands), looking at the spot.
+      const down = (GiftHold.holding && GiftHold.holdFor > 1.3) || GiftHold.placing || GiftHold.sincePlaced < 1.2;
+      const cam = at(-3.3, down ? GIFT_DOWN.crouch : 1.5, 2.6);
       const ahead = him.clone().lerp(at(Rooftop.insideSpot.x + 0.5, 1.3, 0), 0.5);
-      // While a gift is set down (and a moment after it lands): look down at the floor in front.
-      const down = (GiftHold.holding && GiftHold.holdFor > 1.1) || GiftHold.placing || GiftHold.sincePlaced < 1.0;
-      if (down) ahead.copy(cam).addScaledVector(this.toward(cam, ahead), 0.9).setY(0.05);
+      if (down) ahead.copy(cam).addScaledVector(this.toward(cam, ahead), 0.75).setY(0);
       this.aim(cam, ahead);
     } else if (scene === 'to-bed' && root) {
       const look = root.clone().setY(0.9);
@@ -411,7 +418,22 @@ export class DirectorSystem extends createSystem({
       // Proximity passthrough: after the butterfly, you lean away; the garden fades and your room shows.
       const lean = smooth01((gg - GARDEN.leanFrom) / 0.8) * (1 - smooth01((gg - GARDEN.leanBack) / 0.8));
       ProximityCue.film = gg > GARDEN.leanFrom - 0.5 && gg < GARDEN.leanBack + 1.5 ? lean : -1;
-      if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4 - 0.25 * lean).addScaledVector(leftV, 0.55 * lean).setY(1.3 + 0.1 * lean), c.clone().addScaledVector(dir, 3).setY(0.45));
+      // The eagle: it lands on the mat ahead; your left palm calls it; follow it as it flies off, then back to the egg on your palm.
+      if (GardenSpots.eagleState === 'leave' && this.eagleLeftAt < 0) this.eagleLeftAt = gg;
+      const eagleUp = this.eagleLeftAt >= 0 && gg < this.eagleLeftAt + 2.4 && GardenSpots.eagle;
+      const eggDownCam = this.eagleLeftAt >= 0 && gg > this.eagleLeftAt + EGG_PICK.carry && gg < GARDEN.eagleEnd;
+      if (gg >= GARDEN.eagleMat && gg < GARDEN.eaglePalm - 0.3) {
+        // The eagle landing and standing on the mat: step close and crouch to look at it at its own height.
+        const e = GardenSpots.eagle;
+        this.aim(c.clone().addScaledVector(dir, 0.5).setY(0.55), e ? H_TMP.b.copy(e).setY(e.y + 0.2) : c.clone().addScaledVector(dir, 1.25).setY(0.2));
+      } else if (eggDownCam) {
+        // Crouched right by the mat: the hand setting the egg down, close in front of you.
+        this.aim(c.clone().addScaledVector(dir, 0.9).setY(0.26), c.clone().addScaledVector(dir, 1.15).setY(0.04));
+      } else if (gg >= GARDEN.eaglePalm - 0.3 && gg < GARDEN.eagleEnd) {
+        // (No tilting up after it as it leaves: your palm, and the egg on it, stay level.)
+        void eagleUp;
+        this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 1.0).setY(0.82));
+      } else if (gg < GARDEN.palm || gg > GARDEN.palmEnd + 1) this.aim(c.clone().addScaledVector(dir, -0.4 - 0.25 * lean).addScaledVector(leftV, 0.55 * lean).setY(1.3 + 0.1 * lean), c.clone().addScaledVector(dir, 3).setY(0.45));
       else this.aim(c.clone().setY(1.25), c.clone().addScaledVector(dir, 1.3).addScaledVector(leftV, 0.1).setY(0.72));
     }
     // The boat, from just inside the window: low enough to see into it, with sky enough for the sunbreak.
@@ -548,6 +570,7 @@ export class DirectorSystem extends createSystem({
     FriendCue.pat = FriendCue.on && tt - TOUR.friend >= FRIEND.pat - 1.5;
     if (tt > TOUR.movie && this.cue('movie')) d.setValue(Session, 'movie', true);
     if (tt > TOUR.movieEnd && this.cue('movie-end')) d.setValue(Session, 'movie', false);
+    if (tt > TOUR.photo && tt < TOUR.snap + 1.5) BigfootControl.photoFace = Math.max(BigfootControl.photoFace, 0.5);
     if (tt > TOUR.snap && this.cue('snap')) d.setValue(Session, 'photoShots', (d.getValue(Session, 'photoShots') ?? 0) + 1);
     if (tt > TOUR.clouds && this.cue('clouds')) world('clouds');
     if (tt > TOUR.garden && this.cue('garden')) world('garden');
@@ -634,9 +657,14 @@ export class DirectorSystem extends createSystem({
    */
   /** The film's fingertip touch (garden): a correction toward the butterfly, built up while touching. */
   private touchFix = new Vector3();
+  private pinchFix = new Vector3();
+  private eggTarget = new Vector3();
+  private eggFrom = new Vector3();
   private touchSteer = false;
   /** When (s into the garden) the butterfly was touched away; -1 until then. */
   private touchedAt = -1;
+  /** When (s into the garden) the eagle flew off your palm; -1 until then. */
+  private eagleLeftAt = -1;
   private touchedSeen = 0;
 
   private handScript(d: Entity, phase: string, dt: number): void {
@@ -666,7 +694,7 @@ export class DirectorSystem extends createSystem({
       }
     }
     if (scene === 'draw-window' && t > DRAW.show && t < DRAW.hide) {
-      // Only once he has asked ("...Pinch, and drag on the wall."): point at the wall's lower corner,
+      // Once he has asked: point at the wall's lower corner,
       // pinch, drag a big window up to the top corner, hold, release.
       const a = frameToWorld(f, { x: 0, y: 0.25, z: -0.8 }, H_TMP.a);
       const b = frameToWorld(f, { x: 0, y: 2.75, z: 0.8 }, H_TMP.b);
@@ -703,11 +731,14 @@ export class DirectorSystem extends createSystem({
       // (Cupped with the fingers a little apart and tipped up toward you, like the garden's palm.)
       // Setting it down: the camera looks down at the floor, the hands lower and tip forward, and
       // the gift slides off and drops to the floor in view.
-      const lower = (GiftHold.holding && GiftHold.holdFor > 1.3) || GiftHold.placing;
-      const y = lower ? -0.3 : -0.16;
-      const z = lower ? -0.44 : -0.38;
-      left = { at: H_TMP.l.set(-0.07, y, z), rot: lower ? Q_TIP_L : Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
-      right = { at: H_TMP.r.set(0.07, y, z), rot: lower ? Q_TIP_R : Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
+      // The hands keep the same cupped shape they caught it with and lower it all the way down (you crouch);
+      // just above the floor they part a little and the gift drops gently between them onto the floor.
+      const lower = (GiftHold.holding && GiftHold.holdFor > 1.3) || GiftHold.placing || GiftHold.sincePlaced < 1.2;
+      const part = GiftHold.placing || GiftHold.sincePlaced < 1.2 ? GIFT_DOWN.part : 0;
+      const y = lower ? -0.46 : -0.16;
+      const z = lower ? -0.42 : -0.38;
+      left = { at: H_TMP.l.set(-0.07 - part, y, z), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
+      right = { at: H_TMP.r.set(0.07 + part, y, z), rot: Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
     }
     let ease = Math.min(1, dt * 6);
     const tt = phase === RitualPhase.Awake ? this.tourTime() : -1;
@@ -766,7 +797,35 @@ export class DirectorSystem extends createSystem({
         this.touchedAt = gg;
       }
       const flown = this.touchedAt >= 0 && gg > this.touchedAt + 0.8;
-      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd && !flown) left = { at: H_TMP.l.set(0, -0.15, -0.36), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
+      if (gg >= GARDEN.palm && gg < GARDEN.palmEnd && !flown) left = { at: H_TMP.l.set(0, -0.15, -0.36), rot: Q_OFFER_L, pose: 'palmSpread', pinch: 0 };
+      // The same open palm, held out again for the eagle on the mat: it comes, lays its egg, and flies off.
+      // (Held further out and lower than for the butterfly, so the whole eagle fits in view on it.)
+      // (For the eagle the hand comes in from the left, fingers pointing across, like a falconer's: arm, palm and
+      // fingers show around its feet instead of hiding underneath it.) Once the egg is lifted off, it lowers away.
+      const L = this.eagleLeftAt;
+      const lifted = L >= 0 && gg > L + EGG_PICK.carry + 0.4;
+      if (gg >= GARDEN.eaglePalm && gg < GARDEN.eagleEnd && !lifted) left = { at: H_TMP.l.set(0.0, -0.2, -0.48), rot: Q_FALCON_L, pose: 'palmSpread', pinch: 0 };
+      // Then the right hand's thumb and finger pick the egg off the palm (the other fingers open, all in view),
+      // carry it down as you crouch by the mat, and let go gently: it rests on the mat close in front of you.
+      if (L >= 0 && gg >= L + EGG_PICK.reach && gg < GARDEN.eagleEnd) {
+        const release = GARDEN.eagleEnd - EGG_PICK.releaseBeforeEnd;
+        const drop = H_TMP.b.copy(GardenSpots.center).addScaledVector(H_TMP.off.subVectors(GardenSpots.bigfoot, GardenSpots.center).setY(0).normalize(), 1.15).setY(0.075);
+        const target = this.eggTarget;
+        if (gg < L + EGG_PICK.carry) {
+          // (Aim at the egg on the palm only until the fingers close on it: once held it moves with them.)
+          if (GardenSpots.egg && gg < L + EGG_PICK.pinch) target.copy(GardenSpots.egg).setY(GardenSpots.egg.y + 0.03);
+          this.eggFrom.copy(target);
+        } else if (gg < release) {
+          const k = Math.min(1, (gg - L - EGG_PICK.carry) / Math.max(0.1, release - 0.3 - L - EGG_PICK.carry));
+          target.lerpVectors(this.eggFrom, drop, k * k * (3 - 2 * k));
+        } else target.copy(drop).setY(drop.y + 0.08 * Math.min(1, (gg - release) / 0.8));
+        // Steer by where the pinch actually is (the hand is placed by its wrist), until it lets go.
+        const at = GardenSpots.rightPinch;
+        if (at && gg < release) this.pinchFix.addScaledVector(H_TMP.aim.subVectors(target, at), Math.min(1, dt * 3));
+        head.updateMatrixWorld(true);
+        const local = head.worldToLocal(H_TMP.aim.copy(target).add(this.pinchFix));
+        right = { at: H_TMP.r.copy(local).add(H_TMP.off.set(0.05, -0.02, 0.07)), rot: Q_PINCH_R, pose: 'pinch', pinch: gg >= L + EGG_PICK.pinch && gg < release ? 1 : 0 };
+      } else this.pinchFix.set(0, 0, 0);
       // The right hand comes in from the right, index finger out, angled in toward the palm...
       if (gg >= GARDEN.touch - 1.2 && gg < GARDEN.touch && GardenSpots.perched && !flown) right = { at: H_TMP.r.set(0.3, -0.17, -0.36), rot: Q_POINT_IN_R, pose: 'point', pinch: 0 };
       // ...and its fingertip touches the butterfly.

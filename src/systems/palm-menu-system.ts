@@ -133,7 +133,10 @@ export class PalmMenuSystem extends createSystem({
       d.setValue(Session, 'skyOverride', 'night');
       say('Deep night.');
     });
-    this.on('tm-bedtime', () => d.setValue(Session, 'bedtime', !d.getValue(Session, 'bedtime')));
+    this.on('tm-reset', () => {
+      d.setValue(Session, 'skyOverride', '');
+      say("The dream's own sky.");
+    });
     this.on('tm-dawn', () => {
       d.setValue(Session, 'skyOverride', 'dawn');
       say('Sunrise.');

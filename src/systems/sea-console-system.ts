@@ -103,13 +103,10 @@ export class SeaConsoleSystem extends createSystem({
       this.console.buttonWorld(SeaConsoleSpots.button);
       SeaConsoleSpots.ready = true;
     } else SeaConsoleSpots.ready = false;
-    // Goodnight: once the calm has settled, home to bed (the film's Director does this itself).
+    // Goodnight: once the calm has settled, home to the bedroom (the film's Director does this itself).
     if (this.homeIn > 0) {
       this.homeIn -= dt;
-      if (this.homeIn <= 0 && !Director.enabled) {
-        d.setValue(Session, 'world', '');
-        d.setValue(Session, 'bedtime', true);
-      }
+      if (this.homeIn <= 0 && !Director.enabled) d.setValue(Session, 'world', '');
     }
   }
 

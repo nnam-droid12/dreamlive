@@ -50,7 +50,6 @@ npm run build      # production build → dist/
 
 - `iwsdk.config.json` is the project authority (XR features, scene, modules).
 - `src/config/tuning.ts` holds every timing and threshold; `src/config/palette.ts` every color.
-- `BUILD_PLAN.md` is the product spec and phase plan.
 
 ## Deploy
 
@@ -58,4 +57,4 @@ Every push to `main` builds and deploys to GitHub Pages via `.github/workflows/d
 
 ## Credits and licenses
 
-See [CREDITS.md](CREDITS.md). Progress log: [CHANGELOG.md](CHANGELOG.md).
+See [CREDITS.md](CREDITS.md).

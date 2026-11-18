@@ -473,6 +473,8 @@ export const Tuning = {
     creditsWindow: 0.32,
   },
 
+  /** Bigfoot's spoken lines (AI text-to-speech clips): off, so his lines appear only as on-screen captions. */
+  voice: { enabled: false },
   bedtime: {
     /** After the Rooftop story, bedtime starts by itself this long into being awake (after the credits). */
     autoAfterSec: 36,
@@ -500,6 +502,8 @@ export const Tuning = {
     shellSize: 0.5,
     /** Where shells burst, in the window frame (m): beyond the party roof, above the city. */
     sky: { x0: 14, x1: 32, y0: 14, y1: 24, z0: -12, z1: 12 },
+    /** At the rooftop party the shells burst in the sky ahead of you (m): how far, how far to the side, how high above your eyes. */
+    partySky: { dist0: 26, dist1: 40, side: 12, y0: 12, y1: 22 },
     /** Confetti near the viewer: pieces, speed, life, piece size. */
     confetti: 140,
     confettiSpeed: 1.3,
@@ -592,6 +596,8 @@ export const Tuning = {
     /** A gift waits this long (s) for your palm before floating down by itself; lower your hand this far below your eyes (m) to set it down; the next comes this long (s) after. */
     giftWaitSec: 6,
     giftSetDown: 0.62,
+    /** ...or hands this close to the floor (m) set it down too (crouching with it). */
+    giftFloorReach: 0.42,
     giftAfterPlaced: 1.2,
     /** A palm counts as held out for a gift when it faces up at least this much (palm normal's up part, 0..1); a gift this close (m) late in its flight settles into it. */
     giftPalmUp: 0.5,
@@ -599,7 +605,7 @@ export const Tuning = {
     viewerFlightSec: 2.8,
     viewerArc: 2.2,
     /** Gifts that fly to the viewer: size (vs. Bigfoot's), how far ahead and how far below the eyes they land. */
-    viewerGiftScale: 0.3,
+    viewerGiftScale: 0.42,
     viewerGiftReach: 0.7,
     viewerGiftDrop: 0.5,
   },
@@ -645,6 +651,27 @@ export const Tuning = {
     touchReach: 0.05,
     /** A butterfly on your palm sits this far above its surface (m). */
     perchAbove: 0.03,
+    /** The eagle: it glides in this long (s) into the garden, taking eagleArriveSec to land on the mat. Called to a held-out
+     * left palm it flies there in eagleApproachSec, lays its egg eagleLayAfter s after landing (over eagleLaySec), then flies off. */
+    eagleAfter: 13,
+    /** The eagle's size (x the model: 1.5 = about 42 cm long with a 0.9 m wingspan); its egg is 0.8 of that. */
+    eagleScale: 1.5,
+    eagleArriveSec: 3.6,
+    eagleApproachSec: 1.9,
+    /** On your palm it starts walking round this long (s) after landing, taking eagleTurnSec to show you its side; then it lays. */
+    eagleTurnFrom: 0.5,
+    eagleTurnSec: 1.6,
+    eagleLayAfter: 2.6,
+    eagleLaySec: 2.6,
+    /** The egg on your palm is set down when you lower your hand this close (m) to the ground. */
+    eggSetDown: 0.12,
+    /** The egg's size relative to the eagle's scale (1 = about 7 cm tall, like a real eagle's egg). */
+    eggScale: 1.0,
+    /** A right-hand pinch this close (m) to the egg on your palm picks it up. */
+    eggPinchReach: 0.07,
+    /** Thumb and index tips this close (m) count as a pinch. */
+    pinchClose: 0.035,
+    eagleLeaveSec: 4,
     /** The hint for the garden's menu (right palm up) shows after a butterfly leaves, or this long (s) in. */
     menuHintAfter: 25,
   },
@@ -663,6 +690,8 @@ export const Tuning = {
     /** The party console in the film: a little closer than the sea's (m ahead, m left). */
     partyFilmForward: 0.42,
     partyFilmLeft: 0.21,
+    /** The whole console drawn this much larger than its pill sizes below (so its words read clearly on video). */
+    scale: 1.3,
     /** Pill size and spacing (m). */
     pillW: 0.042,
     pillH: 0.2,

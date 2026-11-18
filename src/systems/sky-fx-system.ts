@@ -5,7 +5,9 @@ import { RoomSlots } from '../components/stage.js';
 import { Session } from '../components/session.js';
 import { Palette, PaletteSets } from '../config/palette.js';
 import { Tuning } from '../config/tuning.js';
-import { dreamDelta } from '../dreams/beat-context.js';
+import { dreamDelta, newBeatContext, readBeat } from '../dreams/beat-context.js';
+import { DreamDirector } from '../components/dream.js';
+import { Ritual, RitualPhase } from '../components/ritual.js';
 import { frameToWorld, WindowFrame } from '../showcase/rooftop-layout.js';
 import { Bursts } from '../visuals/bursts.js';
 import { buildRainGlass } from '../visuals/rain-glass.js';
@@ -46,6 +48,8 @@ export class SkyFxSystem extends createSystem({
   private fwd = new Vector3();
   private quat = new Quaternion();
   private p = { x: 0, y: 0, z: 0 };
+  private beat = newBeatContext();
+  private atParty = false;
 
   init(): void {
     this.fireworks = new Bursts(cfg.volley * cfg.shellSparks * 2, cfg.shellSize, true);
@@ -84,6 +88,9 @@ export class SkyFxSystem extends createSystem({
       this.seenConfetti = c;
       this.popConfetti();
     }
+    // At the rooftop party the window is behind you, out of sight: the shells go up in the sky ahead instead.
+    this.atParty =
+      d.hasComponent(DreamDirector) && d.hasComponent(Ritual) && d.getValue(DreamDirector, 'chapterId') === 'rooftop-party' && d.getValue(Ritual, 'phase') === RitualPhase.Asleep && readBeat(d, this.beat) && this.beat.scene.startsWith('party-') && this.beat.scene !== 'party-wait';
     const f = d.getValue(Session, 'fireworkShots') ?? 0;
     if (f !== this.seenFireworks) {
       this.seenFireworks = f;
@@ -131,11 +138,26 @@ export class SkyFxSystem extends createSystem({
   }
 
   private shell(): void {
-    const s = cfg.sky;
-    this.p.x = s.x0 + Math.random() * (s.x1 - s.x0);
-    this.p.y = s.y0 + Math.random() * (s.y1 - s.y0);
-    this.p.z = s.z0 + Math.random() * (s.z1 - s.z0);
-    frameToWorld(this.frame, this.p, this.at);
+    if (this.atParty) {
+      // In the sky ahead of you, wherever you are looking along the horizon.
+      const s = cfg.partySky;
+      this.player.head.getWorldPosition(this.head);
+      this.fwd.set(0, 0, -1).applyQuaternion(this.player.head.getWorldQuaternion(this.quat)).setY(0);
+      if (this.fwd.lengthSq() < 1e-4) this.fwd.set(0, 0, -1);
+      this.fwd.normalize();
+      const dist = s.dist0 + Math.random() * (s.dist1 - s.dist0);
+      const side = (Math.random() * 2 - 1) * s.side;
+      this.at.copy(this.head).addScaledVector(this.fwd, dist);
+      this.at.x += -this.fwd.z * side;
+      this.at.z += this.fwd.x * side;
+      this.at.y += s.y0 + Math.random() * (s.y1 - s.y0);
+    } else {
+      const s = cfg.sky;
+      this.p.x = s.x0 + Math.random() * (s.x1 - s.x0);
+      this.p.y = s.y0 + Math.random() * (s.y1 - s.y0);
+      this.p.z = s.z0 + Math.random() * (s.z1 - s.z0);
+      frameToWorld(this.frame, this.p, this.at);
+    }
     // Each shell is one or two colours from the palette.
     const i = Math.floor(Math.random() * PaletteSets.fireworks.length);
     const colors = [PaletteSets.fireworks[i], PaletteSets.fireworks[(i + 1 + Math.floor(Math.random() * 2)) % PaletteSets.fireworks.length]];

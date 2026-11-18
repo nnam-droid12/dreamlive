@@ -7,6 +7,7 @@
 import { VoiceNow } from './voice-now.js';
 import { Timeline } from './timeline.js';
 import { Director } from '../config/director.js';
+import { Tuning } from '../config/tuning.js';
 
 type Vec = { x: number; y: number; z: number };
 
@@ -597,6 +598,8 @@ class AudioEngine {
    * loading (it is fetched on first ask, so call `preloadVoice` ahead of time).
    */
   speak(name: string, at: Vec, gain = 1): boolean {
+    // Voice off: the caller's caption carries the line (no clip, no ducking, no talking body).
+    if (!Tuning.voice.enabled) return true;
     Timeline.log('voice', name, gain);
     // (His body moves with the line, also in the film's silent offline render.)
     VoiceNow.name = name;
@@ -619,7 +622,7 @@ class AudioEngine {
 
   preloadVoice(name: string): void {
     const c = this.ctx;
-    if (!c || this.voices.has(name) || this.voiceLoading.has(name)) return;
+    if (!Tuning.voice.enabled || !c || this.voices.has(name) || this.voiceLoading.has(name)) return;
     this.voiceLoading.add(name);
     fetch(`${import.meta.env.BASE_URL}audio/voice/${name}.mp3`)
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))

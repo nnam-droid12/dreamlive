@@ -78,6 +78,6 @@
   </div>
   <div class="row">
     <Button id="tm-dawn" class="b"><ButtonLabel>Dawn</ButtonLabel></Button>
-    <Button id="tm-bedtime" class="b"><ButtonLabel>Bedtime</ButtonLabel></Button>
+    <Button id="tm-reset" class="b"><ButtonLabel>Reset</ButtonLabel></Button>
   </div>
 </Panel>

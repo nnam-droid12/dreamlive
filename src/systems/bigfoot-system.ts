@@ -156,14 +156,22 @@ export class BigfootSystem extends createSystem({
       else this.wake(phase === RitualPhase.Awake ? 99 : phaseTime);
     }
 
+    // Someone is framing a photo of him: he turns to face you and looks into the camera.
+    if (BigfootControl.photoFace > 0) {
+      BigfootControl.photoFace = Math.max(0, BigfootControl.photoFace - realDelta);
+      this.player.head.getWorldPosition(this.lookAtYou);
+      const r = this.rig.root;
+      r.quaternion.slerp(this.face(r.position, this.lookAtYou), Math.min(1, realDelta * 5));
+    }
     // The garden is yours alone, whatever else is going on: he is away.
     if (d.getValue(Session, 'world') === 'garden') this.rig.root.visible = false;
     this.rig.setPose(this.wantPose, this.wantEat);
     // The friend system's look and reach (released whenever it is not in charge).
     const fc = BigfootControl.active && phase === RitualPhase.Awake;
-    this.rig.setLook(fc && BigfootControl.looking ? BigfootControl.look : null);
+    this.rig.setLook(BigfootControl.photoFace > 0 ? this.lookAtYou : fc && BigfootControl.looking ? BigfootControl.look : null);
     this.rig.setUpright(fc ? 0.85 : 0);
-    this.rig.setBow(fc ? BigfootControl.bow : 0);
+    this.rig.setBow(BigfootControl.photoFace > 0 ? 0 : fc ? BigfootControl.bow : 0);
+    if (BigfootControl.photoFace > 0) this.rig.setUpright(0.9);
     this.rig.setReach('right', fc && BigfootControl.reach.right ? BigfootControl.reachAt.right : null, BigfootControl.shape.right);
     this.rig.setReach('left', fc && BigfootControl.reach.left ? BigfootControl.reachAt.left : null, BigfootControl.shape.left);
     // In the boat: holding on to both gunwales, sitting tall, head up, looking at you.

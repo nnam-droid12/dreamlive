@@ -48,7 +48,8 @@ function directorSave(): Plugin {
 
 export default defineConfig({
   plugins: [iwsdkDev(), directorSave()],
-  server: { host: '0.0.0.0', port: 8081, open: false },
+  // (artifacts/ holds thousands of rendered frames: never watch it, or every saved frame wakes the dev server.)
+  server: { host: '0.0.0.0', port: 8081, open: false, watch: { ignored: ['**/artifacts/**', '**/dist/**'] } },
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',
