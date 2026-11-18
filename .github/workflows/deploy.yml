@@ -24,7 +24,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      # (A dev tool's dependency, onnxruntime-node, tries to download optional CUDA binaries that 404: skip them.)
       - run: npm ci
+        env:
+          npm_config_onnxruntime_node_install_cuda: skip
       - run: npm run typecheck
       - run: npm run build
         env:
