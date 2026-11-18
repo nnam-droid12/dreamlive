@@ -97,6 +97,9 @@ export class BigfootSystem extends createSystem({
   private holding = false;
   private seated = false;
   private lookAtYou = new Vector3();
+  /** Where he stopped to pose for a photo. */
+  private photoSpot = new Vector3();
+  private photoHeld = false;
   /** Seated in the boat: his hip offset, eased (undefined until he first sits). */
   private boatSitOff?: number;
   private popQ = new Quaternion();
@@ -168,7 +171,8 @@ export class BigfootSystem extends createSystem({
     this.rig.setPose(this.wantPose, this.wantEat);
     // The friend system's look and reach (released whenever it is not in charge).
     const fc = BigfootControl.active && phase === RitualPhase.Awake;
-    this.rig.setLook(BigfootControl.photoFace > 0 ? this.lookAtYou : fc && BigfootControl.looking ? BigfootControl.look : null);
+    if (BigfootControl.photoFace > 0) this.rig.setLook(this.lookAtYou, true);
+    else this.rig.setLook(fc && BigfootControl.looking ? BigfootControl.look : null);
     this.rig.setUpright(fc ? 0.85 : 0);
     this.rig.setBow(BigfootControl.photoFace > 0 ? 0 : fc ? BigfootControl.bow : 0);
     if (BigfootControl.photoFace > 0) this.rig.setUpright(0.9);
@@ -336,9 +340,11 @@ export class BigfootSystem extends createSystem({
       this.setState(BigfootState.Awake);
       r.position.copy(this.exit);
       r.quaternion.copy(this.face(this.exit, this.head));
-      // Posing for a photo (the viewer is framing one with their fingers).
-      const posing = (this.entity?.getValue(Bigfoot, 'pose') ?? 0) > 0;
-      this.rig!.play(posing ? 'cheer' : t < 7 ? 'wave' : 'idle');
+      // Posing for a photo (the viewer is framing one with their fingers): he puts the popcorn away and
+      // stands tall, head up, looking into the camera (the cheer clip crouches and hides his face).
+      const posing = (this.entity?.getValue(Bigfoot, 'pose') ?? 0) > 0 || BigfootControl.photoFace > 0;
+      if (posing) this.showPopcorn(false);
+      this.rig!.play(posing ? 'idle' : t < 7 ? 'wave' : 'idle');
     }
   }
 
@@ -393,6 +399,16 @@ export class BigfootSystem extends createSystem({
   private friend(): void {
     const r = this.rig!.root;
     this.showPopcorn(false);
+    // Posing for a photo: he stops where he is and stands tall (the facing-you turn is applied after).
+    if (BigfootControl.photoFace > 0) {
+      if (!this.photoHeld) this.photoSpot.copy(r.position);
+      this.photoHeld = true;
+      r.position.copy(this.photoSpot);
+      this.setState(BigfootState.Awake);
+      this.rig!.play('idle');
+      return;
+    }
+    this.photoHeld = false;
     r.position.copy(BigfootControl.spot);
     // A laugh shakes him a little.
     if (BigfootControl.shake > 0) r.position.x += Math.sin(performance.now() * 0.05) * 0.015 * BigfootControl.shake;

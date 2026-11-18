@@ -48,7 +48,7 @@ const CUT_JUMP = 2.5;
 /** After the eagle leaves (s): the right hand reaches for the egg, pinches it, carries it down to the mat; it lets go this long before the garden ends. */
 const EGG_PICK = { reach: 0.6, pinch: 1.8, carry: 2.3, releaseBeforeEnd: 1.6 };
 /** Setting a gift down: the camera's crouched eye height (m), and how far (m) each hand moves aside to let it drop. */
-const GIFT_DOWN = { crouch: 0.8, part: 0.09 };
+const GIFT_DOWN = { crouch: 0.8, part: 0.09, floorAt: 2.6 };
 /** How long (s) each scene's caption shows at its start. */
 const FEATURE_HOLD = 3.5;
 const CARD_W = 1.5;
@@ -735,7 +735,10 @@ export class DirectorSystem extends createSystem({
       // just above the floor they part a little and the gift drops gently between them onto the floor.
       const lower = (GiftHold.holding && GiftHold.holdFor > 1.3) || GiftHold.placing || GiftHold.sincePlaced < 1.2;
       const part = GiftHold.placing || GiftHold.sincePlaced < 1.2 ? GIFT_DOWN.part : 0;
-      const y = lower ? -0.46 : -0.16;
+      // In two stages: a little lower while you crouch and look down (the hands stay in view), then all the
+      // way to the floor once the view has settled on it, where it is let go.
+      const settled = (GiftHold.holding && GiftHold.holdFor > GIFT_DOWN.floorAt) || GiftHold.placing || GiftHold.sincePlaced < 1.2;
+      const y = lower ? (settled ? -0.46 : -0.27) : -0.16;
       const z = lower ? -0.42 : -0.38;
       left = { at: H_TMP.l.set(-0.07 - part, y, z), rot: Q_OFFER_L, pose: 'cupSpread', pinch: 0 };
       right = { at: H_TMP.r.set(0.07 + part, y, z), rot: Q_OFFER_R, pose: 'cupSpread', pinch: 0 };
