@@ -79,8 +79,11 @@ export interface BigfootRig {
   hipHeight(): number;
   /** Bow toward the way he faces, 0..1 (to be patted by someone sitting down). */
   setBow(a: number): void;
-  /** Turn his head toward a world point (null = let the animation lead). */
-  setLook(target: Vector3 | null): void;
+  /**
+   * Turn his head toward a world point (null = let the animation lead). `face`: aim his face
+   * straight at it whatever the animation does with his head (posing for a photo).
+   */
+  setLook(target: Vector3 | null, face?: boolean): void;
   /**
    * Reach a hand to a world point exactly (two-bone IK on top of the animation),
    * the hand open with fingers up ('palm', a high-five) or a fist forward ('fist').
@@ -168,6 +171,14 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
   // Skeleton.pose() can't be used: it rebuilds from inverse binds and drops the parents' scale.
   const restPose = bones.map((b) => ({ p: b.position.clone(), q: b.quaternion.clone(), s: b.scale.clone() }));
   const headBone = bones.find((b) => /Head$/.test(b.name));
+  // Which way his face points in the head bone's own frame (measured in the bind pose, where he faces +Z).
+  const faceLocal = new Vector3(0, 0, 1);
+  if (headBone) {
+    root.updateMatrixWorld(true);
+    const hq = headBone.getWorldQuaternion(new Quaternion());
+    const rq = root.getWorldQuaternion(new Quaternion());
+    faceLocal.applyQuaternion(rq).applyQuaternion(hq.invert()).normalize();
+  }
   const bone = (re: RegExp) => bones.find((b) => re.test(b.name));
   const limb = {
     hips: bone(/Hips$/),
@@ -187,7 +198,7 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     rHand: bone(/RightHand$/),
   };
   let pose: '' | 'sit' = '';
-  const look = { on: false, target: new Vector3(), weight: 0 };
+  const look = { on: false, face: false, target: new Vector3(), weight: 0, cur: new Vector3(), q: new Quaternion() };
   const upright = { want: 0, weight: 0 };
   const bow = { want: 0, weight: 0, fwd: new Vector3(), dir: new Vector3(), q: new Quaternion() };
   const talk = { want: 0, level: 0, time: 0, applied: false, before: new Quaternion() };
@@ -238,6 +249,20 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     fwd.set(0, 0, 1).applyQuaternion(AIM.rootQ);
     headBone.updateWorldMatrix(true, false);
     const want = IK.u.subVectors(look.target, IK.s.setFromMatrixPosition(headBone.matrixWorld)).normalize();
+    if (look.face) {
+      // Face straight at the target: turn the face direction the animation gives onto the line to it.
+      headBone.getWorldQuaternion(AIM.world);
+      look.cur.copy(faceLocal).applyQuaternion(AIM.world).normalize();
+      look.q.setFromUnitVectors(look.cur, want);
+      // (At most ~75 degrees, so a target behind him never wrings his neck.)
+      const ang = look.cur.angleTo(want);
+      look.q.slerp(IK.q.identity(), 1 - look.weight * Math.min(1, 1.3 / Math.max(1e-4, ang)));
+      AIM.world.premultiply(look.q);
+      headBone.parent.getWorldQuaternion(AIM.parent);
+      headBone.quaternion.copy(AIM.parent.invert().multiply(AIM.world));
+      headBone.updateMatrixWorld(true);
+      return;
+    }
     // Clamp: at most ~70° to either side and ~35° up or down from straight ahead.
     const yawTo = Math.atan2(want.x, want.z) - Math.atan2(fwd.x, fwd.z);
     const yaw = Math.max(-1.2, Math.min(1.2, Math.atan2(Math.sin(yawTo), Math.cos(yawTo))));
@@ -361,8 +386,9 @@ function realRig(scene: Object3D, clips: AnimationClip[]): BigfootRig {
     setTalk(a) {
       talk.want = Math.max(0, Math.min(1, a));
     },
-    setLook(target) {
+    setLook(target, face = false) {
       look.on = !!target;
+      look.face = face;
       if (target) look.target.copy(target);
     },
     setReach(h, target, shape = 'palm') {
